@@ -5,6 +5,7 @@ export class AmbientMusic {
   private currentStep = 0;
   private timerID: number | null = null;
   private masterGain: GainNode | null = null;
+  private onBeat?: () => void;
 
   // C major pentatonic scale (C3 to C5)
   private frequencies = [
@@ -43,6 +44,10 @@ export class AmbientMusic {
       this.masterGain.connect(this.ctx.destination);
       this.masterGain.gain.value = 0;
     }
+  }
+
+  public setOnBeat(fn?: () => void) {
+    this.onBeat = fn;
   }
 
   public play() {
@@ -86,8 +91,10 @@ export class AmbientMusic {
         // Bazen arkaplanda çok hafif alt sesler de gelsin diye (bass)
         if (this.currentStep % 16 === 0) {
            this.playBass(this.nextNoteTime, this.frequencies[0]);
+           this.scheduleBeat(this.nextNoteTime);
         } else if (this.currentStep % 16 === 8) {
            this.playBass(this.nextNoteTime, this.frequencies[4]);
+           this.scheduleBeat(this.nextNoteTime);
         }
       }
       
@@ -97,6 +104,14 @@ export class AmbientMusic {
     }
     
     this.timerID = window.setTimeout(() => this.scheduleNextNotes(), 100);
+  }
+
+  private scheduleBeat(time: number) {
+    if (!this.onBeat || !this.ctx) return;
+    const delay = Math.max(0, (time - this.ctx.currentTime) * 1000);
+    window.setTimeout(() => {
+       if (this.isPlaying && this.onBeat) this.onBeat();
+    }, delay);
   }
 
   private playPluck(time: number, freq: number) {

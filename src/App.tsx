@@ -3,7 +3,7 @@ import { useGameStore } from './store/useGameStore';
 import { generatePuzzle, isTutorialLevel, getTutorialSymbols, type SymbolType } from './lib/LevelEngine';
 import * as Leaderboard from './lib/Leaderboard';
 import * as Icons from './components/Icons';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useAnimation } from 'framer-motion';
 import { AmbientMusic } from './lib/AmbientMusic';
 
 let audioCtx: AudioContext | null = null;
@@ -179,6 +179,7 @@ function MenuScreen({ startGame }: { startGame: (asDev?: boolean) => void }) {
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [showInfo, setShowInfo] = useState(false);
   const [muteAudio, setMuteAudio] = useState(localStorage.getItem('zeka_mute') === 'true');
+  const logoControls = useAnimation();
 
   const toggleMute = () => {
     const newMute = !muteAudio;
@@ -202,6 +203,18 @@ function MenuScreen({ startGame }: { startGame: (asDev?: boolean) => void }) {
   // Ambiyans Müziğini Ana Menüde çaldır
   useEffect(() => {
     initAudio();
+    if (ambientMusic) {
+      ambientMusic.setOnBeat(() => {
+         if (!muteAudio) {
+           logoControls.start({
+             y: [0, -6, 0],
+             scale: [1, 1.05, 1],
+             transition: { duration: 0.5, ease: "easeOut" }
+           });
+         }
+      });
+    }
+
     const handleFirstInteraction = () => {
       if (audioCtx?.state === 'suspended') audioCtx.resume();
       if (!muteAudio) ambientMusic?.play();
@@ -220,8 +233,9 @@ function MenuScreen({ startGame }: { startGame: (asDev?: boolean) => void }) {
       window.removeEventListener('click', handleFirstInteraction);
       window.removeEventListener('touchstart', handleFirstInteraction);
       ambientMusic?.stop(); // Oyunun içine girince kapansın
+      if (ambientMusic) ambientMusic.setOnBeat(undefined);
     };
-  }, []);
+  }, [muteAudio, logoControls]);
 
   // Mute tuşuna basıldığında anında tepki
   useEffect(() => {
@@ -251,8 +265,7 @@ function MenuScreen({ startGame }: { startGame: (asDev?: boolean) => void }) {
         
         {/* Rhythmic Bouncing Logo Syncing with Ambient Music */}
         <motion.div 
-          animate={muteAudio ? {} : { y: [0, -6, 0] }}
-          transition={muteAudio ? {} : { duration: 1.44, ease: "easeInOut", repeat: Infinity }}
+          animate={logoControls}
           className="mx-auto w-fit mb-8"
         >
           <div className="w-24 h-24 bg-[#1D1D1F] text-white rounded-[2.5rem] flex items-center justify-center shadow-[0_20px_40px_rgba(0,0,0,0.2)] rotate-3 hover:rotate-6 transition-transform">
