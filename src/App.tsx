@@ -200,33 +200,17 @@ function MenuScreen({ startGame }: { startGame: (asDev?: boolean) => void }) {
     fetch();
   }, [tab]);
 
-  // Ambiyans Müziğini Ana Menüde çaldır — İlk etkileşim dinleyicisi (sadece 1 kez mount)
+  // Ambiyans Müziğini Ana Menüde çaldır
   useEffect(() => {
     initAudio();
-
-    const startMusic = () => {
-      if (audioCtx?.state === 'suspended') audioCtx.resume();
-      if (!isMuted()) ambientMusic?.play();
-    };
-
-    const handleFirstInteraction = () => {
-      startMusic();
-      window.removeEventListener('click', handleFirstInteraction);
-      window.removeEventListener('touchstart', handleFirstInteraction);
-    };
-
-    // Audio daha önce açıldıysa (örn: kapat-aç) direkt çal
-    if (audioCtx?.state === 'running') {
-      if (!isMuted()) ambientMusic?.play();
-    } else {
-      // İlk defa açılışta kullanıcı etkileşimi bekleniyor (tarayıcı politikası)
-      window.addEventListener('click', handleFirstInteraction);
-      window.addEventListener('touchstart', handleFirstInteraction);
+    
+    // AudioContext açıksa direkt çal (oyundan dönüşte her zaman açıktır)
+    if (!isMuted() && audioCtx) {
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      ambientMusic?.play();
     }
 
     return () => {
-      window.removeEventListener('click', handleFirstInteraction);
-      window.removeEventListener('touchstart', handleFirstInteraction);
       ambientMusic?.stop();
       if (ambientMusic) ambientMusic.setOnBeat(undefined);
     };
