@@ -206,10 +206,10 @@ function MenuScreen({ startGame }: { startGame: (asDev?: boolean) => void }) {
     if (ambientMusic) {
       ambientMusic.setOnBeat(() => {
          if (!muteAudio) {
+           logoControls.stop(); // hızlı hızlı geleceği için animasyonları sıfırla
            logoControls.start({
-             y: [0, -6, 0],
-             scale: [1, 1.05, 1],
-             transition: { duration: 0.5, ease: "easeOut" }
+             scale: [1, 1.08, 1],
+             transition: { duration: 0.15, ease: "easeOut" }
            });
          }
       });
