@@ -248,20 +248,22 @@ function MenuScreen({ startGame }: { startGame: (asDev?: boolean) => void }) {
                 ZEKA, hafıza yeteneğini ve dikkatini zorlayan minimalist bir zihin bulmacasıdır. Her tur ekranda beliren simgenin matematiksel değerini akıldan hesapla ve ilerle!
               </p>
 
-              <div className="flex flex-col gap-3 mb-6 bg-neutral-50 p-4 rounded-2xl border border-neutral-100">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm text-neutral-600 shrink-0"><Icons.MusicOn className="w-4 h-4"/></div>
-                  <span className="text-xs font-bold text-neutral-600">Ses Efektlerini Aç / Kapat</span>
+              <div className="flex justify-center gap-6 mb-6 bg-neutral-50 rounded-2xl p-6 border border-neutral-100">
+                <div className="flex flex-col items-center gap-3">
+                  <div className="p-3 bg-white border border-neutral-200 shadow-sm rounded-full"><SymbolDisplay type="CircleFilled" /></div>
+                  <span className="font-bold text-xl text-green-600">+1</span>
+                  <span className="text-xs text-neutral-400 font-bold uppercase tracking-widest">Dolu</span>
                 </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm text-amber-500 shrink-0"><Icons.Trophy className="w-4 h-4"/></div>
-                  <span className="text-xs font-bold text-neutral-600">Dünya Sıralaması ve Skorlar</span>
+                <div className="flex flex-col items-center gap-3">
+                  <div className="p-3 bg-white border border-neutral-200 shadow-sm rounded-full"><SymbolDisplay type="CircleEmpty" /></div>
+                  <span className="font-bold text-xl text-red-500">-1</span>
+                  <span className="text-xs text-neutral-400 font-bold uppercase tracking-widest">Boş</span>
                 </div>
               </div>
 
               <div className="text-center mb-6">
                  <span className="text-[10px] font-black tracking-widest text-neutral-400 uppercase block mb-1">GELİŞTİRİCİ</span>
-                 <a href="https://arcngames.com" target="_blank" rel="noopener noreferrer" className="text-sm font-bold text-[#1D1D1F] hover:text-amber-500 transition-colors">ARCN Games</a>
+                 <span className="text-sm font-bold text-[#1D1D1F]">ARCN Games</span>
               </div>
               <button onClick={() => setShowInfo(false)} className="w-full py-3 bg-neutral-100 text-neutral-800 rounded-xl font-bold tracking-wider text-sm hover:bg-neutral-200">
                 KAPAT
@@ -298,14 +300,14 @@ function MenuScreen({ startGame }: { startGame: (asDev?: boolean) => void }) {
                 ))}
               </div>
 
-              <div className="p-3 overflow-y-auto flex-1 bg-neutral-50/50">
+              <div className="p-3 overflow-y-auto w-full min-h-[320px] bg-neutral-50/50">
                 {loading ? (
-                  <div className="flex flex-col items-center py-10 gap-3">
+                  <div className="flex flex-col items-center justify-center h-full min-h-[250px] gap-3">
                     <div className="w-8 h-8 border-4 border-neutral-200 border-t-[#1D1D1F] rounded-full animate-spin"></div>
                     <span className="text-[10px] font-bold text-neutral-400 tracking-widest uppercase">Yükleniyor...</span>
                   </div>
                 ) : scores.length === 0 ? (
-                  <div className="text-center py-10">
+                  <div className="text-center flex flex-col items-center justify-center h-full min-h-[250px]">
                     <span className="text-4xl mb-3 block">🎯</span>
                     <p className="text-neutral-400 font-semibold text-sm">Henüz skor yok</p>
                   </div>
