@@ -238,26 +238,50 @@ function MenuScreen({ startGame }: { startGame: (asDev?: boolean) => void }) {
       {/* INFO MODAL */}
       <AnimatePresence>
         {showInfo && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 pointer-events-auto">
             <motion.div 
-              initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-white rounded-3xl p-6 w-[90%] max-w-[340px] shadow-2xl relative"
+              initial={{ scale: 0.9, opacity: 0 }} 
+              animate={{ scale: 1, opacity: 1, transition: { duration: 0.2 } }} 
+              exit={{ scale: 0.95, opacity: 0, transition: { duration: 0.1 } }}
+              className="bg-white rounded-3xl p-5 w-full max-w-[340px] shadow-2xl relative"
             >
-              <h2 className="text-2xl font-black mb-4">Hakkında</h2>
-              <p className="text-sm font-medium text-neutral-600 mb-4 leading-relaxed">
-                ZEKA, hafıza yeteneğini ve dikkatini zorlayan minimalist bir zihin bulmacasıdır. Her tur ekranda beliren simgenin matematiksel değerini akıldan hesapla ve ilerle!
+              <h2 className="text-xl font-black mb-3">Hakkında</h2>
+              <p className="text-xs font-medium text-neutral-600 mb-4 leading-relaxed">
+                ZEKA, hafıza ve dikkati zorlayan minimalist bir zihin bulmacasıdır. Her tur ekranda beliren şekillerin matematiksel değerini akıldan hesapla ve ilerle!
               </p>
 
-              <div className="flex justify-center gap-6 mb-6 bg-neutral-50 rounded-2xl p-6 border border-neutral-100">
-                <div className="flex flex-col items-center gap-3">
-                  <div className="p-3 bg-white border border-neutral-200 shadow-sm rounded-full"><SymbolDisplay type="CircleFilled" /></div>
-                  <span className="font-bold text-xl text-green-600">+1</span>
-                  <span className="text-xs text-neutral-400 font-bold uppercase tracking-widest">Dolu</span>
+              <div className="grid grid-cols-4 gap-2 mb-6 bg-neutral-50 rounded-2xl p-3 border border-neutral-100 place-items-center">
+                <div className="flex flex-col items-center gap-1">
+                  <div className="w-8 h-8 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center"><SymbolDisplay type="CircleFilled" /></div>
+                  <span className="text-[9px] font-bold text-neutral-500 text-center tracking-tighter leading-tight">+1 / -1<br/>Daire</span>
                 </div>
-                <div className="flex flex-col items-center gap-3">
-                  <div className="p-3 bg-white border border-neutral-200 shadow-sm rounded-full"><SymbolDisplay type="CircleEmpty" /></div>
-                  <span className="font-bold text-xl text-red-500">-1</span>
-                  <span className="text-xs text-neutral-400 font-bold uppercase tracking-widest">Boş</span>
+                <div className="flex flex-col items-center gap-1">
+                  <div className="w-8 h-8 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center"><SymbolDisplay type="TriangleUp" /></div>
+                  <span className="text-[9px] font-bold text-neutral-500 text-center tracking-tighter leading-tight">+1 / -1<br/>Üçgen</span>
+                </div>
+                <div className="flex flex-col items-center gap-1">
+                  <div className="w-8 h-8 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center"><SymbolDisplay type="Prev1" /></div>
+                  <span className="text-[9px] font-bold text-neutral-500 text-center tracking-tighter leading-tight">Önceki<br/>Cevap</span>
+                </div>
+                <div className="flex flex-col items-center gap-1">
+                  <div className="w-8 h-8 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center"><SymbolDisplay type="Mul2" /></div>
+                  <span className="text-[9px] font-bold text-neutral-500 text-center tracking-tighter leading-tight">Çarp / Böl</span>
+                </div>
+                <div className="flex flex-col items-center gap-1">
+                  <div className="w-8 h-8 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center"><SymbolDisplay type="ReverseNext" /></div>
+                  <span className="text-[9px] font-bold text-neutral-500 text-center tracking-tighter leading-tight">Tersine<br/>Çevir</span>
+                </div>
+                <div className="flex flex-col items-center gap-1">
+                  <div className="w-8 h-8 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center"><SymbolDisplay type="Star" /></div>
+                  <span className="text-[9px] font-bold text-neutral-500 text-center tracking-tighter leading-tight">Sıfırlar</span>
+                </div>
+                <div className="flex flex-col items-center gap-1">
+                  <div className="w-8 h-8 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center"><SymbolDisplay type="InvertAll" /></div>
+                  <span className="text-[9px] font-bold text-neutral-500 text-center tracking-tighter leading-tight">Tümünü<br/>Tersle</span>
+                </div>
+                <div className="flex flex-col items-center gap-1">
+                  <div className="w-8 h-8 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center"><SymbolDisplay type="Heart" /></div>
+                  <span className="text-[9px] font-bold text-neutral-500 text-center tracking-tighter leading-tight">Eksi<br/>Koruma</span>
                 </div>
               </div>
 
@@ -276,9 +300,11 @@ function MenuScreen({ startGame }: { startGame: (asDev?: boolean) => void }) {
       {/* LEADERBOARD MODAL */}
       <AnimatePresence>
         {showLeaderboard && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 pointer-events-auto">
             <motion.div 
-              initial={{ scale: 0.9, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              initial={{ scale: 0.9, opacity: 0, y: 20 }} 
+              animate={{ scale: 1, opacity: 1, y: 0, transition: { duration: 0.2 } }} 
+              exit={{ scale: 0.95, opacity: 0, y: 10, transition: { duration: 0.1 } }}
               className="bg-white rounded-3xl w-full max-w-[360px] shadow-2xl flex flex-col overflow-hidden max-h-[85dvh]"
             >
               <div className="flex justify-between items-center p-4 border-b border-neutral-100 shrink-0">
