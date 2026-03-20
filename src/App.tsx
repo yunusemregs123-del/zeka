@@ -8,6 +8,8 @@ import { AmbientMusic } from './lib/AmbientMusic';
 
 let audioCtx: AudioContext | null = null;
 let ambientMusic: AmbientMusic | null = null;
+let audioResumed = false; // tarayıcıda ilk etkileşim yapıldı mı?
+
 const isMuted = () => localStorage.getItem('zeka_mute') === 'true';
 
 const initAudio = () => {
@@ -17,6 +19,20 @@ const initAudio = () => {
       audioCtx = new AudioContext();
       ambientMusic = new AmbientMusic(audioCtx);
     }
+  }
+};
+
+const resumeAndPlay = () => {
+  if (!audioCtx || !ambientMusic) return;
+  if (isMuted()) return;
+  if (audioCtx.state === 'suspended') {
+    audioCtx.resume().then(() => {
+      audioResumed = true;
+      if (!isMuted()) ambientMusic?.play();
+    });
+  } else {
+    audioResumed = true;
+    ambientMusic.play();
   }
 };
 
@@ -203,10 +219,12 @@ function MenuScreen({ startGame }: { startGame: (asDev?: boolean) => void }) {
   // Ambiyans Müziğini Ana Menüde çaldır
   useEffect(() => {
     initAudio();
+
+    // onBeat callback'ini ayarla
     if (ambientMusic) {
       ambientMusic.setOnBeat(() => {
-         if (!muteAudio) {
-           logoControls.stop(); // hızlı hızlı geleceği için animasyonları sıfırla
+         if (!isMuted()) {
+           logoControls.stop();
            logoControls.start({
              scale: [1, 1.08, 1],
              transition: { duration: 0.15, ease: "easeOut" }
@@ -215,44 +233,41 @@ function MenuScreen({ startGame }: { startGame: (asDev?: boolean) => void }) {
       });
     }
 
-    if (!muteAudio && audioCtx?.state === 'running') {
-       ambientMusic?.play();
+    // İlk kullanıcı etkileşiminde müziği başlat (tarayıcı politikası)
+    const startMusic = () => {
+      initAudio();
+      resumeAndPlay();
+    };
+
+    // Eğer audioCtx zaten çalışıyorsa (önceden etkileşim yapılmışsa) direkt başlat
+    if (audioResumed && !isMuted()) {
+      ambientMusic?.play();
     }
 
+    document.addEventListener('click', startMusic, { once: true, capture: true });
+    document.addEventListener('touchstart', startMusic, { once: true, capture: true });
+
     return () => {
-      ambientMusic?.stop(); // Oyunun içine girince kapansın
+      document.removeEventListener('click', startMusic, { capture: true });
+      document.removeEventListener('touchstart', startMusic, { capture: true });
+      ambientMusic?.stop();
       if (ambientMusic) ambientMusic.setOnBeat(undefined);
     };
-  }, [muteAudio, logoControls]);
+  }, [logoControls]);
 
   // Mute tuşuna basıldığında anında tepki
   useEffect(() => {
     if (muteAudio) {
       ambientMusic?.stop();
-    } else if (audioCtx?.state === 'running') {
-      ambientMusic?.play();
+    } else if (audioResumed) {
+      resumeAndPlay();
     }
   }, [muteAudio]);
-
-  const handleGlobalInteraction = () => {
-    initAudio();
-    if (audioCtx?.state === 'suspended') {
-      audioCtx.resume().then(() => {
-        if (!muteAudio) ambientMusic?.play();
-      });
-    } else if (!muteAudio) {
-      ambientMusic?.play();
-    }
-  };
 
   const tabLabels = { daily: 'GÜNLÜK', weekly: 'HAFTALIK', alltime: 'TÜM ZAMANLAR' };
 
   return (
-    <div 
-      onClick={handleGlobalInteraction}
-      onTouchStart={handleGlobalInteraction}
-      className="min-h-[100dvh] bg-[#F5F5F7] text-[#1D1D1F] flex flex-col items-center justify-center font-sans selection:bg-neutral-200 p-4 md:p-6 relative overflow-hidden"
-    >
+    <div className="min-h-[100dvh] bg-[#F5F5F7] text-[#1D1D1F] flex flex-col items-center justify-center font-sans selection:bg-neutral-200 p-4 md:p-6 relative overflow-hidden">
       
       {/* DEV BUTTON - TOP RIGHT */}
       <div className="absolute top-4 right-4 z-10">
