@@ -8,6 +8,7 @@ import { AmbientMusic } from './lib/AmbientMusic';
 
 let audioCtx: AudioContext | null = null;
 let ambientMusic: AmbientMusic | null = null;
+let globalGain: GainNode | null = null;
 const isMuted = () => localStorage.getItem('zeka_mute') === 'true';
 
 const initAudio = () => {
@@ -15,23 +16,34 @@ const initAudio = () => {
     const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
     if (AudioContext) {
       audioCtx = new AudioContext();
-      ambientMusic = new AmbientMusic(audioCtx);
+      globalGain = audioCtx.createGain();
+      globalGain.gain.value = 1;
+      globalGain.connect(audioCtx.destination);
+      ambientMusic = new AmbientMusic(audioCtx, globalGain);
     }
   }
+};
+
+// Tüm sesleri sessizce kapatmak / açmak için
+const fadeGlobalAudio = (targetValue: number, duration = 0.15) => {
+  if (!audioCtx || !globalGain) return;
+  const now = audioCtx.currentTime;
+  globalGain.gain.cancelScheduledValues(now);
+  globalGain.gain.setValueAtTime(globalGain.gain.value, now);
+  globalGain.gain.linearRampToValueAtTime(targetValue, now + duration);
 };
 
 const playSound = (type: 'click' | 'success' | 'fail' | 'tick' | 'intro') => {
   if (isMuted()) return;
   initAudio();
-  if (!audioCtx) return;
-  // Reuse audio context to prevent 6-context browser limit dropping sounds
+  if (!audioCtx || !globalGain) return;
   if (audioCtx.state === 'suspended') audioCtx.resume();
   
   const ctx = audioCtx;
   const osc = ctx.createOscillator();
   const gain = ctx.createGain();
   osc.connect(gain);
-  gain.connect(ctx.destination);
+  gain.connect(globalGain);
   const now = ctx.currentTime;
   
   if (type === 'click') {
@@ -223,12 +235,8 @@ function MenuScreen({ startGame }: { startGame: (asDev?: boolean) => void }) {
 
     // Sayfa yenilenirken cızırtıyı önle
     const handleBeforeUnload = () => {
+      fadeGlobalAudio(0, 0.05);
       ambientMusic?.stop();
-      if (audioCtx) {
-        audioCtx.close();
-        audioCtx = null;
-        ambientMusic = null;
-      }
     };
 
     window.addEventListener('click', handleFirstInteraction);
@@ -236,6 +244,7 @@ function MenuScreen({ startGame }: { startGame: (asDev?: boolean) => void }) {
     window.addEventListener('beforeunload', handleBeforeUnload);
 
     if (!muteAudio && audioCtx?.state === 'running') {
+       fadeGlobalAudio(1, 0.3);
        ambientMusic?.play();
     }
 
@@ -251,8 +260,10 @@ function MenuScreen({ startGame }: { startGame: (asDev?: boolean) => void }) {
   // Mute tuşuna basıldığında anında tepki
   useEffect(() => {
     if (muteAudio) {
-      ambientMusic?.stop();
+      fadeGlobalAudio(0, 0.15);
+      setTimeout(() => ambientMusic?.stop(), 160);
     } else if (audioCtx?.state === 'running') {
+      fadeGlobalAudio(1, 0.3);
       ambientMusic?.play();
     }
   }, [muteAudio]);

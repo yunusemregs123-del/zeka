@@ -37,11 +37,11 @@ export class AmbientMusic {
     4, -1, 5, -1,  6, -1, 3, -1
   ];
 
-  constructor(ctx: AudioContext | null) {
+  constructor(ctx: AudioContext | null, outputNode?: GainNode) {
     this.ctx = ctx;
     if (this.ctx) {
       this.masterGain = this.ctx.createGain();
-      this.masterGain.connect(this.ctx.destination);
+      this.masterGain.connect(outputNode || this.ctx.destination);
       this.masterGain.gain.value = 0;
     }
   }
