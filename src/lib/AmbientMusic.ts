@@ -55,28 +55,32 @@ export class AmbientMusic {
     if (this.ctx.state === 'suspended') this.ctx.resume();
     
     if (this.masterGain) {
-      this.masterGain.gain.cancelScheduledValues(this.ctx.currentTime);
-      this.masterGain.gain.setValueAtTime(this.masterGain.gain.value, this.ctx.currentTime);
-      this.masterGain.gain.linearRampToValueAtTime(1, this.ctx.currentTime + 0.1);
+      const now = this.ctx.currentTime;
+      this.masterGain.gain.cancelScheduledValues(now);
+      this.masterGain.gain.setValueAtTime(0, now);
+      // Yavaş açılış: cızırtıyı önler
+      this.masterGain.gain.linearRampToValueAtTime(1, now + 0.3);
     }
     
     this.isPlaying = true;
     this.currentStep = 0;
-    this.nextNoteTime = this.ctx.currentTime + 0.1;
+    this.nextNoteTime = this.ctx.currentTime + 0.35;
     this.scheduleNextNotes();
   }
 
   public stop() {
-    this.isPlaying = false;
     if (this.timerID !== null) {
       window.clearTimeout(this.timerID);
       this.timerID = null;
     }
-    if (this.ctx && this.masterGain) {
-      this.masterGain.gain.cancelScheduledValues(this.ctx.currentTime);
-      this.masterGain.gain.setValueAtTime(this.masterGain.gain.value, this.ctx.currentTime);
-      this.masterGain.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 0.05);
+    if (this.ctx && this.masterGain && this.isPlaying) {
+      const now = this.ctx.currentTime;
+      this.masterGain.gain.cancelScheduledValues(now);
+      this.masterGain.gain.setValueAtTime(this.masterGain.gain.value, now);
+      // Yumuşak kapanış: 150ms fade-out, cızırtı yok
+      this.masterGain.gain.linearRampToValueAtTime(0, now + 0.15);
     }
+    this.isPlaying = false;
   }
 
   private scheduleNextNotes() {

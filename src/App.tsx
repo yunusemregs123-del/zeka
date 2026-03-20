@@ -221,8 +221,19 @@ function MenuScreen({ startGame }: { startGame: (asDev?: boolean) => void }) {
       window.removeEventListener('touchstart', handleFirstInteraction);
     };
 
+    // Sayfa yenilenirken cızırtıyı önle
+    const handleBeforeUnload = () => {
+      ambientMusic?.stop();
+      if (audioCtx) {
+        audioCtx.close();
+        audioCtx = null;
+        ambientMusic = null;
+      }
+    };
+
     window.addEventListener('click', handleFirstInteraction);
     window.addEventListener('touchstart', handleFirstInteraction);
+    window.addEventListener('beforeunload', handleBeforeUnload);
 
     if (!muteAudio && audioCtx?.state === 'running') {
        ambientMusic?.play();
@@ -231,7 +242,8 @@ function MenuScreen({ startGame }: { startGame: (asDev?: boolean) => void }) {
     return () => {
       window.removeEventListener('click', handleFirstInteraction);
       window.removeEventListener('touchstart', handleFirstInteraction);
-      ambientMusic?.stop(); // Oyunun içine girince kapansın
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      ambientMusic?.stop();
       if (ambientMusic) ambientMusic.setOnBeat(undefined);
     };
   }, [muteAudio, logoControls]);
