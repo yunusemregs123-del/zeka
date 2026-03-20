@@ -55,7 +55,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     get().startNewLevel(true);
   },
 
-  startNewLevel: (isRetry = false) => {
+  startNewLevel: (_isRetry = false) => {
     const currentMaxTime = get().level <= 50 ? 20 : Math.max(5, 20 - Math.floor((get().level - 50) / 10));
     set({
       currentValue: 0,
@@ -64,7 +64,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     });
   },
 
-  submitAnswer: (answer: number) => {},
+  submitAnswer: (_answer: number) => {},
 
   setCurrentValue: (val) => set({ currentValue: Math.max(-9, Math.min(9, val)) }),
   

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useGameStore } from './store/useGameStore';
 import { generatePuzzle, isTutorialLevel, getTutorialSymbols, type SymbolType } from './lib/LevelEngine';
 import * as Leaderboard from './lib/Leaderboard';
@@ -357,7 +357,7 @@ function GameOverScreen({ level, totalTimeSpent, expected, isDevMode, goToMenu }
 export default function App() {
   const { 
     gameState, level, totalTimeSpent, currentValue, timeLeft, maxTime, coins, previousAnswers, hideIntro, isDevMode,
-    startNewLevel, setCurrentValue, tickTimer, addLevelTime, endGame, setHideIntro, startGame, goToMenu, toggleDevMode, devAdvanceLevel
+    startNewLevel, setCurrentValue, tickTimer, addLevelTime, endGame, setHideIntro, startGame, goToMenu, devAdvanceLevel
   } = useGameStore();
 
   const [sequence, setSequence] = useState<SymbolType[]>([]);
