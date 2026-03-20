@@ -233,17 +233,14 @@ function MenuScreen({ startGame }: { startGame: (asDev?: boolean) => void }) {
       });
     }
 
-    // İlk kullanıcı etkileşiminde müziği başlat (tarayıcı politikası)
+    // Direkt çalmayı dene (Capacitor/native'de çalışır, tarayıcı izin verirse de)
+    resumeAndPlay();
+
+    // Tarayıcı engellerse, ilk dokunuşta başlat (fallback)
     const startMusic = () => {
       initAudio();
       resumeAndPlay();
     };
-
-    // Eğer audioCtx zaten çalışıyorsa (önceden etkileşim yapılmışsa) direkt başlat
-    if (audioResumed && !isMuted()) {
-      ambientMusic?.play();
-    }
-
     document.addEventListener('click', startMusic, { once: true, capture: true });
     document.addEventListener('touchstart', startMusic, { once: true, capture: true });
 
