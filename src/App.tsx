@@ -190,30 +190,8 @@ function MenuScreen({ startGame }: { startGame: (asDev?: boolean) => void }) {
   return (
     <div className="min-h-[100dvh] bg-[#F5F5F7] text-[#1D1D1F] flex flex-col items-center justify-center font-sans selection:bg-neutral-200 p-4 md:p-6 relative overflow-hidden">
       
-      {/* TOP LEFT ICONS */}
-      <div className="absolute top-4 left-4 flex gap-3 z-10">
-        <button 
-          onClick={toggleMute}
-          className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-sm text-neutral-500 hover:text-black transition"
-        >
-          {muteAudio ? <Icons.MusicOff className="w-5 h-5" /> : <Icons.MusicOn className="w-5 h-5" />}
-        </button>
-        <button 
-          onClick={() => setShowInfo(true)}
-          className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-sm text-neutral-500 hover:text-black transition"
-        >
-          <Icons.Info className="w-5 h-5" />
-        </button>
-      </div>
-
-      {/* TOP RIGHT ICONS */}
-      <div className="absolute top-4 right-4 flex gap-3 z-10 items-center">
-        <button 
-          onClick={() => setShowLeaderboard(true)}
-          className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-sm text-amber-500 hover:text-amber-600 transition"
-        >
-          <Icons.Trophy className="w-5 h-5" />
-        </button>
+      {/* DEV BUTTON - TOP RIGHT */}
+      <div className="absolute top-4 right-4 z-10">
         <button 
           onClick={() => startGame(true)}
           className="px-3 py-1.5 bg-neutral-200 text-neutral-500 rounded-lg font-bold text-[9px] tracking-widest hover:bg-neutral-300 transition-all opacity-40 hover:opacity-100"
@@ -236,6 +214,19 @@ function MenuScreen({ startGame }: { startGame: (asDev?: boolean) => void }) {
           BAŞLA
         </button>
 
+        {/* BOTTOM ACTION BUTTONS */}
+        <div className="flex justify-center gap-4 mt-6">
+          <button onClick={toggleMute} className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center shadow-md border border-neutral-100 text-neutral-500 hover:text-black hover:-translate-y-1 transition-all">
+             {muteAudio ? <Icons.MusicOff className="w-6 h-6" /> : <Icons.MusicOn className="w-6 h-6" />}
+          </button>
+          <button onClick={() => setShowLeaderboard(true)} className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center shadow-md border border-neutral-100 text-amber-500 hover:text-amber-600 hover:-translate-y-1 transition-all">
+             <Icons.Trophy className="w-6 h-6" />
+          </button>
+          <button onClick={() => setShowInfo(true)} className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center shadow-md border border-neutral-100 text-neutral-500 hover:text-black hover:-translate-y-1 transition-all">
+             <Icons.Info className="w-6 h-6" />
+          </button>
+        </div>
+
         {personalBest && (
           <div className="mt-8 text-center opacity-70">
             <span className="text-[10px] font-black text-amber-500 tracking-widest uppercase block mb-1">KİŞİSEL REKOR</span>
@@ -254,9 +245,24 @@ function MenuScreen({ startGame }: { startGame: (asDev?: boolean) => void }) {
             >
               <h2 className="text-2xl font-black mb-4">Hakkında</h2>
               <p className="text-sm font-medium text-neutral-600 mb-4 leading-relaxed">
-                ZEKA, hafıza yeteneğini ve dikkatini zorlayan minimalist bir zihin bulmacasıdır. Her tur ekranda beliren simgenin matematiksel değerini akıldan hesapla ve ilerle!<br/><br/>
-                Süleyman Arıcan tarafından geliştirilmiştir.
+                ZEKA, hafıza yeteneğini ve dikkatini zorlayan minimalist bir zihin bulmacasıdır. Her tur ekranda beliren simgenin matematiksel değerini akıldan hesapla ve ilerle!
               </p>
+
+              <div className="flex flex-col gap-3 mb-6 bg-neutral-50 p-4 rounded-2xl border border-neutral-100">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm text-neutral-600 shrink-0"><Icons.MusicOn className="w-4 h-4"/></div>
+                  <span className="text-xs font-bold text-neutral-600">Ses Efektlerini Aç / Kapat</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm text-amber-500 shrink-0"><Icons.Trophy className="w-4 h-4"/></div>
+                  <span className="text-xs font-bold text-neutral-600">Dünya Sıralaması ve Skorlar</span>
+                </div>
+              </div>
+
+              <div className="text-center mb-6">
+                 <span className="text-[10px] font-black tracking-widest text-neutral-400 uppercase block mb-1">GELİŞTİRİCİ</span>
+                 <a href="https://arcngames.com" target="_blank" rel="noopener noreferrer" className="text-sm font-bold text-[#1D1D1F] hover:text-amber-500 transition-colors">ARCN Games</a>
+              </div>
               <button onClick={() => setShowInfo(false)} className="w-full py-3 bg-neutral-100 text-neutral-800 rounded-xl font-bold tracking-wider text-sm hover:bg-neutral-200">
                 KAPAT
               </button>
