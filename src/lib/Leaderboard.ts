@@ -1,16 +1,14 @@
-// Leaderboard system using localStorage
-// Future: Replace with Firebase/Supabase for global leaderboards
+// Leaderboard system using Supabase for global scores + localStorage for personal best
+import { supabase } from './supabaseClient';
 
 export interface ScoreEntry {
   id: string;
-  playerName: string;
+  player_name: string;
   level: number;
-  totalTime: number; // total seconds (lower is better)
-  date: string; // ISO date string
-  timestamp: number;
+  total_time: number;
+  created_at: string;
 }
 
-const STORAGE_KEY = 'zeka_leaderboard';
 const PLAYER_NAME_KEY = 'zeka_player_name';
 const PERSONAL_BEST_KEY = 'zeka_personal_best';
 
@@ -23,7 +21,7 @@ export function setPlayerName(name: string): void {
   localStorage.setItem(PLAYER_NAME_KEY, name.trim().substring(0, 20));
 }
 
-// --- Personal Best ---
+// --- Personal Best (local) ---
 export interface PersonalBest {
   level: number;
   totalTime: number;
@@ -42,7 +40,6 @@ export function getPersonalBest(): PersonalBest | null {
 
 export function updatePersonalBest(level: number, totalTime: number): boolean {
   const current = getPersonalBest();
-  // Better = higher level, or same level with less time
   const isBetter = !current 
     || level > current.level 
     || (level === current.level && totalTime < current.totalTime);
@@ -58,65 +55,70 @@ export function updatePersonalBest(level: number, totalTime: number): boolean {
   return isBetter;
 }
 
-// --- Leaderboard Scores ---
-function generateId(): string {
-  return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
-}
+// --- Supabase Score Operations ---
 
-export function getAllScores(): ScoreEntry[] {
-  const stored = localStorage.getItem(STORAGE_KEY);
-  if (!stored) return [];
-  try {
-    return JSON.parse(stored) as ScoreEntry[];
-  } catch {
-    return [];
+export async function addScore(playerName: string, level: number, totalTime: number): Promise<ScoreEntry | null> {
+  const { data, error } = await supabase
+    .from('scores')
+    .insert({
+      player_name: (playerName.trim().substring(0, 20)) || 'Anonim',
+      level,
+      total_time: Number(totalTime.toFixed(2))
+    })
+    .select()
+    .single();
+  
+  if (error) {
+    console.error('Skor kayıt hatası:', error);
+    return null;
   }
+  return data;
 }
 
-export function addScore(playerName: string, level: number, totalTime: number): ScoreEntry {
-  const scores = getAllScores();
-  const entry: ScoreEntry = {
-    id: generateId(),
-    playerName: playerName.trim().substring(0, 20) || 'Anonim',
-    level,
-    totalTime: Number(totalTime.toFixed(2)),
-    date: new Date().toISOString(),
-    timestamp: Date.now()
-  };
-  scores.push(entry);
-  // Keep only top 100 scores
-  scores.sort((a, b) => b.level - a.level || a.totalTime - b.totalTime);
-  const trimmed = scores.slice(0, 100);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(trimmed));
-  return entry;
-}
-
-// --- Filtered Leaderboards ---
-
-export function getDailyScores(): ScoreEntry[] {
+export async function getDailyScores(): Promise<ScoreEntry[]> {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const todayMs = today.getTime();
   
-  return getAllScores()
-    .filter(s => s.timestamp >= todayMs)
-    .sort((a, b) => b.level - a.level || a.totalTime - b.totalTime);
+  const { data, error } = await supabase
+    .from('scores')
+    .select('*')
+    .gte('created_at', today.toISOString())
+    .order('level', { ascending: false })
+    .order('total_time', { ascending: true })
+    .limit(50);
+  
+  if (error) { console.error(error); return []; }
+  return data || [];
 }
 
-export function getWeeklyScores(): ScoreEntry[] {
-  const now = new Date();
-  const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-  const weekAgoMs = weekAgo.getTime();
+export async function getWeeklyScores(): Promise<ScoreEntry[]> {
+  const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
   
-  return getAllScores()
-    .filter(s => s.timestamp >= weekAgoMs)
-    .sort((a, b) => b.level - a.level || a.totalTime - b.totalTime);
+  const { data, error } = await supabase
+    .from('scores')
+    .select('*')
+    .gte('created_at', weekAgo.toISOString())
+    .order('level', { ascending: false })
+    .order('total_time', { ascending: true })
+    .limit(50);
+  
+  if (error) { console.error(error); return []; }
+  return data || [];
 }
 
-export function getAllTimeScores(): ScoreEntry[] {
-  return getAllScores()
-    .sort((a, b) => b.level - a.level || a.totalTime - b.totalTime);
+export async function getAllTimeScores(): Promise<ScoreEntry[]> {
+  const { data, error } = await supabase
+    .from('scores')
+    .select('*')
+    .order('level', { ascending: false })
+    .order('total_time', { ascending: true })
+    .limit(50);
+  
+  if (error) { console.error(error); return []; }
+  return data || [];
 }
+
+// --- Formatting ---
 
 export function formatTime(seconds: number): string {
   if (seconds < 60) return `${seconds.toFixed(2)}s`;

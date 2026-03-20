@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState } from 'react';
 import { useGameStore } from './store/useGameStore';
 import { generatePuzzle, isTutorialLevel, getTutorialSymbols, type SymbolType } from './lib/LevelEngine';
 import * as Leaderboard from './lib/Leaderboard';
@@ -156,12 +156,21 @@ const TutorialExample = ({ text, sequence, result }: { text?: string, sequence?:
 // ─── MENU SCREEN ──────────────────────────────────────
 function MenuScreen({ startGame }: { startGame: (asDev?: boolean) => void }) {
   const [tab, setTab] = useState<'daily' | 'weekly' | 'alltime'>('daily');
+  const [scores, setScores] = useState<Leaderboard.ScoreEntry[]>([]);
+  const [loading, setLoading] = useState(true);
   const personalBest = Leaderboard.getPersonalBest();
 
-  const scores = useMemo(() => {
-    if (tab === 'daily') return Leaderboard.getDailyScores();
-    if (tab === 'weekly') return Leaderboard.getWeeklyScores();
-    return Leaderboard.getAllTimeScores();
+  useEffect(() => {
+    setLoading(true);
+    const fetch = async () => {
+      let data: Leaderboard.ScoreEntry[];
+      if (tab === 'daily') data = await Leaderboard.getDailyScores();
+      else if (tab === 'weekly') data = await Leaderboard.getWeeklyScores();
+      else data = await Leaderboard.getAllTimeScores();
+      setScores(data);
+      setLoading(false);
+    };
+    fetch();
   }, [tab]);
 
   const tabLabels = { daily: 'GÜNLÜK', weekly: 'HAFTALIK', alltime: 'TÜM ZAMANLAR' };
@@ -239,34 +248,41 @@ function MenuScreen({ startGame }: { startGame: (asDev?: boolean) => void }) {
             </div>
           ) : (
             <div className="space-y-2">
-              {scores.slice(0, 20).map((entry, idx) => (
-                <div
-                  key={entry.id}
-                  className={`flex items-center gap-3 p-3 rounded-xl transition ${
-                    idx === 0 ? 'bg-amber-50 border border-amber-100' :
-                    idx === 1 ? 'bg-neutral-50 border border-neutral-100' :
-                    idx === 2 ? 'bg-orange-50/60 border border-orange-100/60' :
-                    'hover:bg-neutral-50'
-                  }`}
-                >
-                  <span className={`w-7 h-7 rounded-full flex items-center justify-center font-black text-xs shrink-0 ${
-                    idx === 0 ? 'bg-amber-400 text-white' :
-                    idx === 1 ? 'bg-neutral-300 text-white' :
-                    idx === 2 ? 'bg-orange-300 text-white' :
-                    'bg-neutral-100 text-neutral-500'
-                  }`}>
-                    {idx + 1}
-                  </span>
-                  <div className="flex-1 min-w-0">
-                    <span className="font-bold text-sm block truncate">{entry.playerName}</span>
-                    <span className="text-[10px] text-neutral-400 font-medium">{Leaderboard.formatDate(entry.date)}</span>
-                  </div>
-                  <div className="text-right shrink-0">
-                    <span className="font-black text-sm block">Blm {entry.level}</span>
-                    <span className="text-[10px] text-neutral-400 font-semibold">{Leaderboard.formatTime(entry.totalTime)}</span>
-                  </div>
+              {loading ? (
+                <div className="flex flex-col items-center py-10 gap-3">
+                  <div className="w-8 h-8 border-4 border-neutral-200 border-t-[#1D1D1F] rounded-full animate-spin"></div>
+                  <span className="text-[10px] font-bold text-neutral-400 tracking-widest uppercase">Yükleniyor...</span>
                 </div>
-              ))}
+              ) : (
+                scores.slice(0, 20).map((entry, idx) => (
+                  <div
+                    key={entry.id}
+                    className={`flex items-center gap-3 p-3 rounded-xl transition ${
+                      idx === 0 ? 'bg-amber-50 border border-amber-100' :
+                      idx === 1 ? 'bg-neutral-50 border border-neutral-100' :
+                      idx === 2 ? 'bg-orange-50/60 border border-orange-100/60' :
+                      'hover:bg-neutral-50'
+                    }`}
+                  >
+                    <span className={`w-7 h-7 rounded-full flex items-center justify-center font-black text-xs shrink-0 ${
+                      idx === 0 ? 'bg-amber-400 text-white' :
+                      idx === 1 ? 'bg-neutral-300 text-white' :
+                      idx === 2 ? 'bg-orange-300 text-white' :
+                      'bg-neutral-100 text-neutral-500'
+                    }`}>
+                      {idx + 1}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <span className="font-bold text-sm block truncate">{entry.player_name}</span>
+                      <span className="text-[10px] text-neutral-400 font-medium">{Leaderboard.formatDate(entry.created_at)}</span>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <span className="font-black text-sm block">Blm {entry.level}</span>
+                      <span className="text-[10px] text-neutral-400 font-semibold">{Leaderboard.formatTime(entry.total_time)}</span>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           )}
         </div>
@@ -283,11 +299,11 @@ function GameOverScreen({ level, totalTimeSpent, expected, isDevMode, goToMenu }
   const [saved, setSaved] = useState(false);
   const [isNewBest, setIsNewBest] = useState(false);
 
-  const handleSaveScore = () => {
+  const handleSaveScore = async () => {
     if (isDevMode) { goToMenu(); return; }
     const name = playerName.trim() || 'Anonim';
     Leaderboard.setPlayerName(name);
-    Leaderboard.addScore(name, level, totalTimeSpent);
+    await Leaderboard.addScore(name, level, totalTimeSpent);
     const newBest = Leaderboard.updatePersonalBest(level, totalTimeSpent);
     setIsNewBest(newBest);
     setSaved(true);
