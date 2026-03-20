@@ -4,17 +4,27 @@ import { generatePuzzle, isTutorialLevel, getTutorialSymbols, type SymbolType } 
 import * as Leaderboard from './lib/Leaderboard';
 import * as Icons from './components/Icons';
 import { motion, AnimatePresence } from 'framer-motion';
+import { AmbientMusic } from './lib/AmbientMusic';
 
 let audioCtx: AudioContext | null = null;
+let ambientMusic: AmbientMusic | null = null;
 const isMuted = () => localStorage.getItem('zeka_mute') === 'true';
+
+const initAudio = () => {
+  if (!audioCtx) {
+    const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+    if (AudioContext) {
+      audioCtx = new AudioContext();
+      ambientMusic = new AmbientMusic(audioCtx);
+    }
+  }
+};
 
 const playSound = (type: 'click' | 'success' | 'fail' | 'tick' | 'intro') => {
   if (isMuted()) return;
-  const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
-  if (!AudioContext) return;
-  
+  initAudio();
+  if (!audioCtx) return;
   // Reuse audio context to prevent 6-context browser limit dropping sounds
-  if (!audioCtx) audioCtx = new AudioContext();
   if (audioCtx.state === 'suspended') audioCtx.resume();
   
   const ctx = audioCtx;
@@ -184,6 +194,39 @@ function MenuScreen({ startGame }: { startGame: (asDev?: boolean) => void }) {
     };
     fetch();
   }, [tab]);
+
+  // Ambiyans Müziğini Ana Menüde çaldır
+  useEffect(() => {
+    initAudio();
+    const handleFirstInteraction = () => {
+      if (audioCtx?.state === 'suspended') audioCtx.resume();
+      if (!muteAudio) ambientMusic?.play();
+      window.removeEventListener('click', handleFirstInteraction);
+      window.removeEventListener('touchstart', handleFirstInteraction);
+    };
+
+    window.addEventListener('click', handleFirstInteraction);
+    window.addEventListener('touchstart', handleFirstInteraction);
+
+    if (!muteAudio && audioCtx?.state === 'running') {
+       ambientMusic?.play();
+    }
+
+    return () => {
+      window.removeEventListener('click', handleFirstInteraction);
+      window.removeEventListener('touchstart', handleFirstInteraction);
+      ambientMusic?.stop(); // Oyunun içine girince kapansın
+    };
+  }, []);
+
+  // Mute tuşuna basıldığında anında tepki
+  useEffect(() => {
+    if (muteAudio) {
+      ambientMusic?.stop();
+    } else if (audioCtx?.state === 'running') {
+      ambientMusic?.play();
+    }
+  }, [muteAudio]);
 
   const tabLabels = { daily: 'GÜNLÜK', weekly: 'HAFTALIK', alltime: 'TÜM ZAMANLAR' };
 
