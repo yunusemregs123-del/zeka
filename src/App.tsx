@@ -8,7 +8,6 @@ import { AmbientMusic } from './lib/AmbientMusic';
 
 let audioCtx: AudioContext | null = null;
 let ambientMusic: AmbientMusic | null = null;
-
 const isMuted = () => localStorage.getItem('zeka_mute') === 'true';
 
 const initAudio = () => {
@@ -201,33 +200,28 @@ function MenuScreen({ startGame }: { startGame: (asDev?: boolean) => void }) {
     fetch();
   }, [tab]);
 
-  // Ambiyans Müziğini Ana Menüde çaldır
+  // Ambiyans Müziğini Ana Menüde çaldır — İlk etkileşim dinleyicisi (sadece 1 kez mount)
   useEffect(() => {
     initAudio();
-    if (ambientMusic) {
-      ambientMusic.setOnBeat(() => {
-         if (!muteAudio) {
-           logoControls.stop();
-           logoControls.start({
-             scale: [1, 1.08, 1],
-             transition: { duration: 0.15, ease: "easeOut" }
-           });
-         }
-      });
-    }
+
+    const startMusic = () => {
+      if (audioCtx?.state === 'suspended') audioCtx.resume();
+      if (!isMuted()) ambientMusic?.play();
+    };
 
     const handleFirstInteraction = () => {
-      if (audioCtx?.state === 'suspended') audioCtx.resume();
-      if (!muteAudio) ambientMusic?.play();
+      startMusic();
       window.removeEventListener('click', handleFirstInteraction);
       window.removeEventListener('touchstart', handleFirstInteraction);
     };
 
-    window.addEventListener('click', handleFirstInteraction);
-    window.addEventListener('touchstart', handleFirstInteraction);
-
-    if (!muteAudio && audioCtx?.state === 'running') {
-       ambientMusic?.play();
+    // Audio daha önce açıldıysa (örn: kapat-aç) direkt çal
+    if (audioCtx?.state === 'running') {
+      if (!isMuted()) ambientMusic?.play();
+    } else {
+      // İlk defa açılışta kullanıcı etkileşimi bekleniyor (tarayıcı politikası)
+      window.addEventListener('click', handleFirstInteraction);
+      window.addEventListener('touchstart', handleFirstInteraction);
     }
 
     return () => {
@@ -236,7 +230,22 @@ function MenuScreen({ startGame }: { startGame: (asDev?: boolean) => void }) {
       ambientMusic?.stop();
       if (ambientMusic) ambientMusic.setOnBeat(undefined);
     };
-  }, [muteAudio, logoControls]);
+  }, []);
+
+  // Logo animasyonunu müziğin ritmine senkronize et
+  useEffect(() => {
+    if (ambientMusic) {
+      ambientMusic.setOnBeat(() => {
+         if (!isMuted()) {
+           logoControls.stop();
+           logoControls.start({
+             scale: [1, 1.08, 1],
+             transition: { duration: 0.15, ease: "easeOut" }
+           });
+         }
+      });
+    }
+  }, [logoControls]);
 
   // Mute tuşuna basıldığında anında tepki
   useEffect(() => {
