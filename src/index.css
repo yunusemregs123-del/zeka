@@ -1,0 +1,27 @@
+@import "tailwindcss";
+
+@theme {
+  --color-base: #fafafa; /* Minimalist off-white */
+  --color-contrast: #111111; /* Minimalist near-black */
+  --font-family-primary: 'Inter', system-ui, sans-serif;
+}
+
+@layer base {
+  body {
+    background-color: var(--color-base);
+    color: var(--color-contrast);
+    font-family: var(--font-family-primary);
+    margin: 0;
+    padding: 0;
+    overflow: hidden; /* Avoid scrollbars in the game view */
+    user-select: none;
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+/* Custom CSS for some specific minimalist animations/styles */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
