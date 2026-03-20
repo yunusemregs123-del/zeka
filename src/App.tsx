@@ -203,33 +203,38 @@ function MenuScreen({ startGame }: { startGame: (asDev?: boolean) => void }) {
   // Ambiyans Müziğini Ana Menüde çaldır
   useEffect(() => {
     initAudio();
-    
-    // AudioContext açıksa direkt çal (oyundan dönüşte her zaman açıktır)
-    if (!isMuted() && audioCtx) {
-      if (audioCtx.state === 'suspended') audioCtx.resume();
-      ambientMusic?.play();
-    }
-
-    return () => {
-      ambientMusic?.stop();
-      if (ambientMusic) ambientMusic.setOnBeat(undefined);
-    };
-  }, []);
-
-  // Logo animasyonunu müziğin ritmine senkronize et
-  useEffect(() => {
     if (ambientMusic) {
       ambientMusic.setOnBeat(() => {
-         if (!isMuted()) {
-           logoControls.stop();
+         if (!muteAudio) {
            logoControls.start({
-             scale: [1, 1.08, 1],
-             transition: { duration: 0.15, ease: "easeOut" }
+             scale: [1, 1.06, 1],
+             transition: { duration: 0.18, ease: "easeOut" }
            });
          }
       });
     }
-  }, [logoControls]);
+
+    const handleFirstInteraction = () => {
+      if (audioCtx?.state === 'suspended') audioCtx.resume();
+      if (!muteAudio) ambientMusic?.play();
+      window.removeEventListener('click', handleFirstInteraction);
+      window.removeEventListener('touchstart', handleFirstInteraction);
+    };
+
+    window.addEventListener('click', handleFirstInteraction);
+    window.addEventListener('touchstart', handleFirstInteraction);
+
+    if (!muteAudio && audioCtx?.state === 'running') {
+       ambientMusic?.play();
+    }
+
+    return () => {
+      window.removeEventListener('click', handleFirstInteraction);
+      window.removeEventListener('touchstart', handleFirstInteraction);
+      ambientMusic?.stop(); // Oyunun içine girince kapansın
+      if (ambientMusic) ambientMusic.setOnBeat(undefined);
+    };
+  }, [muteAudio, logoControls]);
 
   // Mute tuşuna basıldığında anında tepki
   useEffect(() => {

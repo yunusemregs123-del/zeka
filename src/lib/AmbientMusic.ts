@@ -88,13 +88,13 @@ export class AmbientMusic {
       
       if (stepVal !== -1) {
         this.playPluck(this.nextNoteTime, this.frequencies[stepVal]);
+        this.scheduleBeat(this.nextNoteTime);
         // Bazen arkaplanda çok hafif alt sesler de gelsin diye (bass)
         if (this.currentStep % 16 === 0) {
            this.playBass(this.nextNoteTime, this.frequencies[0]);
         } else if (this.currentStep % 16 === 8) {
            this.playBass(this.nextNoteTime, this.frequencies[4]);
         }
-        this.scheduleBeat(this.nextNoteTime);
       }
       
       this.currentStep++;
