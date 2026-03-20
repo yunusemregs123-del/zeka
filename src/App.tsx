@@ -250,38 +250,46 @@ function MenuScreen({ startGame }: { startGame: (asDev?: boolean) => void }) {
                 ZEKA, hafıza ve dikkati zorlayan minimalist bir zihin bulmacasıdır. Her tur ekranda beliren şekillerin matematiksel değerini akıldan hesapla ve ilerle!
               </p>
 
-              <div className="grid grid-cols-4 gap-2 mb-6 bg-neutral-50 rounded-2xl p-3 border border-neutral-100 place-items-center">
+              <div className="grid grid-cols-5 gap-1 mb-6 bg-neutral-50 rounded-2xl p-2 md:p-3 border border-neutral-100 place-items-center">
                 <div className="flex flex-col items-center gap-1">
-                  <div className="w-8 h-8 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center"><SymbolDisplay type="CircleFilled" /></div>
-                  <span className="text-[9px] font-bold text-neutral-500 text-center tracking-tighter leading-tight">+1 / -1<br/>Daire</span>
+                  <div className="w-8 h-8 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center scale-90 md:scale-100"><SymbolDisplay type="CircleFilled" /></div>
+                  <span className="text-[8px] md:text-[9px] font-bold text-neutral-500 text-center tracking-tighter leading-tight">+1/-1<br/>Daire</span>
                 </div>
                 <div className="flex flex-col items-center gap-1">
-                  <div className="w-8 h-8 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center"><SymbolDisplay type="TriangleUp" /></div>
-                  <span className="text-[9px] font-bold text-neutral-500 text-center tracking-tighter leading-tight">+1 / -1<br/>Üçgen</span>
+                  <div className="w-8 h-8 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center scale-90 md:scale-100"><SymbolDisplay type="TriangleUp" /></div>
+                  <span className="text-[8px] md:text-[9px] font-bold text-neutral-500 text-center tracking-tighter leading-tight">+1/-1<br/>Üçgen</span>
                 </div>
                 <div className="flex flex-col items-center gap-1">
-                  <div className="w-8 h-8 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center"><SymbolDisplay type="Prev1" /></div>
-                  <span className="text-[9px] font-bold text-neutral-500 text-center tracking-tighter leading-tight">Önceki<br/>Cevap</span>
+                  <div className="w-8 h-8 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center scale-90 md:scale-100"><SymbolDisplay type="Prev1" /></div>
+                  <span className="text-[8px] md:text-[9px] font-bold text-neutral-500 text-center tracking-tighter leading-tight">1 Önceki<br/>Cevap</span>
                 </div>
                 <div className="flex flex-col items-center gap-1">
-                  <div className="w-8 h-8 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center"><SymbolDisplay type="Mul2" /></div>
-                  <span className="text-[9px] font-bold text-neutral-500 text-center tracking-tighter leading-tight">Çarp / Böl</span>
+                  <div className="w-8 h-8 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center scale-90 md:scale-100"><SymbolDisplay type="Prev2" /></div>
+                  <span className="text-[8px] md:text-[9px] font-bold text-neutral-500 text-center tracking-tighter leading-tight">2 Önceki<br/>Cevap</span>
                 </div>
                 <div className="flex flex-col items-center gap-1">
-                  <div className="w-8 h-8 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center"><SymbolDisplay type="ReverseNext" /></div>
-                  <span className="text-[9px] font-bold text-neutral-500 text-center tracking-tighter leading-tight">Tersine<br/>Çevir</span>
+                  <div className="w-8 h-8 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center scale-90 md:scale-100"><SymbolDisplay type="Mul2" /></div>
+                  <span className="text-[8px] md:text-[9px] font-bold text-neutral-500 text-center tracking-tighter leading-tight">Çarpı<br/>İki</span>
                 </div>
                 <div className="flex flex-col items-center gap-1">
-                  <div className="w-8 h-8 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center"><SymbolDisplay type="Star" /></div>
-                  <span className="text-[9px] font-bold text-neutral-500 text-center tracking-tighter leading-tight">Sıfırlar</span>
+                  <div className="w-8 h-8 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center scale-90 md:scale-100"><SymbolDisplay type="Div2" /></div>
+                  <span className="text-[8px] md:text-[9px] font-bold text-neutral-500 text-center tracking-tighter leading-tight">Bölü<br/>İki</span>
                 </div>
                 <div className="flex flex-col items-center gap-1">
-                  <div className="w-8 h-8 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center"><SymbolDisplay type="InvertAll" /></div>
-                  <span className="text-[9px] font-bold text-neutral-500 text-center tracking-tighter leading-tight">Tümünü<br/>Tersle</span>
+                  <div className="w-8 h-8 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center scale-90 md:scale-100"><SymbolDisplay type="ReverseNext" /></div>
+                  <span className="text-[8px] md:text-[9px] font-bold text-neutral-500 text-center tracking-tighter leading-tight">Tersine<br/>Çevir</span>
                 </div>
                 <div className="flex flex-col items-center gap-1">
-                  <div className="w-8 h-8 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center"><SymbolDisplay type="Heart" /></div>
-                  <span className="text-[9px] font-bold text-neutral-500 text-center tracking-tighter leading-tight">Eksi<br/>Koruma</span>
+                  <div className="w-8 h-8 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center scale-90 md:scale-100"><SymbolDisplay type="Star" /></div>
+                  <span className="text-[8px] md:text-[9px] font-bold text-neutral-500 text-center tracking-tighter leading-tight">Sıfırlar</span>
+                </div>
+                <div className="flex flex-col items-center gap-1">
+                  <div className="w-8 h-8 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center scale-90 md:scale-100"><SymbolDisplay type="InvertAll" /></div>
+                  <span className="text-[8px] md:text-[9px] font-bold text-neutral-500 text-center tracking-tighter leading-tight">Tümünü<br/>Tersle</span>
+                </div>
+                <div className="flex flex-col items-center gap-1">
+                  <div className="w-8 h-8 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center scale-90 md:scale-100"><SymbolDisplay type="Heart" /></div>
+                  <span className="text-[8px] md:text-[9px] font-bold text-neutral-500 text-center tracking-tighter leading-tight">Eksi<br/>Koruma</span>
                 </div>
               </div>
 

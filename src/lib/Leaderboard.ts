@@ -94,13 +94,44 @@ export async function isNameTaken(name: string): Promise<boolean> {
   return data && data.length > 0;
 }
 
-export async function addScore(playerName: string, level: number, totalTime: number): Promise<ScoreEntry | null> {
+export async function addScore(playerName: string, level: number, totalTime: number, oldName?: string): Promise<ScoreEntry | null> {
+  const nameToUse = playerName.trim().substring(0, 15) || 'Anonim';
+  const nameToUpdate = oldName || nameToUse;
   const countryCode = getCachedCountry();
-  
+
+  const { data: existing } = await supabase
+    .from('scores')
+    .select('*')
+    .ilike('player_name', nameToUpdate)
+    .limit(1);
+
+  if (existing && existing.length > 0) {
+    const row = existing[0];
+    const isBetter = level > row.level || (level === row.level && totalTime < row.total_time);
+
+    const updates: any = {};
+    if (nameToUse !== row.player_name) updates.player_name = nameToUse;
+
+    if (isBetter) {
+      updates.level = level;
+      updates.total_time = Number(totalTime.toFixed(2));
+      updates.created_at = new Date().toISOString();
+    }
+    if (countryCode && countryCode !== row.country_code) {
+      updates.country_code = countryCode;
+    }
+
+    if (Object.keys(updates).length > 0) {
+      const { data, error } = await supabase.from('scores').update(updates).eq('id', row.id).select().single();
+      if (!error && data) return data as ScoreEntry;
+    }
+    return row as ScoreEntry;
+  }
+
   const { data, error } = await supabase
     .from('scores')
     .insert({
-      player_name: (playerName.trim().substring(0, 20)) || 'Anonim',
+      player_name: nameToUse,
       level,
       total_time: Number(totalTime.toFixed(2)),
       country_code: countryCode || null

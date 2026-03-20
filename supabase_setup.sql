@@ -21,6 +21,9 @@ CREATE POLICY "Herkes skorları görebilir" ON scores
 CREATE POLICY "Herkes skor ekleyebilir" ON scores
   FOR INSERT WITH CHECK (true);
 
+CREATE POLICY "Herkes kendi skorunu güncelleyebilir" ON scores
+  FOR UPDATE USING (true);
+
 -- Hızlı sorgular için index
 CREATE INDEX idx_scores_level_time ON scores (level DESC, total_time ASC);
 CREATE INDEX idx_scores_created_at ON scores (created_at DESC);
