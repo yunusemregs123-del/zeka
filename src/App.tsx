@@ -8,7 +8,6 @@ import { AmbientMusic } from './lib/AmbientMusic';
 
 let audioCtx: AudioContext | null = null;
 let ambientMusic: AmbientMusic | null = null;
-let audioResumed = false; // tarayıcıda ilk etkileşim yapıldı mı?
 
 const isMuted = () => localStorage.getItem('zeka_mute') === 'true';
 
@@ -19,20 +18,6 @@ const initAudio = () => {
       audioCtx = new AudioContext();
       ambientMusic = new AmbientMusic(audioCtx);
     }
-  }
-};
-
-const resumeAndPlay = () => {
-  if (!audioCtx || !ambientMusic) return;
-  if (isMuted()) return;
-  if (audioCtx.state === 'suspended') {
-    audioCtx.resume().then(() => {
-      audioResumed = true;
-      if (!isMuted()) ambientMusic?.play();
-    });
-  } else {
-    audioResumed = true;
-    ambientMusic.play();
   }
 };
 
@@ -219,11 +204,9 @@ function MenuScreen({ startGame }: { startGame: (asDev?: boolean) => void }) {
   // Ambiyans Müziğini Ana Menüde çaldır
   useEffect(() => {
     initAudio();
-
-    // onBeat callback'ini ayarla
     if (ambientMusic) {
       ambientMusic.setOnBeat(() => {
-         if (!isMuted()) {
+         if (!muteAudio) {
            logoControls.stop();
            logoControls.start({
              scale: [1, 1.08, 1],
@@ -233,31 +216,34 @@ function MenuScreen({ startGame }: { startGame: (asDev?: boolean) => void }) {
       });
     }
 
-    // Direkt çalmayı dene (Capacitor/native'de çalışır, tarayıcı izin verirse de)
-    resumeAndPlay();
-
-    // Tarayıcı engellerse, ilk dokunuşta başlat (fallback)
-    const startMusic = () => {
-      initAudio();
-      resumeAndPlay();
+    const handleFirstInteraction = () => {
+      if (audioCtx?.state === 'suspended') audioCtx.resume();
+      if (!muteAudio) ambientMusic?.play();
+      window.removeEventListener('click', handleFirstInteraction);
+      window.removeEventListener('touchstart', handleFirstInteraction);
     };
-    document.addEventListener('click', startMusic, { once: true, capture: true });
-    document.addEventListener('touchstart', startMusic, { once: true, capture: true });
+
+    window.addEventListener('click', handleFirstInteraction);
+    window.addEventListener('touchstart', handleFirstInteraction);
+
+    if (!muteAudio && audioCtx?.state === 'running') {
+       ambientMusic?.play();
+    }
 
     return () => {
-      document.removeEventListener('click', startMusic, { capture: true });
-      document.removeEventListener('touchstart', startMusic, { capture: true });
+      window.removeEventListener('click', handleFirstInteraction);
+      window.removeEventListener('touchstart', handleFirstInteraction);
       ambientMusic?.stop();
       if (ambientMusic) ambientMusic.setOnBeat(undefined);
     };
-  }, [logoControls]);
+  }, [muteAudio, logoControls]);
 
   // Mute tuşuna basıldığında anında tepki
   useEffect(() => {
     if (muteAudio) {
       ambientMusic?.stop();
-    } else if (audioResumed) {
-      resumeAndPlay();
+    } else if (audioCtx?.state === 'running') {
+      ambientMusic?.play();
     }
   }, [muteAudio]);
 
