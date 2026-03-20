@@ -42,7 +42,7 @@ export class AmbientMusic {
     if (this.ctx) {
       this.masterGain = this.ctx.createGain();
       this.masterGain.connect(this.ctx.destination);
-      this.masterGain.gain.value = 0;
+      this.masterGain.gain.value = 1;
     }
   }
 
