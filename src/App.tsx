@@ -348,7 +348,11 @@ function GameOverScreen({ level, totalTimeSpent, expected, isDevMode, goToMenu }
 
   useEffect(() => {
     Leaderboard.fetchAndCacheCountry();
-  }, []);
+    if (!isDevMode) {
+      const newBest = Leaderboard.updatePersonalBest(level, totalTimeSpent);
+      if (newBest) setIsNewBest(true);
+    }
+  }, [level, totalTimeSpent, isDevMode]);
 
   const handleSaveScore = async () => {
     if (isDevMode) { goToMenu(); return; }
@@ -370,8 +374,6 @@ function GameOverScreen({ level, totalTimeSpent, expected, isDevMode, goToMenu }
 
     Leaderboard.setPlayerName(name);
     await Leaderboard.addScore(name, level, totalTimeSpent);
-    const newBest = Leaderboard.updatePersonalBest(level, totalTimeSpent);
-    setIsNewBest(newBest);
     setSaved(true);
     setIsChecking(false);
   };
@@ -381,7 +383,7 @@ function GameOverScreen({ level, totalTimeSpent, expected, isDevMode, goToMenu }
       <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="text-center bg-white p-6 md:p-8 rounded-[2rem] shadow-2xl w-full max-w-sm border border-neutral-100 relative overflow-hidden">
         <div className="absolute top-0 inset-x-0 h-3 bg-red-500"></div>
         
-        {isNewBest && saved && (
+        {isNewBest && (
           <motion.div initial={{ scale: 0, y: -20 }} animate={{ scale: 1, y: 0 }} 
             className="bg-amber-50 border-2 border-amber-200 text-amber-700 rounded-full px-4 py-2 inline-flex items-center gap-2 font-bold text-xs tracking-widest mb-4 mt-2"
           >
@@ -438,7 +440,14 @@ function GameOverScreen({ level, totalTimeSpent, expected, isDevMode, goToMenu }
               disabled={isChecking}
               className={`w-full py-4 text-white rounded-full font-bold tracking-[0.2em] text-sm shadow-[0_10px_30px_rgba(0,0,0,0.2)] transition-all ${isChecking ? 'bg-neutral-400 scale-95 pointer-events-none' : 'bg-[#1D1D1F] hover:scale-105 active:scale-95'}`}
             >
-              {isChecking ? 'KONTROL EDİLİYOR...' : 'SKORU KAYDET'}
+              {isChecking ? 'KONTROL EDİLİYOR...' : 'SKORU KAYDET VE PAYLAŞ'}
+            </button>
+            
+            <button 
+              onClick={goToMenu}
+              className="w-full mt-3 py-2 text-[10px] font-bold tracking-widest text-neutral-400 uppercase hover:text-neutral-700 transition"
+            >
+              ATLA (SADECE CİHAZDA KALSIN)
             </button>
           </div>
         ) : (
