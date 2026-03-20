@@ -4,6 +4,7 @@ export class AmbientMusic {
   private nextNoteTime = 0;
   private currentStep = 0;
   private timerID: number | null = null;
+  private masterGain: GainNode | null = null;
 
   // C major pentatonic scale (C3 to C5)
   private frequencies = [
@@ -37,11 +38,22 @@ export class AmbientMusic {
 
   constructor(ctx: AudioContext | null) {
     this.ctx = ctx;
+    if (this.ctx) {
+      this.masterGain = this.ctx.createGain();
+      this.masterGain.connect(this.ctx.destination);
+      this.masterGain.gain.value = 0;
+    }
   }
 
   public play() {
     if (!this.ctx || this.isPlaying) return;
     if (this.ctx.state === 'suspended') this.ctx.resume();
+    
+    if (this.masterGain) {
+      this.masterGain.gain.cancelScheduledValues(this.ctx.currentTime);
+      this.masterGain.gain.setValueAtTime(this.masterGain.gain.value, this.ctx.currentTime);
+      this.masterGain.gain.linearRampToValueAtTime(1, this.ctx.currentTime + 0.1);
+    }
     
     this.isPlaying = true;
     this.currentStep = 0;
@@ -54,6 +66,11 @@ export class AmbientMusic {
     if (this.timerID !== null) {
       window.clearTimeout(this.timerID);
       this.timerID = null;
+    }
+    if (this.ctx && this.masterGain) {
+      this.masterGain.gain.cancelScheduledValues(this.ctx.currentTime);
+      this.masterGain.gain.setValueAtTime(this.masterGain.gain.value, this.ctx.currentTime);
+      this.masterGain.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 0.05);
     }
   }
 
@@ -103,7 +120,7 @@ export class AmbientMusic {
     
     osc.connect(filter);
     filter.connect(gain);
-    gain.connect(this.ctx.destination);
+    if (this.masterGain) gain.connect(this.masterGain);
     
     osc.start(time);
     osc.stop(time + 0.5);
@@ -124,7 +141,7 @@ export class AmbientMusic {
     gain.gain.exponentialRampToValueAtTime(0.001, time + 1.5); 
     
     osc.connect(gain);
-    gain.connect(this.ctx.destination);
+    if (this.masterGain) gain.connect(this.masterGain);
     
     osc.start(time);
     osc.stop(time + 1.6);

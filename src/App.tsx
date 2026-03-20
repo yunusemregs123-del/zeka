@@ -35,41 +35,45 @@ const playSound = (type: 'click' | 'success' | 'fail' | 'tick' | 'intro') => {
   const now = ctx.currentTime;
   
   if (type === 'click') {
-    osc.type = 'triangle';
-    osc.frequency.setValueAtTime(600, now);
-    osc.frequency.exponentialRampToValueAtTime(300, now + 0.1);
-    gain.gain.setValueAtTime(0.1, now);
-    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(800, now);
+    osc.frequency.exponentialRampToValueAtTime(1000, now + 0.05);
+    gain.gain.setValueAtTime(0, now);
+    gain.gain.linearRampToValueAtTime(0.04, now + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
     osc.start(now); osc.stop(now + 0.1);
   } else if (type === 'success') {
     osc.type = 'sine';
-    osc.frequency.setValueAtTime(400, now);
-    osc.frequency.setValueAtTime(600, now + 0.1);
-    osc.frequency.setValueAtTime(800, now + 0.2);
-    gain.gain.setValueAtTime(0.15, now);
-    gain.gain.linearRampToValueAtTime(0, now + 0.4);
+    osc.frequency.setValueAtTime(659.25, now);
+    osc.frequency.setValueAtTime(783.99, now + 0.08);
+    osc.frequency.setValueAtTime(1046.50, now + 0.16);
+    gain.gain.setValueAtTime(0, now);
+    gain.gain.linearRampToValueAtTime(0.08, now + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
     osc.start(now); osc.stop(now + 0.4);
   } else if (type === 'fail') {
-    osc.type = 'sawtooth';
-    osc.frequency.setValueAtTime(150, now);
-    osc.frequency.linearRampToValueAtTime(100, now + 0.3);
-    gain.gain.setValueAtTime(0.15, now);
-    gain.gain.linearRampToValueAtTime(0, now + 0.3);
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(200, now);
+    osc.frequency.exponentialRampToValueAtTime(100, now + 0.3);
+    gain.gain.setValueAtTime(0, now);
+    gain.gain.linearRampToValueAtTime(0.08, now + 0.05);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
     osc.start(now); osc.stop(now + 0.3);
   } else if (type === 'tick') {
     osc.type = 'sine';
-    osc.frequency.setValueAtTime(800, now);
-    gain.gain.setValueAtTime(0.02, now);
-    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
+    osc.frequency.setValueAtTime(1200, now);
+    gain.gain.setValueAtTime(0, now);
+    gain.gain.linearRampToValueAtTime(0.01, now + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
     osc.start(now); osc.stop(now + 0.05);
   } else if (type === 'intro') {
     osc.type = 'sine';
-    osc.frequency.setValueAtTime(300, now);
-    osc.frequency.exponentialRampToValueAtTime(800, now + 0.5);
+    osc.frequency.setValueAtTime(261.63, now);
+    osc.frequency.exponentialRampToValueAtTime(392.00, now + 0.4);
     gain.gain.setValueAtTime(0, now);
-    gain.gain.linearRampToValueAtTime(0.1, now + 0.1);
-    gain.gain.linearRampToValueAtTime(0, now + 0.5);
-    osc.start(now); osc.stop(now + 0.5);
+    gain.gain.linearRampToValueAtTime(0.05, now + 0.1);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
+    osc.start(now); osc.stop(now + 0.6);
   }
 };
 
@@ -244,9 +248,18 @@ function MenuScreen({ startGame }: { startGame: (asDev?: boolean) => void }) {
       </div>
 
       <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="text-center w-full max-w-sm z-0">
-        <div className="w-24 h-24 bg-[#1D1D1F] text-white rounded-[2.5rem] flex items-center justify-center mx-auto mb-8 shadow-[0_20px_40px_rgba(0,0,0,0.2)] rotate-3 hover:rotate-6 transition-transform">
-          <h1 className="text-5xl font-black">Z</h1>
-        </div>
+        
+        {/* Rhythmic Bouncing Logo Syncing with Ambient Music */}
+        <motion.div 
+          animate={muteAudio ? {} : { y: [0, -6, 0] }}
+          transition={muteAudio ? {} : { duration: 1.44, ease: "easeInOut", repeat: Infinity }}
+          className="mx-auto w-fit mb-8"
+        >
+          <div className="w-24 h-24 bg-[#1D1D1F] text-white rounded-[2.5rem] flex items-center justify-center shadow-[0_20px_40px_rgba(0,0,0,0.2)] rotate-3 hover:rotate-6 transition-transform">
+            <h1 className="text-5xl font-black">Z</h1>
+          </div>
+        </motion.div>
+
         <h1 className="text-6xl font-black tracking-tighter mb-2 text-[#1D1D1F]">ZEKA</h1>
         <p className="text-lg text-neutral-400 font-semibold mb-10 tracking-widest uppercase">Zihin Bulmacası</p>
         
