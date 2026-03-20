@@ -215,23 +215,11 @@ function MenuScreen({ startGame }: { startGame: (asDev?: boolean) => void }) {
       });
     }
 
-    const handleFirstInteraction = () => {
-      if (audioCtx?.state === 'suspended') audioCtx.resume();
-      if (!muteAudio) ambientMusic?.play();
-      window.removeEventListener('click', handleFirstInteraction);
-      window.removeEventListener('touchstart', handleFirstInteraction);
-    };
-
-    window.addEventListener('click', handleFirstInteraction);
-    window.addEventListener('touchstart', handleFirstInteraction);
-
     if (!muteAudio && audioCtx?.state === 'running') {
        ambientMusic?.play();
     }
 
     return () => {
-      window.removeEventListener('click', handleFirstInteraction);
-      window.removeEventListener('touchstart', handleFirstInteraction);
       ambientMusic?.stop(); // Oyunun içine girince kapansın
       if (ambientMusic) ambientMusic.setOnBeat(undefined);
     };
@@ -246,10 +234,25 @@ function MenuScreen({ startGame }: { startGame: (asDev?: boolean) => void }) {
     }
   }, [muteAudio]);
 
+  const handleGlobalInteraction = () => {
+    initAudio();
+    if (audioCtx?.state === 'suspended') {
+      audioCtx.resume().then(() => {
+        if (!muteAudio) ambientMusic?.play();
+      });
+    } else if (!muteAudio) {
+      ambientMusic?.play();
+    }
+  };
+
   const tabLabels = { daily: 'GÜNLÜK', weekly: 'HAFTALIK', alltime: 'TÜM ZAMANLAR' };
 
   return (
-    <div className="min-h-[100dvh] bg-[#F5F5F7] text-[#1D1D1F] flex flex-col items-center justify-center font-sans selection:bg-neutral-200 p-4 md:p-6 relative overflow-hidden">
+    <div 
+      onClick={handleGlobalInteraction}
+      onTouchStart={handleGlobalInteraction}
+      className="min-h-[100dvh] bg-[#F5F5F7] text-[#1D1D1F] flex flex-col items-center justify-center font-sans selection:bg-neutral-200 p-4 md:p-6 relative overflow-hidden"
+    >
       
       {/* DEV BUTTON - TOP RIGHT */}
       <div className="absolute top-4 right-4 z-10">
