@@ -6,8 +6,10 @@ import * as Icons from './components/Icons';
 import { motion, AnimatePresence } from 'framer-motion';
 
 let audioCtx: AudioContext | null = null;
+const isMuted = () => localStorage.getItem('zeka_mute') === 'true';
 
 const playSound = (type: 'click' | 'success' | 'fail' | 'tick' | 'intro') => {
+  if (isMuted()) return;
   const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
   if (!AudioContext) return;
   
@@ -159,6 +161,16 @@ function MenuScreen({ startGame }: { startGame: (asDev?: boolean) => void }) {
   const [scores, setScores] = useState<Leaderboard.ScoreEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const personalBest = Leaderboard.getPersonalBest();
+  
+  const [showLeaderboard, setShowLeaderboard] = useState(false);
+  const [showInfo, setShowInfo] = useState(false);
+  const [muteAudio, setMuteAudio] = useState(localStorage.getItem('zeka_mute') === 'true');
+
+  const toggleMute = () => {
+    const newMute = !muteAudio;
+    setMuteAudio(newMute);
+    localStorage.setItem('zeka_mute', String(newMute));
+  };
 
   useEffect(() => {
     setLoading(true);
@@ -176,117 +188,148 @@ function MenuScreen({ startGame }: { startGame: (asDev?: boolean) => void }) {
   const tabLabels = { daily: 'GÜNLÜK', weekly: 'HAFTALIK', alltime: 'TÜM ZAMANLAR' };
 
   return (
-    <div className="min-h-screen bg-[#F5F5F7] text-[#1D1D1F] flex flex-col items-center font-sans selection:bg-neutral-200 p-4 md:p-6 relative overflow-y-auto">
+    <div className="min-h-[100dvh] bg-[#F5F5F7] text-[#1D1D1F] flex flex-col items-center justify-center font-sans selection:bg-neutral-200 p-4 md:p-6 relative overflow-hidden">
       
-      <button 
-        onClick={() => startGame(true)}
-        className="absolute top-3 right-3 px-3 py-1.5 bg-neutral-200 text-neutral-500 rounded-lg font-bold text-[9px] tracking-widest hover:bg-neutral-300 transition-all opacity-40 hover:opacity-100 z-10"
-      >
-        DEV
-      </button>
+      {/* TOP LEFT ICONS */}
+      <div className="absolute top-4 left-4 flex gap-3 z-10">
+        <button 
+          onClick={toggleMute}
+          className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-sm text-neutral-500 hover:text-black transition"
+        >
+          {muteAudio ? <Icons.MusicOff className="w-5 h-5" /> : <Icons.MusicOn className="w-5 h-5" />}
+        </button>
+        <button 
+          onClick={() => setShowInfo(true)}
+          className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-sm text-neutral-500 hover:text-black transition"
+        >
+          <Icons.Info className="w-5 h-5" />
+        </button>
+      </div>
 
-      <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="text-center w-full max-w-sm mt-8 md:mt-12 mb-6">
-        <div className="w-20 h-20 bg-[#1D1D1F] text-white rounded-[2rem] flex items-center justify-center mx-auto mb-6 shadow-2xl rotate-3 hover:rotate-6 transition-transform">
-          <h1 className="text-4xl font-black">Z</h1>
+      {/* TOP RIGHT ICONS */}
+      <div className="absolute top-4 right-4 flex gap-3 z-10 items-center">
+        <button 
+          onClick={() => setShowLeaderboard(true)}
+          className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-sm text-amber-500 hover:text-amber-600 transition"
+        >
+          <Icons.Trophy className="w-5 h-5" />
+        </button>
+        <button 
+          onClick={() => startGame(true)}
+          className="px-3 py-1.5 bg-neutral-200 text-neutral-500 rounded-lg font-bold text-[9px] tracking-widest hover:bg-neutral-300 transition-all opacity-40 hover:opacity-100"
+        >
+          DEV
+        </button>
+      </div>
+
+      <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="text-center w-full max-w-sm z-0">
+        <div className="w-24 h-24 bg-[#1D1D1F] text-white rounded-[2.5rem] flex items-center justify-center mx-auto mb-8 shadow-[0_20px_40px_rgba(0,0,0,0.2)] rotate-3 hover:rotate-6 transition-transform">
+          <h1 className="text-5xl font-black">Z</h1>
         </div>
-        <h1 className="text-5xl font-black tracking-tighter mb-2 text-[#1D1D1F]">ZEKA</h1>
-        <p className="text-base text-neutral-400 font-semibold mb-6 tracking-widest uppercase">Zihin Bulmacası</p>
+        <h1 className="text-6xl font-black tracking-tighter mb-2 text-[#1D1D1F]">ZEKA</h1>
+        <p className="text-lg text-neutral-400 font-semibold mb-10 tracking-widest uppercase">Zihin Bulmacası</p>
         
         <button 
           onClick={() => startGame(false)}
-          className="w-full py-5 bg-[#1D1D1F] text-white rounded-full font-bold tracking-[0.2em] text-lg shadow-[0_10px_30px_rgba(0,0,0,0.2)] hover:scale-105 active:scale-95 transition-all"
+          className="w-full py-6 bg-[#1D1D1F] text-white rounded-full font-bold tracking-[0.2em] text-xl shadow-[0_10px_30px_rgba(0,0,0,0.2)] hover:scale-105 active:scale-95 transition-all"
         >
           BAŞLA
         </button>
-      </motion.div>
 
-      {personalBest && (
-        <motion.div initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }}
-          className="w-full max-w-sm bg-white rounded-2xl p-4 shadow-sm border border-neutral-100 mb-4"
-        >
-          <div className="flex justify-between items-center">
-            <div>
-              <span className="text-[10px] font-black text-amber-500 tracking-widest uppercase">KİŞİSEL REKOR</span>
-              <div className="flex items-baseline gap-3 mt-1">
-                <span className="text-2xl font-black">Bölüm {personalBest.level}</span>
-                <span className="text-neutral-400 font-bold text-sm">{Leaderboard.formatTime(personalBest.totalTime)}</span>
-              </div>
-            </div>
-            <div className="w-12 h-12 bg-amber-50 border-2 border-amber-200 rounded-full flex items-center justify-center">
-              <span className="text-xl">🏆</span>
-            </div>
+        {personalBest && (
+          <div className="mt-8 text-center opacity-70">
+            <span className="text-[10px] font-black text-amber-500 tracking-widest uppercase block mb-1">KİŞİSEL REKOR</span>
+            <span className="text-lg font-black text-neutral-800 tracking-wide">Bölüm {personalBest.level}</span>
           </div>
-        </motion.div>
-      )}
-
-      <motion.div initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2 }}
-        className="w-full max-w-sm bg-white rounded-3xl shadow-sm border border-neutral-100 overflow-hidden mb-8"
-      >
-        <div className="flex border-b border-neutral-100">
-          {(['daily', 'weekly', 'alltime'] as const).map(t => (
-            <button 
-              key={t}
-              onClick={() => setTab(t)}
-              className={`flex-1 py-3 text-[10px] md:text-xs font-black tracking-widest uppercase transition-all relative ${
-                tab === t ? 'text-[#1D1D1F]' : 'text-neutral-300 hover:text-neutral-500'
-              }`}
-            >
-              {tabLabels[t]}
-              {tab === t && (
-                <motion.div layoutId="tabIndicator" className="absolute bottom-0 inset-x-4 h-[3px] bg-[#1D1D1F] rounded-full" />
-              )}
-            </button>
-          ))}
-        </div>
-
-        <div className="p-3 md:p-4 max-h-[280px] overflow-y-auto">
-          {scores.length === 0 ? (
-            <div className="text-center py-10">
-              <span className="text-4xl mb-3 block">🎯</span>
-              <p className="text-neutral-400 font-semibold text-sm">Henüz skor yok</p>
-              <p className="text-neutral-300 text-xs mt-1">Oynayarak ilk skoru sen kır!</p>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {loading ? (
-                <div className="flex flex-col items-center py-10 gap-3">
-                  <div className="w-8 h-8 border-4 border-neutral-200 border-t-[#1D1D1F] rounded-full animate-spin"></div>
-                  <span className="text-[10px] font-bold text-neutral-400 tracking-widest uppercase">Yükleniyor...</span>
-                </div>
-              ) : (
-                scores.slice(0, 20).map((entry, idx) => (
-                  <div
-                    key={entry.id}
-                    className={`flex items-center gap-3 p-3 rounded-xl transition ${
-                      idx === 0 ? 'bg-amber-50 border border-amber-100' :
-                      idx === 1 ? 'bg-neutral-50 border border-neutral-100' :
-                      idx === 2 ? 'bg-orange-50/60 border border-orange-100/60' :
-                      'hover:bg-neutral-50'
-                    }`}
-                  >
-                    <span className={`w-7 h-7 rounded-full flex items-center justify-center font-black text-xs shrink-0 ${
-                      idx === 0 ? 'bg-amber-400 text-white' :
-                      idx === 1 ? 'bg-neutral-300 text-white' :
-                      idx === 2 ? 'bg-orange-300 text-white' :
-                      'bg-neutral-100 text-neutral-500'
-                    }`}>
-                      {idx + 1}
-                    </span>
-                    <div className="flex-1 min-w-0">
-                      <span className="font-bold text-sm block truncate">{entry.player_name}</span>
-                      <span className="text-[10px] text-neutral-400 font-medium">{Leaderboard.formatDate(entry.created_at)}</span>
-                    </div>
-                    <div className="text-right shrink-0">
-                      <span className="font-black text-sm block">Blm {entry.level}</span>
-                      <span className="text-[10px] text-neutral-400 font-semibold">{Leaderboard.formatTime(entry.total_time)}</span>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          )}
-        </div>
+        )}
       </motion.div>
+
+      {/* INFO MODAL */}
+      <AnimatePresence>
+        {showInfo && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-white rounded-3xl p-6 w-[90%] max-w-[340px] shadow-2xl relative"
+            >
+              <h2 className="text-2xl font-black mb-4">Hakkında</h2>
+              <p className="text-sm font-medium text-neutral-600 mb-4 leading-relaxed">
+                ZEKA, hafıza yeteneğini ve dikkatini zorlayan minimalist bir zihin bulmacasıdır. Her tur ekranda beliren simgenin matematiksel değerini akıldan hesapla ve ilerle!<br/><br/>
+                Süleyman Arıcan tarafından geliştirilmiştir.
+              </p>
+              <button onClick={() => setShowInfo(false)} className="w-full py-3 bg-neutral-100 text-neutral-800 rounded-xl font-bold tracking-wider text-sm hover:bg-neutral-200">
+                KAPAT
+              </button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* LEADERBOARD MODAL */}
+      <AnimatePresence>
+        {showLeaderboard && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="bg-white rounded-3xl w-full max-w-[360px] shadow-2xl flex flex-col overflow-hidden max-h-[85dvh]"
+            >
+              <div className="flex justify-between items-center p-4 border-b border-neutral-100 shrink-0">
+                <h2 className="text-xl font-black text-[#1D1D1F] flex items-center gap-2"><Icons.Trophy className="w-6 h-6 text-amber-500"/> SKOR TABLOSU</h2>
+                <button onClick={() => setShowLeaderboard(false)} className="w-8 h-8 flex items-center justify-center bg-neutral-100 rounded-full hover:bg-neutral-200">
+                  <span className="font-bold text-neutral-500 text-xs">✕</span>
+                </button>
+              </div>
+
+              <div className="flex border-b border-neutral-100 shrink-0">
+                {(['daily', 'weekly', 'alltime'] as const).map(t => (
+                  <button 
+                    key={t} onClick={() => setTab(t)}
+                    className={`flex-1 py-3 text-[10px] sm:text-xs font-black tracking-widest uppercase transition-all relative ${tab === t ? 'text-[#1D1D1F]' : 'text-neutral-300 hover:text-neutral-500'}`}
+                  >
+                    {tabLabels[t]}
+                    {tab === t && <motion.div layoutId="tabIndicator" className="absolute bottom-0 inset-x-4 h-[3px] bg-[#1D1D1F] rounded-full" />}
+                  </button>
+                ))}
+              </div>
+
+              <div className="p-3 overflow-y-auto flex-1 bg-neutral-50/50">
+                {loading ? (
+                  <div className="flex flex-col items-center py-10 gap-3">
+                    <div className="w-8 h-8 border-4 border-neutral-200 border-t-[#1D1D1F] rounded-full animate-spin"></div>
+                    <span className="text-[10px] font-bold text-neutral-400 tracking-widest uppercase">Yükleniyor...</span>
+                  </div>
+                ) : scores.length === 0 ? (
+                  <div className="text-center py-10">
+                    <span className="text-4xl mb-3 block">🎯</span>
+                    <p className="text-neutral-400 font-semibold text-sm">Henüz skor yok</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {scores.map((entry, idx) => (
+                      <div key={entry.id} className={`flex items-center gap-2 p-2 sm:p-3 rounded-xl transition ${idx === 0 ? 'bg-amber-50 border border-amber-100' : idx === 1 ? 'bg-neutral-50 border border-neutral-100' : idx === 2 ? 'bg-orange-50/60 border border-orange-100/60' : 'bg-white border border-transparent'}`}>
+                        <span className={`w-6 h-6 rounded-full flex items-center justify-center font-black text-[10px] shrink-0 ${idx === 0 ? 'bg-amber-400 text-white' : idx === 1 ? 'bg-neutral-300 text-white' : idx === 2 ? 'bg-orange-300 text-white' : 'bg-neutral-100 text-neutral-500'}`}>
+                          {idx + 1}
+                        </span>
+                        <div className="flex-1 min-w-0 pr-1">
+                          <span className="font-bold text-xs sm:text-sm block truncate flex items-center gap-1">
+                            {entry.country_code && <span className="text-[10px]">{entry.country_code.toUpperCase().replace(/./g, char => String.fromCodePoint(char.charCodeAt(0) + 127397))}</span>}
+                            {entry.player_name}
+                          </span>
+                          <span className="text-[9px] sm:text-[10px] text-neutral-400 font-medium">{Leaderboard.formatDate(entry.created_at)}</span>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <span className="font-black text-xs sm:text-sm block">Blm {entry.level}</span>
+                          <span className="text-[9px] sm:text-[10px] text-neutral-400 font-semibold">{Leaderboard.formatTime(entry.total_time)}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -295,39 +338,63 @@ function MenuScreen({ startGame }: { startGame: (asDev?: boolean) => void }) {
 function GameOverScreen({ level, totalTimeSpent, expected, isDevMode, goToMenu }: {
   level: number; totalTimeSpent: number; expected: number; isDevMode: boolean; goToMenu: () => void;
 }) {
+  const hasSavedName = !!Leaderboard.getPlayerName();
   const [playerName, setPlayerName] = useState(Leaderboard.getPlayerName() || '');
+  const [showInput, setShowInput] = useState(!hasSavedName);
+  const [errorMsg, setErrorMsg] = useState('');
+  const [isChecking, setIsChecking] = useState(false);
   const [saved, setSaved] = useState(false);
   const [isNewBest, setIsNewBest] = useState(false);
 
+  useEffect(() => {
+    Leaderboard.fetchAndCacheCountry();
+  }, []);
+
   const handleSaveScore = async () => {
     if (isDevMode) { goToMenu(); return; }
-    const name = playerName.trim() || 'Anonim';
+    const name = playerName.trim();
+    if (!name) { setErrorMsg('Takma ad boş olamaz.'); return; }
+    
+    setIsChecking(true);
+    setErrorMsg('');
+    
+    const savedName = Leaderboard.getPlayerName();
+    if (name !== savedName) {
+      const taken = await Leaderboard.isNameTaken(name);
+      if (taken) {
+        setErrorMsg('Bu takma ad başkası tarafından kullanılıyor!');
+        setIsChecking(false);
+        return;
+      }
+    }
+
     Leaderboard.setPlayerName(name);
     await Leaderboard.addScore(name, level, totalTimeSpent);
     const newBest = Leaderboard.updatePersonalBest(level, totalTimeSpent);
     setIsNewBest(newBest);
     setSaved(true);
+    setIsChecking(false);
   };
 
   return (
-    <div className="min-h-screen bg-[#F5F5F7] text-[#1D1D1F] flex flex-col items-center justify-center font-sans selection:bg-neutral-200 p-4 md:p-6">
-      <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="text-center bg-white p-6 md:p-10 rounded-[2.5rem] shadow-2xl w-full max-w-sm border border-neutral-100 relative overflow-hidden">
+    <div className="min-h-[100dvh] bg-[#F5F5F7] text-[#1D1D1F] flex flex-col items-center justify-center font-sans selection:bg-neutral-200 p-4 md:p-6">
+      <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="text-center bg-white p-6 md:p-8 rounded-[2rem] shadow-2xl w-full max-w-sm border border-neutral-100 relative overflow-hidden">
         <div className="absolute top-0 inset-x-0 h-3 bg-red-500"></div>
         
         {isNewBest && saved && (
           <motion.div initial={{ scale: 0, y: -20 }} animate={{ scale: 1, y: 0 }} 
-            className="bg-amber-50 border-2 border-amber-200 text-amber-700 rounded-full px-4 py-2 inline-flex items-center gap-2 font-bold text-xs tracking-widest mb-4 mt-4"
+            className="bg-amber-50 border-2 border-amber-200 text-amber-700 rounded-full px-4 py-2 inline-flex items-center gap-2 font-bold text-xs tracking-widest mb-4 mt-2"
           >
             <span className="text-lg">🏆</span> YENİ KİŞİSEL REKOR!
           </motion.div>
         )}
 
-        <h1 className="text-4xl md:text-5xl font-black tracking-tighter mb-2 text-red-500 mt-3">OYUN BİTTİ</h1>
-        <p className="text-base text-neutral-500 font-medium mb-6 leading-snug">
+        <h1 className="text-4xl md:text-5xl font-black tracking-tighter mb-2 text-red-500 mt-2">OYUN BİTTİ</h1>
+        <p className="text-sm text-neutral-500 font-medium mb-6 leading-snug">
           Doğru cevap: <strong className="text-black text-xl ml-1">{expected > 0 ? `+${expected}` : expected}</strong>
         </p>
 
-        <div className="flex flex-col gap-2 mb-6 text-left bg-neutral-50 p-5 rounded-2xl border border-neutral-100">
+        <div className="flex flex-col gap-2 mb-6 text-left bg-neutral-50 p-4 rounded-xl border border-neutral-100">
           <div className="flex justify-between items-center">
             <span className="text-neutral-500 font-bold text-xs tracking-widest">ULAŞILAN BÖLÜM</span>
             <span className="text-2xl font-black">{level}</span>
@@ -340,27 +407,44 @@ function GameOverScreen({ level, totalTimeSpent, expected, isDevMode, goToMenu }
         </div>
 
         {!saved && !isDevMode ? (
-          <div className="mb-4">
-            <label className="block text-[10px] font-black text-neutral-400 tracking-widest uppercase mb-2 text-left">TAKMA ADIN</label>
-            <input 
-              value={playerName}
-              onChange={e => setPlayerName(e.target.value)}
-              placeholder="Adını gir..."
-              maxLength={20}
-              className="w-full px-4 py-3 rounded-xl bg-neutral-50 border border-neutral-200 font-bold text-center text-lg outline-none focus:border-amber-400 focus:bg-white transition"
-              onKeyDown={e => { if(e.key === 'Enter') handleSaveScore(); }}
-            />
+          <div className="mb-2">
+            {showInput ? (
+              <div className="mb-4">
+                <label className="block text-[10px] font-black text-neutral-400 tracking-widest uppercase mb-2 text-left">TAKMA ADIN</label>
+                <input 
+                  value={playerName}
+                  onChange={e => setPlayerName(e.target.value)}
+                  placeholder="Efsane ismini gir..."
+                  maxLength={15}
+                  className="w-full px-4 py-3 rounded-xl bg-neutral-50 border border-neutral-200 font-bold text-center text-lg outline-none focus:border-amber-400 focus:bg-white transition"
+                  onKeyDown={e => { if(e.key === 'Enter') handleSaveScore(); }}
+                />
+                <AnimatePresence>
+                  {errorMsg && <motion.p initial={{opacity:0, y:-5}} animate={{opacity:1, y:0}} className="text-red-500 text-[11px] mt-2 font-bold">{errorMsg}</motion.p>}
+                </AnimatePresence>
+              </div>
+            ) : (
+              <div className="mb-4 bg-neutral-100 rounded-xl px-4 py-3 flex items-center justify-between">
+                <div>
+                   <span className="block text-[10px] font-black text-neutral-400 tracking-widest uppercase text-left mb-0.5">OYUNCU KİMLİĞİN</span>
+                   <span className="font-bold text-sm block truncate text-left">{playerName}</span>
+                </div>
+                <button onClick={() => setShowInput(true)} className="text-[10px] font-bold text-amber-500 underline uppercase tracking-wider shrink-0 ml-2">İsim<br/>Değiştir</button>
+              </div>
+            )}
+            
             <button 
               onClick={handleSaveScore}
-              className="w-full mt-4 py-4 bg-[#1D1D1F] text-white rounded-full font-bold tracking-[0.2em] text-sm shadow-[0_10px_30px_rgba(0,0,0,0.2)] hover:scale-105 active:scale-95 transition-all"
+              disabled={isChecking}
+              className={`w-full py-4 text-white rounded-full font-bold tracking-[0.2em] text-sm shadow-[0_10px_30px_rgba(0,0,0,0.2)] transition-all ${isChecking ? 'bg-neutral-400 scale-95 pointer-events-none' : 'bg-[#1D1D1F] hover:scale-105 active:scale-95'}`}
             >
-              SKORU KAYDET
+              {isChecking ? 'KONTROL EDİLİYOR...' : 'SKORU KAYDET'}
             </button>
           </div>
         ) : (
           <button 
             onClick={() => goToMenu()}
-            className="w-full py-4 bg-[#1D1D1F] text-white rounded-full font-bold tracking-[0.2em] text-sm shadow-[0_10px_30px_rgba(0,0,0,0.2)] hover:scale-105 active:scale-95 transition-all"
+            className="w-full py-4 bg-[#1D1D1F] text-white rounded-full font-bold tracking-[0.2em] text-sm shadow-[0_10px_30px_rgba(0,0,0,0.2)] hover:scale-105 active:scale-95 transition-all mt-2"
           >
             ANA MENÜ
           </button>
@@ -693,7 +777,6 @@ export default function App() {
       {/* OVERLAYS */}
       <AnimatePresence>
         
-        {/* INTRO MODAL */}
         {showIntroModal && (
           <motion.div 
             initial={{ opacity: 0, backdropFilter: 'blur(0px)' }} 
@@ -704,34 +787,34 @@ export default function App() {
             <motion.div 
               initial={{ scale: 0.9, y: 20 }}
               animate={{ scale: 1, y: 0 }}
-              className="bg-white p-6 md:p-12 rounded-[2.5rem] shadow-2xl max-w-sm w-full max-h-[90dvh] overflow-y-auto"
+              className="bg-white p-5 md:p-8 rounded-3xl shadow-2xl max-w-[320px] w-full max-h-[85dvh] overflow-y-auto"
             >
-              <h2 className="text-xl font-black tracking-tight mb-8 text-[#1D1D1F]">NASIL OYNANIR?</h2>
-              <div className="flex justify-center gap-6 mb-8 bg-neutral-50 rounded-2xl p-6 border border-neutral-100">
-                <div className="flex flex-col items-center gap-3">
-                  <div className="p-3 bg-white border border-neutral-200 shadow-sm rounded-full"><SymbolDisplay type="CircleFilled" /></div>
-                  <span className="font-bold text-xl text-green-600">+1</span>
-                  <span className="text-xs text-neutral-400 font-bold uppercase tracking-widest">Dolu</span>
+              <h2 className="text-xl font-black tracking-tight mb-4 text-[#1D1D1F]">NASIL OYNANIR?</h2>
+              <div className="flex justify-center gap-4 mb-5 bg-neutral-50 rounded-xl p-4 border border-neutral-100">
+                <div className="flex flex-col items-center gap-2">
+                  <div className="p-2 bg-white border border-neutral-200 shadow-sm rounded-full"><SymbolDisplay type="CircleFilled" /></div>
+                  <span className="font-bold text-lg text-green-600">+1</span>
+                  <span className="text-[10px] text-neutral-400 font-bold uppercase tracking-widest">Dolu</span>
                 </div>
-                <div className="flex flex-col items-center gap-3">
-                  <div className="p-3 bg-white border border-neutral-200 shadow-sm rounded-full"><SymbolDisplay type="CircleEmpty" /></div>
-                  <span className="font-bold text-xl text-red-500">-1</span>
-                  <span className="text-xs text-neutral-400 font-bold uppercase tracking-widest">Boş</span>
+                <div className="flex flex-col items-center gap-2">
+                  <div className="p-2 bg-white border border-neutral-200 shadow-sm rounded-full"><SymbolDisplay type="CircleEmpty" /></div>
+                  <span className="font-bold text-lg text-red-500">-1</span>
+                  <span className="text-[10px] text-neutral-400 font-bold uppercase tracking-widest">Boş</span>
                 </div>
               </div>
-              <p className="text-neutral-500 font-medium leading-relaxed mb-8 text-sm md:text-base">
-                Ekranda gördüğün matematiksel dizginin toplam değerini zihninden hesapla. Alt taraftaki dev üçgen oklarıyla kendi cevabını ekrana yaz ve süre bitmeden CONFIRM'e bas!
+              <p className="text-neutral-500 font-medium leading-relaxed mb-6 text-xs md:text-sm px-1">
+                Ekranda gördüğün dizginin toplam değerini zihninden hesapla. Alt taraftaki dev oklara dokunarak kendi cevabını ekrana yaz ve ONAYLA'ya bas!
               </p>
               
-              <div className="flex items-center justify-center gap-3 mb-8 bg-neutral-100/50 p-4 rounded-xl cursor-pointer" onClick={() => setIntroCheckbox(!introCheckbox)}>
+              <div className="flex items-center justify-center gap-2 mb-6 bg-neutral-100/50 p-3 rounded-lg cursor-pointer" onClick={() => setIntroCheckbox(!introCheckbox)}>
                 <input 
                   type="checkbox" 
                   checked={introCheckbox} 
                   onChange={(e) => setIntroCheckbox(e.target.checked)}
                   onClick={(e) => e.stopPropagation()}
-                  className="w-5 h-5 accent-[#1D1D1F] cursor-pointer"
+                  className="w-4 h-4 accent-[#1D1D1F] cursor-pointer"
                 />
-                <label className="font-bold tracking-wide text-xs text-neutral-600 cursor-pointer select-none uppercase">Tekrar Gösterme</label>
+                <label className="font-bold tracking-wide text-[10px] text-neutral-600 cursor-pointer select-none uppercase">Tekrar Gösterme</label>
               </div>
 
               <button 
@@ -740,7 +823,7 @@ export default function App() {
                   setShowIntroModal(false);
                   initLevel();
                 }}
-                className="w-full py-5 bg-[#1D1D1F] text-white rounded-full font-bold tracking-[0.2em] shadow-xl hover:scale-105 active:scale-95 transition-all text-sm"
+                className="w-full py-3.5 bg-[#1D1D1F] text-white rounded-full font-bold tracking-[0.2em] shadow-xl hover:scale-105 active:scale-95 transition-all text-xs"
               >
                 ANLADIM, BAŞLA!
               </button>
@@ -754,40 +837,42 @@ export default function App() {
             initial={{ opacity: 0, backdropFilter: 'blur(0px)' }} 
             animate={{ opacity: 1, backdropFilter: 'blur(8px)' }} 
             exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-black/60 z-50 flex flex-col items-center justify-center p-4 text-center overflow-y-auto"
+            className="absolute inset-0 bg-black/60 z-50 flex flex-col items-center justify-center p-4 text-center overflow-hidden"
           >
             <motion.div 
               initial={{ scale: 0.9, y: 20 }}
               animate={{ scale: 1, y: 0 }}
-              className="bg-white p-5 md:p-10 rounded-[2.5rem] md:rounded-[3rem] shadow-2xl max-w-[95%] sm:max-w-lg w-full flex flex-col items-center my-8"
+              className="bg-white p-5 md:p-6 rounded-3xl shadow-2xl max-w-[340px] w-full flex flex-col items-center max-h-[85dvh] overflow-y-auto overflow-x-hidden"
             >
-              <div className="px-4 py-2 bg-amber-100 text-amber-600 rounded-full font-bold tracking-widest text-xs mb-8 uppercase flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
-                DİKKAT!
+              <div className="px-3 py-1.5 bg-amber-100 text-amber-600 rounded-full font-bold tracking-widest text-[10px] mb-6 uppercase flex items-center gap-2 shrink-0">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                DİKKAT! YENİ KURAL!
               </div>
 
-              <div className="flex justify-center flex-wrap gap-4 mb-8">
+              <div className="flex justify-center flex-wrap gap-2 mb-6 shrink-0">
                 {getTutorialSymbols(level).map(s => (
-                  <div key={s} className="p-4 bg-white border border-neutral-200 rounded-2xl shadow-sm scale-125 my-2">
+                  <div key={s} className="p-3 bg-white border border-neutral-200 rounded-xl shadow-sm my-1">
                     <SymbolDisplay type={s} />
                   </div>
                 ))}
               </div>
 
-              <h2 className="text-xl md:text-2xl font-black text-[#1D1D1F] mb-4 tracking-tighter">
+              <h2 className="text-lg font-black text-[#1D1D1F] mb-2 tracking-tighter shrink-0">
                 {TUTORIAL_CONTENT[level]?.title || "YENİ BİR KURAL"}
               </h2>
 
-              <p className="text-neutral-500 font-medium leading-relaxed mb-6 text-[15px] max-w-sm">
+              <p className="text-neutral-500 font-medium leading-relaxed mb-4 text-[12px] max-w-[280px] shrink-0">
                 {TUTORIAL_CONTENT[level]?.desc || "Bu yeni kural oyunun matematğini değiştirecek!"}
               </p>
 
               {TUTORIAL_CONTENT[level]?.exampleSequence && (
-                <TutorialExample 
-                  text={TUTORIAL_CONTENT[level].exampleText}
-                  sequence={TUTORIAL_CONTENT[level].exampleSequence}
-                  result={TUTORIAL_CONTENT[level].exampleResult}
-                />
+                <div className="shrink-0 w-full mb-4">
+                  <TutorialExample 
+                    text={TUTORIAL_CONTENT[level].exampleText}
+                    sequence={TUTORIAL_CONTENT[level].exampleSequence}
+                    result={TUTORIAL_CONTENT[level].exampleResult}
+                  />
+                </div>
               )}
 
               <button 
@@ -795,7 +880,7 @@ export default function App() {
                   setShowTutorialModal(false);
                   initLevel();
                 }}
-                className="w-full py-5 bg-[#1D1D1F] text-white rounded-full font-bold tracking-[0.2em] shadow-xl hover:scale-105 active:scale-95 transition-all text-sm"
+                className="w-full py-3.5 bg-[#1D1D1F] text-white rounded-full font-bold tracking-[0.2em] shadow-xl hover:scale-105 active:scale-95 transition-all text-xs mt-auto shrink-0"
               >
                 MEYDAN OKUYORUM
               </button>

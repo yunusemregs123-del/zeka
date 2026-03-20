@@ -7,18 +7,41 @@ export interface ScoreEntry {
   level: number;
   total_time: number;
   created_at: string;
+  country_code?: string;
 }
 
+// --- Player Info ---
 const PLAYER_NAME_KEY = 'zeka_player_name';
 const PERSONAL_BEST_KEY = 'zeka_personal_best';
+const PLAYER_COUNTRY_KEY = 'zeka_player_country';
 
-// --- Player Name ---
 export function getPlayerName(): string {
   return localStorage.getItem(PLAYER_NAME_KEY) || '';
 }
 
 export function setPlayerName(name: string): void {
   localStorage.setItem(PLAYER_NAME_KEY, name.trim().substring(0, 20));
+}
+
+export async function fetchAndCacheCountry(): Promise<string> {
+  const cached = localStorage.getItem(PLAYER_COUNTRY_KEY);
+  if (cached) return cached;
+  
+  try {
+    const res = await fetch('https://ipapi.co/json/');
+    const data = await res.json();
+    if (data.country_code) {
+      localStorage.setItem(PLAYER_COUNTRY_KEY, data.country_code);
+      return data.country_code;
+    }
+  } catch (e) {
+    console.error('Country fetch error', e);
+  }
+  return '';
+}
+
+export function getCachedCountry(): string {
+  return localStorage.getItem(PLAYER_COUNTRY_KEY) || '';
 }
 
 // --- Personal Best (local) ---
@@ -57,13 +80,30 @@ export function updatePersonalBest(level: number, totalTime: number): boolean {
 
 // --- Supabase Score Operations ---
 
+export async function isNameTaken(name: string): Promise<boolean> {
+  const { data, error } = await supabase
+    .from('scores')
+    .select('id')
+    .ilike('player_name', name.trim())
+    .limit(1);
+
+  if (error) {
+    console.error('İsim kontrol hatası:', error);
+    return false;
+  }
+  return data && data.length > 0;
+}
+
 export async function addScore(playerName: string, level: number, totalTime: number): Promise<ScoreEntry | null> {
+  const countryCode = getCachedCountry();
+  
   const { data, error } = await supabase
     .from('scores')
     .insert({
       player_name: (playerName.trim().substring(0, 20)) || 'Anonim',
       level,
-      total_time: Number(totalTime.toFixed(2))
+      total_time: Number(totalTime.toFixed(2)),
+      country_code: countryCode || null
     })
     .select()
     .single();
