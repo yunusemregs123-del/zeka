@@ -29,16 +29,16 @@ export const TriangleDown = (props: IconProps) => (
 export const Mul2 = (props: IconProps) => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" {...props}>
     <rect x="2" y="2" width="20" height="20" rx="6" />
-    <path d="M8 11.5l3.5 3.5m0-3.5L8 15" strokeWidth="2.2" />
-    <path d="M13 11.5c0-2 4-2 4 0c0 2-4 3.5-4 5h4" strokeWidth="2.2" />
+    <path d="M6 9.5L11 14.5M11 9.5L6 14.5" strokeWidth="2" />
+    <path d="M13 10C13 6.5 18 6.5 18 10.5C18 13.5 13 14.5 13 16.5H18" strokeWidth="2" />
   </svg>
 );
 
 export const Div2 = (props: IconProps) => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" {...props}>
     <rect x="2" y="2" width="20" height="20" rx="6" />
-    <path d="M8.5 16.5l2.5-7.5" strokeWidth="2.2" />
-    <path d="M12.5 11.5c0-2 4-2 4 0c0 2-4 3.5-4 5h4" strokeWidth="2.2" />
+    <path d="M7 16.5L10 7.5" strokeWidth="2" />
+    <path d="M13 10C13 6.5 18 6.5 18 10.5C18 13.5 13 14.5 13 16.5H18" strokeWidth="2" />
   </svg>
 );
 
@@ -46,7 +46,7 @@ export const Prev1 = (props: IconProps) => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" {...props}>
     <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
     <path d="M3 3v5h5" />
-    <path d="M10.5 11.5L12 10v6.5" strokeWidth="2.5" />
+    <path d="M9.5 10L12 7.5v9" strokeWidth="2" />
   </svg>
 );
 
@@ -54,7 +54,7 @@ export const Prev2 = (props: IconProps) => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" {...props}>
     <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
     <path d="M3 3v5h5" />
-    <path d="M10 11.5c0-2 4-2 4 0c0 2-4 3.5-4 5h4" strokeWidth="2.5" />
+    <path d="M9 10C9 6.5 15 6.5 15 10.5C15 13.5 9 14.5 9 16.5H15" strokeWidth="2" />
   </svg>
 );
 
