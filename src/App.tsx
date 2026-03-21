@@ -5,6 +5,8 @@ import * as Leaderboard from './lib/Leaderboard';
 import * as Icons from './components/Icons';
 import { motion, AnimatePresence, useAnimation } from 'framer-motion';
 import { AmbientMusic } from './lib/AmbientMusic';
+import { Ads } from './lib/Ads';
+import { Translations, type LanguageCode } from './lib/Translations';
 
 let audioCtx: AudioContext | null = null;
 let ambientMusic: AmbientMusic | null = null;
@@ -89,63 +91,15 @@ const playSound = (type: 'click' | 'success' | 'fail' | 'tick' | 'intro') => {
   }
 };
 
-const TUTORIAL_CONTENT: Record<number, { title: string, desc: string, exampleText?: string, exampleSequence?: SymbolType[], exampleResult?: number | string }> = {
-  11: {
-    title: "YENİ SİMGE: YUKARI VE AŞAĞI ÜÇGEN",
-    desc: "Araya artı (+) girdikten sonraki kısımlar tamamen yeni simgedir. Yukarı üçgen sonuca doğrudan +1 ekler. Aşağı üçgen ise eksi etki (-1) yaratır. Zamanla sayıları artırmak veya azaltmak için sıklıkla kullanılacak.",
-    exampleText: "Örnek İşlem (1 + 1):",
-    exampleSequence: ['CircleFilled', 'Plus', 'TriangleUp'],
-    exampleResult: 2
-  },
-  36: {
-    title: "YENİ SİMGE: YAKIN GEÇMİŞ HAFIZASI (1)",
-    desc: "İçinde 1 yazan dairesel ok, BİR ÖNCEKİ (az önce başarıyla geçtiğin) bölümün doğru cevabı neyse birebir o sayıyı ifade eder. Artık her geçtiğin bölümün cevabını kısa süreliğine hafızana kazıman gerekecek!",
-    exampleText: "Diyelim ki bir önceki elin doğru cevabı 5 idi:",
-    exampleSequence: ['CircleFilled', 'Plus', 'Prev1'],
-    exampleResult: 6
-  },
-  51: {
-    title: "YENİ SİMGE: DERİN GEÇMİŞ HAFIZASI (2)",
-    desc: "İçinde 2 yazan bu dairesel ok işleri iyice zorlaştırır. Bu simge, İKİ BÖLÜM ÖNCEKİ doğru cevaptır! Sadece bir önceki değil, ondan da önceki bölümün sonucunu aklında tutmalısın.",
-    exampleText: "Diyelim ki İKİ el önceki cevap 3 idi:",
-    exampleSequence: ['TriangleUp', 'Plus', 'Prev2'],
-    exampleResult: 4
-  },
-  61: {
-    title: "YENİ SİMGE: ÇARPAN VE BÖLEN KUTULAR",
-    desc: "İçinde 'x2' yazan kare geldiğinde, o noktaya gelene kadarki işlemin sonucunu direkt 2 ile çarpar. '/2' ise yarısına böler.",
-    exampleText: "Örnek (2 x 2):",
-    exampleSequence: ['CircleFilled', 'CircleFilled', 'Plus', 'Mul2'],
-    exampleResult: 4
-  },
-  76: {
-    title: "YENİ SİMGE: YÖN TERSİNE ÇEVİRİCİ DÜZ OKLAR",
-    desc: "İleri ve geri yönündeki iki ok KESİNLİKLE '+' almadan doğrudan sağındaki işlemin mantığını yıkar! +1'i -1, Çarpmayı Bölme yapar.",
-    exampleText: "Zıt etki (1 - 1):",
-    exampleSequence: ['CircleFilled', 'Plus', 'ReverseNext', 'TriangleUp'],
-    exampleResult: 0
-  },
-  91: {
-    title: "YENİ SİMGE: HİÇLİK YILDIZI",
-    desc: "Bazen dizi ne kadar karmaşık olursa olsun bölümün sonlarına doğru bir yıldız belirebilir. Yıldız var olan bütün denklemi kırar, geçmişi ve geleceği hiçe sayar.",
-    exampleText: "Yıldızlı bir sorunun tek cevabı vardır:",
-    exampleSequence: ['TriangleUp', 'Plus', 'Star'],
-    exampleResult: 0
-  },
-  111: {
-    title: "YENİ SİMGE: İŞARET DEĞİŞTİREN KARE",
-    desc: "Üstü siyah çapraz bir çizgiyle kapatılmış boş kare HER ZAMAN bölüm dizisinin en sonuna yerleşir. O noktaya kadar doğru cevabı ne bulduysan onun işaretini (artıysa eksi, eksiyse artı) ters çevirir, seni dev bir tuzağa düşürür.",
-    exampleText: "Tüm sonucu tersine (2 -> -2) çevirir:",
-    exampleSequence: ['CircleFilled', 'CircleFilled', 'Plus', 'InvertAll'],
-    exampleResult: -2
-  },
-  131: {
-    title: "YENİ SİMGE: OLAĞANÜSTÜ KALP",
-    desc: "Sürpriz! Kalp ortaya çıktığında, eğer senin hesapladığın denklemin asıl cevabı eksi (-) bir değere düşüyorsa, oyun sana acır ve o bölümün cevabını 0 kabul eder. Ancak asıl cevabın pozitif bir değerse, Kalp işlemi hiç etkilemezmiş gibi doğru cevabı bulmalısın.",
-    exampleText: "Cevap -1 olsa bile son anda Kalp kurtarır:",
-    exampleSequence: ['CircleEmpty', 'Plus', 'Heart'],
-    exampleResult: 0
-  }
+const TUTORIAL_DATA: Record<number, { exampleSequence?: SymbolType[], exampleResult?: number | string }> = {
+  11: { exampleSequence: ['CircleFilled', 'Plus', 'TriangleUp'], exampleResult: 2 },
+  36: { exampleSequence: ['CircleFilled', 'Plus', 'Prev1'], exampleResult: 6 },
+  51: { exampleSequence: ['TriangleUp', 'Plus', 'Prev2'], exampleResult: 4 },
+  61: { exampleSequence: ['CircleFilled', 'CircleFilled', 'Plus', 'Mul2'], exampleResult: 4 },
+  76: { exampleSequence: ['CircleFilled', 'Plus', 'ReverseNext', 'TriangleUp'], exampleResult: 0 },
+  91: { exampleSequence: ['TriangleUp', 'Plus', 'Star'], exampleResult: 0 },
+  111: { exampleSequence: ['CircleFilled', 'CircleFilled', 'Plus', 'InvertAll'], exampleResult: -2 },
+  131: { exampleSequence: ['CircleEmpty', 'Plus', 'Heart'], exampleResult: 0 }
 };
 
 const SymbolDisplay = ({ type }: { type: SymbolType }) => {
@@ -166,16 +120,16 @@ const SymbolDisplay = ({ type }: { type: SymbolType }) => {
 const TutorialExample = ({ text, sequence, result }: { text?: string, sequence?: SymbolType[], result?: number | string }) => {
   if (!sequence || result === undefined) return null;
   return (
-    <div className="w-full bg-neutral-50/80 border border-neutral-100 rounded-2xl p-4 mb-8 text-left overflow-x-auto shadow-[inset_0_2px_10px_rgb(0,0,0,0.02)]">
-      {text && <span className="block text-[10px] font-black text-amber-500 tracking-widest uppercase mb-3">{text}</span>}
-      <div className="flex items-center gap-1 md:gap-2 whitespace-nowrap min-w-max pb-1">
+    <div className="w-full bg-neutral-50/80 border border-neutral-100 rounded-2xl p-4 mb-2 text-left shadow-[inset_0_2px_10px_rgb(0,0,0,0.02)] overflow-hidden">
+      {text && <span className="block text-[10px] font-black text-amber-500 tracking-widest uppercase mb-3 whitespace-normal">{text}</span>}
+      <div className="flex items-center justify-center gap-1 md:gap-2 pb-1 whitespace-nowrap flex-nowrap w-full scale-[0.80] sm:scale-100 origin-center">
         {sequence.map((sym, i) => (
-          <div key={i} className={sym !== 'Plus' ? 'bg-white shadow-sm border border-neutral-100 rounded-xl' : ''}>
+          <div key={i} className={`shrink-0 ${sym !== 'Plus' ? 'bg-white shadow-sm border border-neutral-100 rounded-xl' : ''}`}>
             <SymbolDisplay type={sym} />
           </div>
         ))}
-        <span className="text-xl font-black text-neutral-300 mx-3">=</span>
-        <span className="text-3xl font-black text-amber-500">{result}</span>
+        <span className="text-xl font-black text-neutral-300 mx-1 shrink-0">=</span>
+        <span className="text-2xl md:text-3xl font-black text-amber-500 shrink-0">{result}</span>
       </div>
     </div>
   );
@@ -183,7 +137,10 @@ const TutorialExample = ({ text, sequence, result }: { text?: string, sequence?:
 
 // ─── MENU SCREEN ──────────────────────────────────────
 function MenuScreen({ startGame }: { startGame: (asDev?: boolean) => void }) {
+  const { language, setLanguage } = useGameStore();
+  const t = Translations[language];
   const [tab, setTab] = useState<'daily' | 'weekly' | 'alltime'>('daily');
+  const [showLangMenu, setShowLangMenu] = useState(false);
   const [scores, setScores] = useState<Leaderboard.ScoreEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const personalBest = Leaderboard.getPersonalBest();
@@ -268,11 +225,14 @@ function MenuScreen({ startGame }: { startGame: (asDev?: boolean) => void }) {
     }
   }, [muteAudio]);
 
-  const tabLabels = { daily: 'GÜNLÜK', weekly: 'HAFTALIK', alltime: 'TÜM ZAMANLAR' };
+  const tabLabels = { daily: t.menu_daily_tab, weekly: t.menu_weekly_tab, alltime: t.menu_alltime_tab };
 
   return (
     <div className="min-h-[100dvh] bg-[#F5F5F7] text-[#1D1D1F] flex flex-col items-center justify-center font-sans selection:bg-neutral-200 p-4 md:p-6 relative overflow-hidden">
       
+      {/* DAILY REWARD - TOP LEFT */}
+      <DailyRewardButton />
+
       {/* DEV BUTTON - TOP RIGHT */}
       <div className="absolute top-4 right-4 z-10">
         <button 
@@ -296,13 +256,45 @@ function MenuScreen({ startGame }: { startGame: (asDev?: boolean) => void }) {
         </motion.div>
 
         <h1 className="text-6xl font-black tracking-tighter mb-2 text-[#1D1D1F]">ZEKA</h1>
-        <p className="text-lg text-neutral-400 font-semibold mb-10 tracking-widest uppercase">Zihin Bulmacası</p>
+        <p className="text-lg text-neutral-400 font-semibold mb-6 tracking-widest uppercase">{t.menu_subtitle}</p>
         
+        {/* LANGUAGE SWITCHER */}
+        <div className="relative w-fit mx-auto mb-6 z-20">
+          <button 
+            onClick={() => setShowLangMenu(!showLangMenu)}
+            className="flex items-center justify-between gap-3 px-4 py-2 bg-white border border-neutral-200 rounded-xl shadow-sm text-xs font-bold tracking-widest uppercase hover:bg-neutral-50 hover:border-neutral-300 transition-all text-[#1D1D1F]"
+          >
+            <span>{language}</span>
+            <Icons.ChevronDown className={`w-3 h-3 transition-transform ${showLangMenu ? 'rotate-180' : ''}`} />
+          </button>
+          
+          <AnimatePresence>
+            {showLangMenu && (
+              <motion.div 
+                initial={{ opacity: 0, y: -5, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -5, scale: 0.95 }}
+                className="absolute top-10 inset-x-0 w-full bg-white border border-neutral-200 rounded-xl shadow-xl overflow-hidden flex flex-col items-stretch"
+              >
+                {(['en', 'tr', 'de', 'ja', 'pt'] as LanguageCode[]).map(lang => (
+                  <button 
+                    key={lang} 
+                    onClick={() => { setLanguage(lang); setShowLangMenu(false); }}
+                    className={`py-2 text-xs font-bold tracking-widest uppercase transition-colors ${language === lang ? 'bg-neutral-100 text-amber-500' : 'text-neutral-500 hover:bg-neutral-50 hover:text-[#1D1D1F]'}`}
+                  >
+                    {lang}
+                  </button>
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
         <button 
           onClick={() => startGame(false)}
           className="w-full py-6 bg-[#1D1D1F] text-white rounded-full font-bold tracking-[0.2em] text-xl shadow-[0_10px_30px_rgba(0,0,0,0.2)] hover:scale-105 active:scale-95 transition-all"
         >
-          BAŞLA
+          {t.menu_start}
         </button>
 
         {/* BOTTOM ACTION BUTTONS */}
@@ -320,8 +312,8 @@ function MenuScreen({ startGame }: { startGame: (asDev?: boolean) => void }) {
 
         {personalBest && (
           <div className="mt-8 text-center opacity-70">
-            <span className="text-[10px] font-black text-amber-500 tracking-widest uppercase block mb-1">KİŞİSEL REKOR</span>
-            <span className="text-lg font-black text-neutral-800 tracking-wide">Bölüm {personalBest.level}</span>
+            <span className="text-[10px] font-black text-amber-500 tracking-widest uppercase block mb-1">{t.personal_best}</span>
+            <span className="text-lg font-black text-neutral-800 tracking-wide">{t.level} {personalBest.level}</span>
           </div>
         )}
       </motion.div>
@@ -336,60 +328,60 @@ function MenuScreen({ startGame }: { startGame: (asDev?: boolean) => void }) {
               exit={{ scale: 0.95, opacity: 0, transition: { duration: 0.1 } }}
               className="bg-white rounded-3xl p-5 w-full max-w-[340px] shadow-2xl relative"
             >
-              <h2 className="text-xl font-black mb-3">Hakkında</h2>
+              <h2 className="text-xl font-black mb-3">{t.info_title}</h2>
               <p className="text-xs font-medium text-neutral-600 mb-4 leading-relaxed">
-                ZEKA, hafıza ve dikkati zorlayan minimalist bir zihin bulmacasıdır. Her tur ekranda beliren şekillerin matematiksel değerini akıldan hesapla ve ilerle!
+                {t.info_desc}
               </p>
 
               <div className="grid grid-cols-5 gap-1 mb-6 bg-neutral-50 rounded-2xl p-2 md:p-3 border border-neutral-100 place-items-center">
                 <div className="flex flex-col items-center gap-1">
                   <div className="w-8 h-8 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center scale-90 md:scale-100"><SymbolDisplay type="CircleFilled" /></div>
-                  <span className="text-[8px] md:text-[9px] font-bold text-neutral-500 text-center tracking-tighter leading-tight">+1/-1<br/>Daire</span>
+                  <span className="text-[8px] md:text-[9px] font-bold text-neutral-500 text-center tracking-tighter leading-tight whitespace-pre-line">{t.info_sym1}</span>
                 </div>
                 <div className="flex flex-col items-center gap-1">
                   <div className="w-8 h-8 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center scale-90 md:scale-100"><SymbolDisplay type="TriangleUp" /></div>
-                  <span className="text-[8px] md:text-[9px] font-bold text-neutral-500 text-center tracking-tighter leading-tight">+1/-1<br/>Üçgen</span>
+                  <span className="text-[8px] md:text-[9px] font-bold text-neutral-500 text-center tracking-tighter leading-tight whitespace-pre-line">{t.info_sym2}</span>
                 </div>
                 <div className="flex flex-col items-center gap-1">
                   <div className="w-8 h-8 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center scale-90 md:scale-100"><SymbolDisplay type="Prev1" /></div>
-                  <span className="text-[8px] md:text-[9px] font-bold text-neutral-500 text-center tracking-tighter leading-tight">1 Önceki<br/>Cevap</span>
+                  <span className="text-[8px] md:text-[9px] font-bold text-neutral-500 text-center tracking-tighter leading-tight whitespace-pre-line">{t.info_sym3}</span>
                 </div>
                 <div className="flex flex-col items-center gap-1">
                   <div className="w-8 h-8 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center scale-90 md:scale-100"><SymbolDisplay type="Prev2" /></div>
-                  <span className="text-[8px] md:text-[9px] font-bold text-neutral-500 text-center tracking-tighter leading-tight">2 Önceki<br/>Cevap</span>
+                  <span className="text-[8px] md:text-[9px] font-bold text-neutral-500 text-center tracking-tighter leading-tight whitespace-pre-line">{t.info_sym4}</span>
                 </div>
                 <div className="flex flex-col items-center gap-1">
                   <div className="w-8 h-8 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center scale-90 md:scale-100"><SymbolDisplay type="Mul2" /></div>
-                  <span className="text-[8px] md:text-[9px] font-bold text-neutral-500 text-center tracking-tighter leading-tight">Çarpı<br/>İki</span>
+                  <span className="text-[8px] md:text-[9px] font-bold text-neutral-500 text-center tracking-tighter leading-tight whitespace-pre-line">{t.info_sym5}</span>
                 </div>
                 <div className="flex flex-col items-center gap-1">
                   <div className="w-8 h-8 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center scale-90 md:scale-100"><SymbolDisplay type="Div2" /></div>
-                  <span className="text-[8px] md:text-[9px] font-bold text-neutral-500 text-center tracking-tighter leading-tight">Bölü<br/>İki</span>
+                  <span className="text-[8px] md:text-[9px] font-bold text-neutral-500 text-center tracking-tighter leading-tight whitespace-pre-line">{t.info_sym6}</span>
                 </div>
                 <div className="flex flex-col items-center gap-1">
                   <div className="w-8 h-8 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center scale-90 md:scale-100"><SymbolDisplay type="ReverseNext" /></div>
-                  <span className="text-[8px] md:text-[9px] font-bold text-neutral-500 text-center tracking-tighter leading-tight">Tersine<br/>Çevir</span>
+                  <span className="text-[8px] md:text-[9px] font-bold text-neutral-500 text-center tracking-tighter leading-tight whitespace-pre-line">{t.info_sym7}</span>
                 </div>
                 <div className="flex flex-col items-center gap-1">
                   <div className="w-8 h-8 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center scale-90 md:scale-100"><SymbolDisplay type="Star" /></div>
-                  <span className="text-[8px] md:text-[9px] font-bold text-neutral-500 text-center tracking-tighter leading-tight">Sıfırlar</span>
+                  <span className="text-[8px] md:text-[9px] font-bold text-neutral-500 text-center tracking-tighter leading-tight whitespace-pre-line">{t.info_sym8}</span>
                 </div>
                 <div className="flex flex-col items-center gap-1">
                   <div className="w-8 h-8 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center scale-90 md:scale-100"><SymbolDisplay type="InvertAll" /></div>
-                  <span className="text-[8px] md:text-[9px] font-bold text-neutral-500 text-center tracking-tighter leading-tight">Tümünü<br/>Tersle</span>
+                  <span className="text-[8px] md:text-[9px] font-bold text-neutral-500 text-center tracking-tighter leading-tight whitespace-pre-line">{t.info_sym9}</span>
                 </div>
                 <div className="flex flex-col items-center gap-1">
                   <div className="w-8 h-8 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center scale-90 md:scale-100"><SymbolDisplay type="Heart" /></div>
-                  <span className="text-[8px] md:text-[9px] font-bold text-neutral-500 text-center tracking-tighter leading-tight">Eksi<br/>Koruma</span>
+                  <span className="text-[8px] md:text-[9px] font-bold text-neutral-500 text-center tracking-tighter leading-tight whitespace-pre-line">{t.info_sym10}</span>
                 </div>
               </div>
 
               <div className="text-center mb-6">
-                 <span className="text-[10px] font-black tracking-widest text-neutral-400 uppercase block mb-1">GELİŞTİRİCİ</span>
+                 <span className="text-[10px] font-black tracking-widest text-neutral-400 uppercase block mb-1">{t.info_dev}</span>
                  <span className="text-sm font-bold text-[#1D1D1F]">ARCN Games</span>
               </div>
               <button onClick={() => setShowInfo(false)} className="w-full py-3 bg-neutral-100 text-neutral-800 rounded-xl font-bold tracking-wider text-sm hover:bg-neutral-200">
-                KAPAT
+                {t.info_close}
               </button>
             </motion.div>
           </div>
@@ -407,7 +399,7 @@ function MenuScreen({ startGame }: { startGame: (asDev?: boolean) => void }) {
               className="bg-white rounded-3xl w-full max-w-[360px] shadow-2xl flex flex-col overflow-hidden max-h-[85dvh]"
             >
               <div className="flex justify-between items-center p-4 border-b border-neutral-100 shrink-0">
-                <h2 className="text-xl font-black text-[#1D1D1F] flex items-center gap-2"><Icons.Trophy className="w-6 h-6 text-amber-500"/> SKOR TABLOSU</h2>
+                <h2 className="text-xl font-black text-[#1D1D1F] flex items-center gap-2"><Icons.Trophy className="w-6 h-6 text-amber-500"/> {t.lb_title}</h2>
                 <button onClick={() => setShowLeaderboard(false)} className="w-8 h-8 flex items-center justify-center bg-neutral-100 rounded-full hover:bg-neutral-200">
                   <span className="font-bold text-neutral-500 text-xs">✕</span>
                 </button>
@@ -429,12 +421,12 @@ function MenuScreen({ startGame }: { startGame: (asDev?: boolean) => void }) {
                 {loading ? (
                   <div className="flex flex-col items-center justify-center h-full min-h-[250px] gap-3">
                     <div className="w-8 h-8 border-4 border-neutral-200 border-t-[#1D1D1F] rounded-full animate-spin"></div>
-                    <span className="text-[10px] font-bold text-neutral-400 tracking-widest uppercase">Yükleniyor...</span>
+                    <span className="text-[10px] font-bold text-neutral-400 tracking-widest uppercase">{t.lb_loading}</span>
                   </div>
                 ) : scores.length === 0 ? (
                   <div className="text-center flex flex-col items-center justify-center h-full min-h-[250px]">
                     <span className="text-4xl mb-3 block">🎯</span>
-                    <p className="text-neutral-400 font-semibold text-sm">Henüz skor yok</p>
+                    <p className="text-neutral-400 font-semibold text-sm">{t.lb_empty}</p>
                   </div>
                 ) : (
                   <div className="space-y-2">
@@ -451,7 +443,7 @@ function MenuScreen({ startGame }: { startGame: (asDev?: boolean) => void }) {
                           <span className="text-[9px] sm:text-[10px] text-neutral-400 font-medium">{Leaderboard.formatDate(entry.created_at)}</span>
                         </div>
                         <div className="text-right shrink-0">
-                          <span className="font-black text-xs sm:text-sm block">Blm {entry.level}</span>
+                          <span className="font-black text-xs sm:text-sm block">{t.lb_b_level} {entry.level}</span>
                           <span className="text-[9px] sm:text-[10px] text-neutral-400 font-semibold">{Leaderboard.formatTime(entry.total_time)}</span>
                         </div>
                       </div>
@@ -467,10 +459,128 @@ function MenuScreen({ startGame }: { startGame: (asDev?: boolean) => void }) {
   );
 }
 
+function DailyRewardButton() {
+  const { lastRewardTime, dailyRewardsToday, claimDailyReward, language } = useGameStore();
+  const t = Translations[language];
+  const [showModal, setShowModal] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [isWatching, setIsWatching] = useState(false);
+
+  const COOLDOWN_MS = 3 * 60 * 60 * 1000;
+  const timePassed = lastRewardTime ? Date.now() - lastRewardTime : COOLDOWN_MS;
+  const canClaim = dailyRewardsToday < 3 && timePassed >= COOLDOWN_MS;
+
+  const getTimeRemaining = () => {
+    if (!lastRewardTime) return "";
+    const remaining = COOLDOWN_MS - timePassed;
+    const hours = Math.floor(remaining / (60 * 60 * 1000));
+    const mins = Math.floor((remaining % (60 * 60 * 1000)) / (60 * 1000));
+    return `${hours > 0 ? hours + 's ' : ''}${mins}dk`;
+  };
+
+  const handleWatch = async () => {
+    setIsWatching(true);
+    const result = await Ads.showRewardedAd();
+    setIsWatching(false);
+    if (result.success) {
+      claimDailyReward();
+      setShowModal(false);
+      setShowSuccess(true);
+      playSound('success');
+    }
+  };
+
+  return (
+    <>
+      <div className="absolute top-4 left-4 z-10">
+        <motion.button 
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={() => setShowModal(true)}
+          className={`flex items-center gap-2 px-3 py-2 rounded-2xl shadow-sm border transition-all ${canClaim ? 'bg-amber-100 border-amber-200 text-amber-700' : 'bg-white border-neutral-100 text-neutral-400'}`}
+        >
+          <div className={`p-1 rounded-lg ${canClaim ? 'bg-amber-400 text-white animate-pulse' : 'bg-neutral-100 text-neutral-300'}`}>
+            <Icons.Coins className="w-4 h-4" />
+          </div>
+          <div className="flex flex-col items-start leading-none">
+            <span className="text-[10px] font-black tracking-tight uppercase">{t.daily_reward}</span>
+            <span className="text-[9px] font-bold opacity-70">
+              {canClaim ? t.daily_reward_claim : (dailyRewardsToday >= 3 ? t.daily_reward_done : `${getTimeRemaining()}${t.daily_reward_wait}`)}
+            </span>
+          </div>
+        </motion.button>
+      </div>
+
+      <AnimatePresence>
+        {showModal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <motion.div 
+               initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
+               className="bg-white rounded-[2rem] p-6 w-full max-w-[320px] shadow-2xl text-center"
+            >
+              <div className="w-16 h-16 bg-amber-100 text-amber-500 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-amber-200">
+                <Icons.Coins className="w-10 h-10" />
+              </div>
+              <h2 className="text-2xl font-black mb-2">{t.daily_gift_title}</h2>
+              <p className="text-sm text-neutral-500 mb-6 font-medium leading-relaxed">
+                {t.daily_gift_desc?.split('100')[0]}<strong className="text-amber-500">100 Coin</strong>{t.daily_gift_desc?.split('100')[1]}
+              </p>
+              
+              <div className="space-y-3">
+                <div className="flex justify-between items-center text-[10px] font-black tracking-widest text-neutral-400 uppercase border-b border-neutral-50 pb-2 mb-2">
+                  <span>{t.daily_gift_status}</span>
+                  <span className="text-neutral-800">{dailyRewardsToday}/3</span>
+                </div>
+
+                {canClaim ? (
+                  <button 
+                    onClick={handleWatch}
+                    disabled={isWatching}
+                    className="w-full py-4 bg-[#1D1D1F] text-white rounded-2xl font-bold tracking-widest text-sm flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all shadow-lg"
+                  >
+                    {isWatching ? <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" /> : <><Icons.Play className="w-4 h-4" /> {t.daily_gift_watch}</>}
+                  </button>
+                ) : (
+                  <div className="w-full py-4 bg-neutral-100 text-neutral-400 rounded-2xl font-bold tracking-widest text-sm italic">
+                    {dailyRewardsToday >= 3 ? t.daily_gift_limit : `${getTimeRemaining()}${t.daily_gift_comeback}`}
+                  </div>
+                )}
+                
+                <button onClick={() => setShowModal(false)} className="w-full py-3 text-neutral-400 font-bold text-xs uppercase hover:text-neutral-600 transition">{t.daily_gift_close}</button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+
+        {showSuccess && (
+          <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <motion.div 
+               initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 50, opacity: 0 }}
+               className="bg-white rounded-[2rem] p-8 w-full max-w-[300px] shadow-2xl text-center border-b-8 border-amber-400"
+            >
+              <div className="text-5xl mb-4">✨</div>
+              <h3 className="text-2xl font-black mb-1">{t.congrats_title}</h3>
+              <p className="text-neutral-500 font-bold mb-6 text-sm">{t.congrats_desc}</p>
+              <button 
+                onClick={() => setShowSuccess(false)}
+                className="w-full py-4 bg-amber-400 text-white rounded-2xl font-black tracking-widest text-sm shadow-lg shadow-amber-200"
+              >
+                {t.congrats_btn}
+              </button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+    </>
+  );
+}
+
 // ─── GAME OVER SCREEN ──────────────────────────────────────
-function GameOverScreen({ level, totalTimeSpent, expected, isDevMode, goToMenu }: {
-  level: number; totalTimeSpent: number; expected: number; isDevMode: boolean; goToMenu: () => void;
+function GameOverScreen({ level, totalTimeSpent, expected, isDevMode, hasRevivedInCurrentGame, goToMenu }: {
+  level: number; totalTimeSpent: number; expected: number; isDevMode: boolean; hasRevivedInCurrentGame: boolean; goToMenu: () => void;
 }) {
+  const { language } = useGameStore();
+  const t = Translations[language];
   const hasSavedName = !!Leaderboard.getPlayerName();
   const [playerName, setPlayerName] = useState(Leaderboard.getPlayerName() || '');
   const [showInput, setShowInput] = useState(!hasSavedName);
@@ -490,7 +600,7 @@ function GameOverScreen({ level, totalTimeSpent, expected, isDevMode, goToMenu }
   const handleSaveScore = async () => {
     if (isDevMode) { goToMenu(); return; }
     const name = playerName.trim();
-    if (!name) { setErrorMsg('Takma ad boş olamaz.'); return; }
+    if (!name) { setErrorMsg(t.name_empty); return; }
     
     setIsChecking(true);
     setErrorMsg('');
@@ -499,98 +609,129 @@ function GameOverScreen({ level, totalTimeSpent, expected, isDevMode, goToMenu }
     if (name !== savedName) {
       const taken = await Leaderboard.isNameTaken(name);
       if (taken) {
-        setErrorMsg('Bu takma ad başkası tarafından kullanılıyor!');
+        setErrorMsg(t.name_taken);
         setIsChecking(false);
         return;
       }
     }
 
-    Leaderboard.setPlayerName(name);
     await Leaderboard.addScore(name, level, totalTimeSpent);
     setSaved(true);
     setIsChecking(false);
   };
 
+  const [isWatchingRevive, setIsWatchingRevive] = useState(false);
+  const { reviveGame } = useGameStore();
+
+  const handleRevive = async () => {
+    setIsWatchingRevive(true);
+    const result = await Ads.showRewardedAd();
+    setIsWatchingRevive(false);
+    if (result.success) {
+      reviveGame();
+    }
+  };
+
   return (
-    <div className="min-h-[100dvh] bg-[#F5F5F7] text-[#1D1D1F] flex flex-col items-center justify-center font-sans selection:bg-neutral-200 p-4 md:p-6">
-      <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="text-center bg-white p-6 md:p-8 rounded-[2rem] shadow-2xl w-full max-w-sm border border-neutral-100 relative overflow-hidden">
-        <div className="absolute top-0 inset-x-0 h-3 bg-red-500"></div>
+    <div className="min-h-[100dvh] bg-[#F5F5F7] text-[#1D1D1F] flex flex-col items-center justify-center font-sans selection:bg-neutral-200 p-2 sm:p-4">
+      <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="text-center bg-white p-5 sm:p-6 rounded-[2rem] shadow-2xl w-full max-w-[320px] border border-neutral-100 relative overflow-hidden">
+        <div className="absolute top-0 inset-x-0 h-2 bg-red-500"></div>
         
         {isNewBest && (
           <motion.div initial={{ scale: 0, y: -20 }} animate={{ scale: 1, y: 0 }} 
-            className="bg-amber-50 border-2 border-amber-200 text-amber-700 rounded-full px-4 py-2 inline-flex items-center gap-2 font-bold text-xs tracking-widest mb-4 mt-2"
+            className="bg-amber-50 border border-amber-200 text-amber-700 rounded-full px-3 py-1 inline-flex items-center gap-1.5 font-bold text-[10px] tracking-widest mb-3 mt-1"
           >
-            <span className="text-lg">🏆</span> YENİ KİŞİSEL REKOR!
+            <span>🏆</span> {t.gameover_newbest}
           </motion.div>
         )}
 
-        <h1 className="text-4xl md:text-5xl font-black tracking-tighter mb-2 text-red-500 mt-2">OYUN BİTTİ</h1>
-        <p className="text-sm text-neutral-500 font-medium mb-6 leading-snug">
-          Doğru cevap: <strong className="text-black text-xl ml-1">{expected > 0 ? `+${expected}` : expected}</strong>
+        <h1 className="text-3xl font-black tracking-tighter mb-1 text-red-500 mt-1">{t.gameover_title}</h1>
+        <p className="text-[11px] text-neutral-400 font-bold mb-4 uppercase tracking-tight">
+          {t.gameover_correct} <strong className="text-black text-lg ml-1">{expected > 0 ? `+${expected}` : expected}</strong>
         </p>
 
-        <div className="flex flex-col gap-2 mb-6 text-left bg-neutral-50 p-4 rounded-xl border border-neutral-100">
+        <div className="flex flex-col gap-1 mb-4 text-left bg-neutral-50 p-3 rounded-2xl border border-neutral-100">
           <div className="flex justify-between items-center">
-            <span className="text-neutral-500 font-bold text-xs tracking-widest">ULAŞILAN BÖLÜM</span>
-            <span className="text-2xl font-black">{level}</span>
+            <span className="text-neutral-400 font-bold text-[9px] tracking-widest uppercase">{t.gameover_reached}</span>
+            <span className="text-xl font-black">{level}</span>
           </div>
-          <div className="border-t border-neutral-200/60 my-1"></div>
+          <div className="border-t border-neutral-200/40 my-0.5"></div>
           <div className="flex justify-between items-center">
-            <span className="text-neutral-500 font-bold text-xs tracking-widest">TOPLAM SÜRE</span>
-            <span className="text-2xl font-black">{isDevMode ? 'N/A' : Leaderboard.formatTime(totalTimeSpent)}</span>
+            <span className="text-neutral-400 font-bold text-[9px] tracking-widest uppercase">{t.gameover_time}</span>
+            <span className="text-xl font-black">{isDevMode ? 'N/A' : Leaderboard.formatTime(totalTimeSpent)}</span>
           </div>
         </div>
 
         {!saved && !isDevMode ? (
           <div className="mb-2">
             {showInput ? (
-              <div className="mb-4">
-                <label className="block text-[10px] font-black text-neutral-400 tracking-widest uppercase mb-2 text-left">TAKMA ADIN</label>
+              <div className="mb-3">
                 <input 
                   value={playerName}
                   onChange={e => setPlayerName(e.target.value)}
-                  placeholder="Efsane ismini gir..."
+                  placeholder={t.gameover_name_placeholder}
                   maxLength={15}
-                  className="w-full px-4 py-3 rounded-xl bg-neutral-50 border border-neutral-200 font-bold text-center text-lg outline-none focus:border-amber-400 focus:bg-white transition"
+                  className="w-full px-4 py-2.5 rounded-xl bg-neutral-50 border border-neutral-200 font-bold text-center text-sm outline-none focus:border-amber-400 focus:bg-white transition"
                   onKeyDown={e => { if(e.key === 'Enter') handleSaveScore(); }}
                 />
                 <AnimatePresence>
-                  {errorMsg && <motion.p initial={{opacity:0, y:-5}} animate={{opacity:1, y:0}} className="text-red-500 text-[11px] mt-2 font-bold">{errorMsg}</motion.p>}
+                  {errorMsg && <motion.p initial={{opacity:0, y:-5}} animate={{opacity:1, y:0}} className="text-red-500 text-[10px] mt-1 font-bold">{errorMsg}</motion.p>}
                 </AnimatePresence>
               </div>
             ) : (
-              <div className="mb-4 bg-neutral-100 rounded-xl px-4 py-3 flex items-center justify-between">
-                <div>
-                   <span className="block text-[10px] font-black text-neutral-400 tracking-widest uppercase text-left mb-0.5">OYUNCU KİMLİĞİN</span>
-                   <span className="font-bold text-sm block truncate text-left">{playerName}</span>
-                </div>
-                <button onClick={() => setShowInput(true)} className="text-[10px] font-bold text-amber-500 underline uppercase tracking-wider shrink-0 ml-2">İsim<br/>Değiştir</button>
+              <div className="mb-3 bg-neutral-100 rounded-xl px-3 py-2 flex items-center justify-between">
+                <span className="font-bold text-[11px] block truncate text-left">{playerName}</span>
+                <button onClick={() => setShowInput(true)} className="text-[9px] font-bold text-amber-500 underline uppercase tracking-wider shrink-0 ml-2">{t.gameover_name_change}</button>
               </div>
             )}
             
             <button 
               onClick={handleSaveScore}
               disabled={isChecking}
-              className={`w-full py-4 text-white rounded-full font-bold tracking-[0.2em] text-sm shadow-[0_10px_30px_rgba(0,0,0,0.2)] transition-all ${isChecking ? 'bg-neutral-400 scale-95 pointer-events-none' : 'bg-[#1D1D1F] hover:scale-105 active:scale-95'}`}
+              className={`w-full py-3.5 text-white rounded-2xl font-black tracking-widest text-xs shadow-lg transition-all ${isChecking ? 'bg-neutral-400 scale-95 pointer-events-none' : 'bg-[#1D1D1F] hover:scale-[1.02] active:scale-95'}`}
             >
-              {isChecking ? 'KONTROL EDİLİYOR...' : 'SKORU KAYDET VE PAYLAŞ'}
+              {isChecking ? t.gameover_save_checking : t.gameover_save_btn}
             </button>
             
             <button 
               onClick={goToMenu}
-              className="w-full mt-3 py-2 text-[10px] font-bold tracking-widest text-neutral-400 uppercase hover:text-neutral-700 transition"
+              className="w-full mt-2.5 py-1 text-[9px] font-bold tracking-widest text-neutral-400 uppercase hover:text-neutral-700 transition"
             >
-              ATLA (SADECE CİHAZDA KALSIN)
+              {t.gameover_skip}
             </button>
           </div>
         ) : (
           <button 
             onClick={() => goToMenu()}
-            className="w-full py-4 bg-[#1D1D1F] text-white rounded-full font-bold tracking-[0.2em] text-sm shadow-[0_10px_30px_rgba(0,0,0,0.2)] hover:scale-105 active:scale-95 transition-all mt-2"
+            className="w-full py-3.5 bg-[#1D1D1F] text-white rounded-2xl font-black tracking-widest text-xs shadow-lg hover:scale-[1.02] active:scale-95 transition-all mt-1"
           >
-            ANA MENÜ
+            {t.gameover_menu}
           </button>
         )}
+
+        <div className="mt-4 pt-4 border-t border-neutral-100 w-full">
+          {!hasRevivedInCurrentGame ? (
+            <>
+              <p className="text-[9px] font-black text-amber-500 uppercase tracking-widest mb-2">{t.gameover_revive_title}</p>
+              <button 
+                onClick={handleRevive}
+                disabled={isWatchingRevive}
+                className="w-full py-3.5 bg-gradient-to-r from-amber-400 to-orange-400 text-white rounded-2xl font-black tracking-widest text-xs flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-amber-100"
+              >
+                {isWatchingRevive ? (
+                  <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                ) : (
+                  <><Icons.Play className="w-4 h-4" /> {t.gameover_revive_btn}</>
+                )}
+              </button>
+            </>
+          ) : (
+            <div className="py-2 px-3 bg-neutral-100 rounded-xl">
+              <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-tight">{t.gameover_revive_used_title}</p>
+              <p className="text-[9px] text-neutral-400 mt-1">{t.gameover_revive_used_desc}</p>
+            </div>
+          )}
+        </div>
       </motion.div>
     </div>
   );
@@ -598,9 +739,10 @@ function GameOverScreen({ level, totalTimeSpent, expected, isDevMode, goToMenu }
 
 export default function App() {
   const { 
-    gameState, level, totalTimeSpent, currentValue, timeLeft, maxTime, coins, previousAnswers, hideIntro, isDevMode,
-    startNewLevel, setCurrentValue, tickTimer, addLevelTime, endGame, setHideIntro, startGame, goToMenu, devAdvanceLevel
+    gameState, level, totalTimeSpent, currentValue, timeLeft, maxTime, coins, previousAnswers, hideIntro, isDevMode, hasRevivedInCurrentGame, language,
+    startNewLevel, setCurrentValue, tickTimer, addLevelTime, setHideIntro, startGame, goToMenu, devAdvanceLevel
   } = useGameStore();
+  const t = Translations[language];
 
   const [sequence, setSequence] = useState<SymbolType[]>([]);
   const [expected, setExpected] = useState<number>(0);
@@ -658,7 +800,7 @@ export default function App() {
 
   const handleGameOver = () => {
     playSound('fail');
-    endGame(); // Sets Gamestate to GAMEOVER
+    useGameStore.setState({ gameState: 'GAMEOVER' });
   };
 
   const handleLevelComplete = () => {
@@ -699,7 +841,16 @@ export default function App() {
   }
 
   if (gameState === 'GAMEOVER') {
-    return <GameOverScreen level={level} totalTimeSpent={totalTimeSpent} expected={expected} isDevMode={isDevMode} goToMenu={goToMenu} />;
+    return (
+      <GameOverScreen 
+        level={level} 
+        totalTimeSpent={totalTimeSpent} 
+        expected={expected} 
+        isDevMode={isDevMode} 
+        hasRevivedInCurrentGame={hasRevivedInCurrentGame}
+        goToMenu={goToMenu} 
+      />
+    );
   }
 
   return (
@@ -709,11 +860,11 @@ export default function App() {
       <header className="flex justify-between items-center px-4 py-3 md:p-6 w-full max-w-3xl mx-auto z-10 shrink-0">
         <div className="flex flex-col">
           <span className="text-4xl font-black tracking-tighter flex items-center gap-3">
-            BÖLÜM {level}
-            {isDevMode && <span className="text-xs bg-amber-500 text-white px-2 py-1 rounded-full font-bold tracking-widest uppercase">TEST</span>}
+            {t.header_level} {level}
+            {isDevMode && <span className="text-xs bg-amber-500 text-white px-2 py-1 rounded-full font-bold tracking-widest uppercase">{t.dev_test}</span>}
           </span>
           <span className="text-sm font-semibold tracking-widest text-neutral-500 mt-1 uppercase">
-            Toplam Süre: <span className="text-neutral-900">{isDevMode ? '∞' : `${totalTimeSpent.toFixed(2)}s`}</span>
+            {t.header_time} <span className="text-neutral-900">{isDevMode ? '∞' : `${totalTimeSpent.toFixed(2)}s`}</span>
           </span>
         </div>
         <div className="flex items-center gap-2 bg-white px-5 py-2 rounded-full shadow-sm border border-neutral-100">
@@ -729,10 +880,10 @@ export default function App() {
           {/* QUICK JUMP BAR */}
           <div className="w-full overflow-x-auto hide-scrollbar pb-1">
             <div className="flex items-center gap-2 min-w-max">
-              <span className="text-[10px] font-black text-amber-500 uppercase tracking-widest shrink-0 bg-amber-50 px-2 py-1 rounded">HIZLI ATLA</span>
-              <button onClick={() => devAdvanceLevel(1)} className="px-3 py-1.5 bg-neutral-200 rounded-lg text-[11px] font-bold transition hover:bg-neutral-300 shrink-0">Bölüm 1</button>
-              <button onClick={() => devAdvanceLevel(120)} className="px-3 py-1.5 bg-neutral-200 rounded-lg text-[11px] font-bold transition hover:bg-neutral-300 shrink-0">Bölüm 120 (Max)</button>
-              <button onClick={() => devAdvanceLevel(500)} className="px-3 py-1.5 bg-amber-200 rounded-lg text-[11px] font-bold shadow-sm transition hover:bg-amber-300 shrink-0">Bölüm 500 (Sonsuz)</button>
+              <span className="text-[10px] font-black text-amber-500 uppercase tracking-widest shrink-0 bg-amber-50 px-2 py-1 rounded">{t.dev_jump}</span>
+              <button onClick={() => devAdvanceLevel(1)} className="px-3 py-1.5 bg-neutral-200 rounded-lg text-[11px] font-bold transition hover:bg-neutral-300 shrink-0">{t.dev_jump_1}</button>
+              <button onClick={() => devAdvanceLevel(120)} className="px-3 py-1.5 bg-neutral-200 rounded-lg text-[11px] font-bold transition hover:bg-neutral-300 shrink-0">{t.dev_jump_max}</button>
+              <button onClick={() => devAdvanceLevel(500)} className="px-3 py-1.5 bg-amber-200 rounded-lg text-[11px] font-bold shadow-sm transition hover:bg-amber-300 shrink-0">{t.dev_jump_inf}</button>
               
               <div className="flex shrink-0 border border-neutral-300 rounded-lg overflow-hidden">
                 <input 
@@ -757,25 +908,26 @@ export default function App() {
                   GİT
                 </button>
               </div>
-              <button onClick={() => goToMenu()} className="px-3 py-1.5 bg-red-100 text-red-600 rounded-lg text-[11px] font-bold transition hover:bg-red-200 shrink-0">DEV ÇIKIŞ</button>
+              <button onClick={() => goToMenu()} className="px-3 py-1.5 bg-red-100 text-red-600 rounded-lg text-[11px] font-bold transition hover:bg-red-200 shrink-0">EXIT DEV</button>
             </div>
           </div>
           
           {/* TUTORIALS BAR */}
           <div className="w-full overflow-x-auto hide-scrollbar pb-1">
             <div className="flex items-center gap-2 min-w-max">
-              <span className="text-[10px] font-black text-amber-500 uppercase tracking-widest shrink-0 bg-amber-50 px-2 py-1 rounded">MODALLAR</span>
+              <span className="text-[10px] font-black text-amber-500 uppercase tracking-widest shrink-0 bg-amber-50 px-2 py-1 rounded">MODALS</span>
               {[11, 36, 51, 61, 76, 91, 111, 131].map(lvl => (
                 <button key={lvl} onClick={() => devAdvanceLevel(lvl)} className="px-2 py-1 bg-white border border-neutral-200 rounded text-[10px] font-bold hover:bg-neutral-50 transition shrink-0 whitespace-nowrap">
-                  {TUTORIAL_CONTENT[lvl]?.title.split(':')[0] || `Bölüm ${lvl}`}
+                  {(t[('tut_' + lvl + '_title') as keyof typeof t])?.split(':')[0] || `Level ${lvl}`}
                 </button>
               ))}
             </div>
           </div>
 
-          <span className="font-semibold text-neutral-500 text-[11px]">Gerçek Cevap (Kopya): <strong className="text-amber-500 text-sm ml-1">{expected}</strong></span>
+          <span className="font-semibold text-neutral-500 text-[11px]">Reveal Answer: <strong className="text-amber-500 text-sm ml-1">{expected}</strong></span>
         </div>
       )}
+
 
       {/* MAIN PLAY AREA */}
       <main className="flex-1 min-h-0 flex flex-col items-center justify-center px-2 md:px-4 w-full max-w-4xl mx-auto relative z-10 pb-2">
@@ -855,7 +1007,7 @@ export default function App() {
             disabled={isPaused || showTutorialModal || showIntroModal}
             className={`px-10 py-3 md:px-16 md:py-5 bg-[#1D1D1F] text-white rounded-full font-bold tracking-[0.2em] text-sm md:text-lg shadow-[0_10px_30px_rgba(0,0,0,0.2)] hover:shadow-[0_20px_40px_rgba(0,0,0,0.3)] transition-all focus:outline-none focus:ring-4 focus:ring-neutral-200 ${isPaused || showTutorialModal || showIntroModal ? 'opacity-20 pointer-events-none scale-95' : 'opacity-100'}`}
           >
-            ONAYLA
+            {t.btn_submit}
           </motion.button>
         </div>
       </main>
@@ -887,8 +1039,8 @@ export default function App() {
             disabled={showTutorialModal || showIntroModal || isDevMode || (!isPaused && coins < 50)}
             className={`flex flex-col md:flex-row items-center justify-center gap-1 p-2 md:p-4 rounded-xl md:rounded-2xl shadow-sm border font-bold text-[9px] md:text-xs tracking-widest transition active:scale-95 disabled:opacity-30 disabled:pointer-events-none ${isPaused ? 'bg-amber-100 text-amber-900 border-amber-200' : 'bg-white border-neutral-100 hover:bg-neutral-50'}`}
           >
-            <span>{isPaused ? 'DEVAM ET' : 'DURDUR'}</span>
-            <span className="text-[8px] md:text-[10px] text-amber-600 bg-amber-50 px-1.5 py-0.5 md:py-1 rounded-full">{isDevMode || isPaused ? 'ÜCRTSZ' : '50C'}</span>
+            <span>{isPaused ? t.btn_resume : t.btn_pause}</span>
+            <span className="text-[8px] md:text-[10px] text-amber-600 bg-amber-50 px-1.5 py-0.5 md:py-1 rounded-full">{isDevMode || isPaused ? t.btn_free : '50C'}</span>
           </button>
           
           <button 
@@ -896,7 +1048,7 @@ export default function App() {
             disabled={isPaused || showTutorialModal || showIntroModal || isDevMode || coins < 10}
             className="flex flex-col md:flex-row items-center justify-center gap-1 p-2 md:p-4 rounded-xl md:rounded-2xl bg-white shadow-sm border border-neutral-100 font-bold text-[9px] md:text-xs tracking-widest hover:bg-neutral-50 transition active:scale-95 disabled:opacity-30 disabled:pointer-events-none"
           >
-            <span>+10 SN</span> 
+            <span>{t.btn_plus10}</span> 
             <span className="text-[8px] md:text-[10px] text-amber-600 bg-amber-50 px-1.5 py-0.5 md:py-1 rounded-full">10C</span>
           </button>
 
@@ -910,8 +1062,8 @@ export default function App() {
             disabled={isPaused || showTutorialModal || showIntroModal || (!showSolution && !isDevMode && coins < 50)}
             className="flex flex-col md:flex-row items-center justify-center gap-1 p-2 md:p-4 rounded-xl md:rounded-2xl bg-white shadow-sm border border-neutral-100 font-bold text-[9px] md:text-xs tracking-widest hover:bg-neutral-50 transition active:scale-95 disabled:opacity-30 disabled:pointer-events-none"
           >
-            <span>{showSolution ? 'GİZLE' : 'ÇÖZÜM'}</span>
-            <span className="text-[8px] md:text-[10px] text-amber-600 bg-amber-50 px-1.5 py-0.5 md:py-1 rounded-full">{isDevMode ? 'ÜCRTSZ' : '50C'}</span>
+            <span>{showSolution ? t.btn_hide : t.btn_reveal}</span>
+            <span className="text-[8px] md:text-[10px] text-amber-600 bg-amber-50 px-1.5 py-0.5 md:py-1 rounded-full">{isDevMode ? t.btn_free : '50C'}</span>
           </button>
         </div>
       </footer>
@@ -931,21 +1083,21 @@ export default function App() {
               animate={{ scale: 1, y: 0 }}
               className="bg-white p-5 md:p-8 rounded-3xl shadow-2xl max-w-[320px] w-full max-h-[85dvh] overflow-y-auto"
             >
-              <h2 className="text-xl font-black tracking-tight mb-4 text-[#1D1D1F]">NASIL OYNANIR?</h2>
+              <h2 className="text-xl font-black tracking-tight mb-4 text-[#1D1D1F]">{t.intro_title}</h2>
               <div className="flex justify-center gap-4 mb-5 bg-neutral-50 rounded-xl p-4 border border-neutral-100">
                 <div className="flex flex-col items-center gap-2">
                   <div className="p-2 bg-white border border-neutral-200 shadow-sm rounded-full"><SymbolDisplay type="CircleFilled" /></div>
                   <span className="font-bold text-lg text-green-600">+1</span>
-                  <span className="text-[10px] text-neutral-400 font-bold uppercase tracking-widest">Dolu</span>
+                  <span className="text-[10px] text-neutral-400 font-bold uppercase tracking-widest">{t.intro_full}</span>
                 </div>
                 <div className="flex flex-col items-center gap-2">
                   <div className="p-2 bg-white border border-neutral-200 shadow-sm rounded-full"><SymbolDisplay type="CircleEmpty" /></div>
                   <span className="font-bold text-lg text-red-500">-1</span>
-                  <span className="text-[10px] text-neutral-400 font-bold uppercase tracking-widest">Boş</span>
+                  <span className="text-[10px] text-neutral-400 font-bold uppercase tracking-widest">{t.intro_empty}</span>
                 </div>
               </div>
               <p className="text-neutral-500 font-medium leading-relaxed mb-6 text-xs md:text-sm px-1">
-                Ekranda gördüğün dizginin toplam değerini zihninden hesapla. Alt taraftaki dev oklara dokunarak kendi cevabını ekrana yaz ve ONAYLA'ya bas!
+                {t.intro_p1}
               </p>
               
               <div className="flex items-center justify-center gap-2 mb-6 bg-neutral-100/50 p-3 rounded-lg cursor-pointer" onClick={() => setIntroCheckbox(!introCheckbox)}>
@@ -956,7 +1108,7 @@ export default function App() {
                   onClick={(e) => e.stopPropagation()}
                   className="w-4 h-4 accent-[#1D1D1F] cursor-pointer"
                 />
-                <label className="font-bold tracking-wide text-[10px] text-neutral-600 cursor-pointer select-none uppercase">Tekrar Gösterme</label>
+                <label className="font-bold tracking-wide text-[10px] text-neutral-600 cursor-pointer select-none uppercase">{t.intro_checkbox}</label>
               </div>
 
               <button 
@@ -967,7 +1119,7 @@ export default function App() {
                 }}
                 className="w-full py-3.5 bg-[#1D1D1F] text-white rounded-full font-bold tracking-[0.2em] shadow-xl hover:scale-105 active:scale-95 transition-all text-xs"
               >
-                ANLADIM, BAŞLA!
+                {t.intro_btn}
               </button>
             </motion.div>
           </motion.div>
@@ -988,7 +1140,7 @@ export default function App() {
             >
               <div className="px-3 py-1.5 bg-amber-100 text-amber-600 rounded-full font-bold tracking-widest text-[10px] mb-6 uppercase flex items-center gap-2 shrink-0">
                 <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
-                DİKKAT! YENİ KURAL!
+                {t.tut_attention}
               </div>
 
               <div className="flex justify-center flex-wrap gap-2 mb-6 shrink-0">
@@ -1000,19 +1152,19 @@ export default function App() {
               </div>
 
               <h2 className="text-lg font-black text-[#1D1D1F] mb-2 tracking-tighter shrink-0">
-                {TUTORIAL_CONTENT[level]?.title || "YENİ BİR KURAL"}
+                {t[('tut_' + level + '_title') as LanguageCode] || "YENİ BİR KURAL"}
               </h2>
 
               <p className="text-neutral-500 font-medium leading-relaxed mb-4 text-[12px] max-w-[280px] shrink-0">
-                {TUTORIAL_CONTENT[level]?.desc || "Bu yeni kural oyunun matematğini değiştirecek!"}
+                {t[('tut_' + level + '_desc') as LanguageCode] || "Bu yeni kural oyunun matematiğini değiştirecek!"}
               </p>
 
-              {TUTORIAL_CONTENT[level]?.exampleSequence && (
+              {TUTORIAL_DATA[level]?.exampleSequence && (
                 <div className="shrink-0 w-full mb-4">
                   <TutorialExample 
-                    text={TUTORIAL_CONTENT[level].exampleText}
-                    sequence={TUTORIAL_CONTENT[level].exampleSequence}
-                    result={TUTORIAL_CONTENT[level].exampleResult}
+                    text={t[('tut_' + level + '_ex') as LanguageCode]}
+                    sequence={TUTORIAL_DATA[level].exampleSequence}
+                    result={TUTORIAL_DATA[level].exampleResult}
                   />
                 </div>
               )}
@@ -1024,7 +1176,7 @@ export default function App() {
                 }}
                 className="w-full py-3.5 bg-[#1D1D1F] text-white rounded-full font-bold tracking-[0.2em] shadow-xl hover:scale-105 active:scale-95 transition-all text-xs mt-auto shrink-0"
               >
-                MEYDAN OKUYORUM
+                {t.tut_btn}
               </button>
             </motion.div>
           </motion.div>
@@ -1036,7 +1188,7 @@ export default function App() {
             initial={{ y: -50, opacity: 0, x: '-50%' }} animate={{ y: 0, opacity: 1, x: '-50%' }} exit={{ y: -50, opacity: 0, x: '-50%' }}
             className="absolute top-20 md:top-24 left-1/2 bg-[#1D1D1F] text-white px-8 py-3 md:py-4 rounded-full font-bold shadow-2xl z-40 whitespace-nowrap tracking-wide text-sm md:text-base pointer-events-none"
           >
-            DOĞRU CEVAP: <span className="text-amber-400 ml-1">{expected}</span>
+            {t.solution_text} <span className="text-amber-400 ml-1">{expected}</span>
           </motion.div>
         )}
       </AnimatePresence>

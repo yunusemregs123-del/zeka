@@ -127,4 +127,22 @@ export const MusicOff = (props: IconProps) => (
     <path d="M2 2l20 20" />
   </svg>
 );
+export const Play = (props: IconProps) => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" {...props}>
+    <path d="M5 3l14 9-14 9V3z" />
+  </svg>
+);
 
+export const Coins = (props: IconProps) => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <circle cx="8" cy="8" r="6" />
+    <path d="M18 8a6 6 0 0 1-7.74 5.74" />
+    <path d="M10.26 18.26A6 6 0 1 1 16 8" />
+    <path d="M8 6v4M16 6v4" />
+  </svg>
+);
+export const ChevronDown = ({ className }: { className?: string }) => (
+  <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+  </svg>
+);
