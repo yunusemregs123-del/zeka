@@ -500,7 +500,7 @@ function DailyRewardButton() {
           className={`flex items-center gap-2 px-3 py-2 rounded-2xl shadow-sm border transition-all ${canClaim ? 'bg-amber-100 border-amber-200 text-amber-700' : 'bg-white border-neutral-100 text-neutral-400'}`}
         >
           <div className={`p-1 rounded-lg ${canClaim ? 'bg-amber-400 text-white animate-pulse' : 'bg-neutral-100 text-neutral-300'}`}>
-            <Icons.Coins className="w-4 h-4" />
+            <Icons.Gift className="w-4 h-4" />
           </div>
           <div className="flex flex-col items-start leading-none">
             <span className="text-[10px] font-black tracking-tight uppercase">{t.daily_reward}</span>
@@ -519,7 +519,7 @@ function DailyRewardButton() {
                className="bg-white rounded-[2rem] p-6 w-full max-w-[320px] shadow-2xl text-center"
             >
               <div className="w-16 h-16 bg-amber-100 text-amber-500 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-amber-200">
-                <Icons.Coins className="w-10 h-10" />
+                <Icons.Gift className="w-10 h-10" />
               </div>
               <h2 className="text-2xl font-black mb-2">{t.daily_gift_title}</h2>
               <p className="text-sm text-neutral-500 mb-6 font-medium leading-relaxed">
