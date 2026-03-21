@@ -123,10 +123,10 @@ export const MusicOn = (props: IconProps) => (
 
 export const MusicOff = (props: IconProps) => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-    <path d="M15 9V5l6-1v6.5" />
+    <path d="M9 18V5l12-2v13" />
     <circle cx="6" cy="18" r="3" />
-    <path d="M9 18V8.5" />
-    <path d="M2 2l20 20" />
+    <circle cx="18" cy="16" r="3" />
+    <path d="M3 3l18 18" strokeWidth="2.5" />
   </svg>
 );
 export const Play = (props: IconProps) => (
