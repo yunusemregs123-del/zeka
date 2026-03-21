@@ -149,7 +149,6 @@ function MenuScreen({ startGame }: { startGame: (asDev?: boolean) => void }) {
   const [showInfo, setShowInfo] = useState(false);
   const [muteAudio, setMuteAudio] = useState(localStorage.getItem('zeka_mute') === 'true');
   const logoControls = useAnimation();
-  const rippleControls = useAnimation();
 
   const toggleMute = () => {
     const newMute = !muteAudio;
@@ -176,11 +175,6 @@ function MenuScreen({ startGame }: { startGame: (asDev?: boolean) => void }) {
     if (ambientMusic) {
       ambientMusic.setOnBeat(() => {
          if (!muteAudio) {
-           rippleControls.start({
-             scale: [1, 1.4],
-             opacity: [0.3, 0],
-             transition: { duration: 0.6, ease: "easeOut" }
-           });
            logoControls.start({
              scale: [1, 1.06, 1],
              transition: { duration: 0.18, ease: "easeOut" }
@@ -218,7 +212,7 @@ function MenuScreen({ startGame }: { startGame: (asDev?: boolean) => void }) {
       ambientMusic?.stop();
       if (ambientMusic) ambientMusic.setOnBeat(undefined);
     };
-  }, [muteAudio, logoControls, rippleControls]);
+  }, [muteAudio, logoControls]);
 
   // Mute tuşuna basıldığında anında tepki
   useEffect(() => {
@@ -252,20 +246,14 @@ function MenuScreen({ startGame }: { startGame: (asDev?: boolean) => void }) {
       <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="text-center w-full max-w-sm z-0">
         
         {/* Rhythmic Bouncing Logo Syncing with Ambient Music */}
-        <div className="mx-auto w-fit mb-8 relative">
-          {/* Ripple effect */}
-          <motion.div
-            animate={rippleControls}
-            style={{ opacity: 0 }} // Hidden by default
-            className="absolute inset-0 border-[3px] border-[#1D1D1F]/50 rounded-[2.5rem]"
-          />
-          <motion.div 
-            animate={logoControls}
-            className="w-24 h-24 bg-[#1D1D1F] text-white rounded-[2.5rem] flex items-center justify-center shadow-[0_20px_40px_rgba(0,0,0,0.2)] transition-transform relative z-10"
-          >
+        <motion.div 
+          animate={logoControls}
+          className="mx-auto w-fit mb-8"
+        >
+          <div className="w-24 h-24 bg-[#1D1D1F] text-white rounded-[2.5rem] flex items-center justify-center shadow-[0_20px_40px_rgba(0,0,0,0.2)] transition-transform">
             <h1 className="text-5xl font-black">Z</h1>
-          </motion.div>
-        </div>
+          </div>
+        </motion.div>
 
         <h1 className="text-6xl font-black tracking-tighter mb-2 text-[#1D1D1F]">ZEKA</h1>
         <p className="text-lg text-neutral-400 font-semibold mb-6 tracking-widest uppercase">{t.menu_subtitle}</p>
