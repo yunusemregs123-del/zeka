@@ -250,7 +250,7 @@ function MenuScreen({ startGame }: { startGame: (asDev?: boolean) => void }) {
           animate={logoControls}
           className="mx-auto w-fit mb-8"
         >
-          <div className="w-24 h-24 bg-[#1D1D1F] text-white rounded-[2.5rem] flex items-center justify-center shadow-[0_20px_40px_rgba(0,0,0,0.2)] rotate-3 hover:rotate-6 transition-transform">
+          <div className="w-24 h-24 bg-[#1D1D1F] text-white rounded-[2.5rem] flex items-center justify-center shadow-[0_20px_40px_rgba(0,0,0,0.2)] transition-transform">
             <h1 className="text-5xl font-black">Z</h1>
           </div>
         </motion.div>
