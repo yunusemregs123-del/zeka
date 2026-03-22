@@ -689,6 +689,7 @@ function GameOverScreen({ level, totalTimeSpent, expected, isDevMode, hasRevived
     }
 
     await Leaderboard.addScore(name, level, totalTimeSpent);
+    Leaderboard.setPlayerName(name); // Persist name to device locally!
     setSaved(true);
     setIsChecking(false);
   };
