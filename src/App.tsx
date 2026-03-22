@@ -391,7 +391,7 @@ function MenuScreen({ startGame }: { startGame: (asDev?: boolean) => void }) {
               {/* Progress Bar */}
               <div className="mb-6 bg-neutral-50 p-4 rounded-2xl border border-neutral-100">
                 <div className="flex justify-between items-end mb-2">
-                  <span className="text-[10px] font-black text-neutral-400 uppercase tracking-widest">Kazanılanlar</span>
+                  <span className="text-[10px] font-black text-neutral-400 uppercase tracking-widest">{t.med_earned_title}</span>
                   <span className="text-lg font-black text-[#1D1D1F]">{medals.length} / 12</span>
                 </div>
                 <div className="h-2 w-full bg-neutral-200 rounded-full overflow-hidden">
@@ -455,11 +455,11 @@ function MenuScreen({ startGame }: { startGame: (asDev?: boolean) => void }) {
                         onClick={() => { claimMedalReward(selectedMedal.id, selectedMedal.reward); playSound('success'); }}
                         className="w-full py-4 bg-amber-400 text-white rounded-2xl font-black tracking-widest text-xs shadow-lg hover:scale-105 active:scale-95 transition-all mb-3"
                       >
-                         ÖDÜLÜ TOPLA
+                         {t.med_claim_btn}
                       </button>
                     ) : claimedMedals.includes(selectedMedal.id) ? (
                       <div className="w-full py-4 bg-neutral-100 text-neutral-400 rounded-2xl font-black tracking-widest text-xs mb-3">
-                         ÖDÜL ALINDI ✓
+                         {t.med_claimed_status}
                       </div>
                     ) : null}
 

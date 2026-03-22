@@ -127,6 +127,9 @@ export const Translations: Record<LanguageCode, Record<string, string>> = {
     med_help_10: "Strategic Mind", med_help_10_desc: "Use solution 10 times",
     med_mastery: "Master of ZEKA", med_mastery_desc: "Unlock all 11 other medals",
     med_reward: "Reward",
+    med_earned_title: "Unlocked",
+    med_claim_btn: "COLLECT REWARD",
+    med_claimed_status: "REWARD CLAIMED ✓",
   },
   tr: {
     "btn_plus10": "+10 SN",
@@ -254,6 +257,9 @@ export const Translations: Record<LanguageCode, Record<string, string>> = {
     med_help_10: "Stratejik Zihin", med_help_10_desc: "10 kez çözüm yolunu kullan",
     med_mastery: "ZEKA Ustası", med_mastery_desc: "Diğer tüm 11 madalyayı aç",
     med_reward: "Ödül",
+    med_earned_title: "Kazanılanlar",
+    med_claim_btn: "ÖDÜLÜ TOPLA",
+    med_claimed_status: "ÖDÜL ALINDI ✓",
   },
   de: {
     "btn_plus10": "+10 SEK",
@@ -381,6 +387,9 @@ export const Translations: Record<LanguageCode, Record<string, string>> = {
     med_help_10: "Stratege", med_help_10_desc: "Lösung 10-mal verwenden",
     med_mastery: "ZEKA Meister", med_mastery_desc: "Alle 11 Medaillen freischalten",
     med_reward: "Belohnung",
+    med_earned_title: "Freigeschaltet",
+    med_claim_btn: "BELOHNUNG SAMMELN",
+    med_claimed_status: "BELOHNUNG ERHALTEN ✓",
   },
   ja: {
     "btn_plus10": "+10 秒",
@@ -508,6 +517,9 @@ export const Translations: Record<LanguageCode, Record<string, string>> = {
     med_help_10: "戦略的な思考", med_help_10_desc: "解答を10回使用",
     med_mastery: "ZEKAの覇者", med_mastery_desc: "他の11個のメダルを解除",
     med_reward: "報酬",
+    med_earned_title: "解除済み",
+    med_claim_btn: "報酬を受け取る",
+    med_claimed_status: "報酬受領済み ✓",
   },
   pt: {
     "btn_plus10": "+10 SEG",
@@ -635,5 +647,8 @@ export const Translations: Record<LanguageCode, Record<string, string>> = {
     med_help_10: "Mente Estrat\u00e9gica", med_help_10_desc: "Usar solu\u00e7\u00e3o 10 vezes",
     med_mastery: "Mestre do ZEKA", med_mastery_desc: "Desbloquear as outras 11 medalhas",
     med_reward: "Recompensa",
+    med_earned_title: "Ganhos",
+    med_claim_btn: "COLETAR RECOMPENSA",
+    med_claimed_status: "RECOMPENSA RECEBIDA ✓",
   }
 };
