@@ -40,14 +40,14 @@ const playSound = (type: 'click' | 'success' | 'fail' | 'tick' | 'intro') => {
   initAudio();
   if (!audioCtx || !globalGain) return;
   if (audioCtx.state === 'suspended') audioCtx.resume();
-  
+
   const ctx = audioCtx;
   const osc = ctx.createOscillator();
   const gain = ctx.createGain();
   osc.connect(gain);
   gain.connect(globalGain);
   const now = ctx.currentTime;
-  
+
   if (type === 'click') {
     osc.type = 'sine';
     osc.frequency.setValueAtTime(800, now);
@@ -107,7 +107,7 @@ const SymbolDisplay = ({ type }: { type: SymbolType }) => {
   if (!Icon) return null;
   if (type === 'Plus') return <Icon className="w-4 h-4 mx-[2px] md:mx-1 md:w-6 md:h-6 text-neutral-300 shrink-0" />;
   return (
-    <motion.div 
+    <motion.div
       initial={{ scale: 0, y: 10, opacity: 0 }}
       animate={{ scale: 1, y: 0, opacity: 1 }}
       className="flex items-center justify-center p-[2px] md:p-1"
@@ -144,7 +144,7 @@ function MenuScreen({ startGame }: { startGame: (asDev?: boolean) => void }) {
   const [scores, setScores] = useState<Leaderboard.ScoreEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const personalBest = Leaderboard.getPersonalBest();
-  
+
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [showInfo, setShowInfo] = useState(false);
   const [muteAudio, setMuteAudio] = useState(localStorage.getItem('zeka_mute') === 'true');
@@ -174,12 +174,12 @@ function MenuScreen({ startGame }: { startGame: (asDev?: boolean) => void }) {
     initAudio();
     if (ambientMusic) {
       ambientMusic.setOnBeat(() => {
-         if (!muteAudio) {
-           logoControls.start({
-             scale: [1, 1.06, 1],
-             transition: { duration: 0.18, ease: "easeOut" }
-           });
-         }
+        if (!muteAudio) {
+          logoControls.start({
+            scale: [1, 1.06, 1],
+            transition: { duration: 0.18, ease: "easeOut" }
+          });
+        }
       });
     }
 
@@ -201,8 +201,8 @@ function MenuScreen({ startGame }: { startGame: (asDev?: boolean) => void }) {
     window.addEventListener('beforeunload', handleBeforeUnload);
 
     if (!muteAudio && audioCtx?.state === 'running') {
-       fadeGlobalAudio(1, 0.3);
-       ambientMusic?.play();
+      fadeGlobalAudio(1, 0.3);
+      ambientMusic?.play();
     }
 
     return () => {
@@ -229,13 +229,13 @@ function MenuScreen({ startGame }: { startGame: (asDev?: boolean) => void }) {
 
   return (
     <div className="min-h-[100dvh] bg-[#F5F5F7] text-[#1D1D1F] flex flex-col items-center justify-center font-sans selection:bg-neutral-200 p-4 md:p-6 relative overflow-hidden">
-      
+
       {/* DAILY REWARD - TOP LEFT */}
       <DailyRewardButton />
 
       {/* DEV BUTTON - TOP RIGHT */}
       <div className="absolute top-4 right-4 z-10">
-        <button 
+        <button
           onClick={() => startGame(true)}
           className="px-3 py-1.5 bg-neutral-200 text-neutral-500 rounded-lg font-bold text-[9px] tracking-widest hover:bg-neutral-300 transition-all opacity-40 hover:opacity-100"
         >
@@ -244,9 +244,9 @@ function MenuScreen({ startGame }: { startGame: (asDev?: boolean) => void }) {
       </div>
 
       <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="text-center w-full max-w-sm z-0">
-        
+
         {/* Rhythmic Bouncing Logo Syncing with Ambient Music */}
-        <motion.div 
+        <motion.div
           animate={logoControls}
           className="mx-auto w-fit mb-8"
         >
@@ -257,28 +257,28 @@ function MenuScreen({ startGame }: { startGame: (asDev?: boolean) => void }) {
 
         <h1 className="text-6xl font-black tracking-tighter mb-2 text-[#1D1D1F]">ZEKA</h1>
         <p className="text-lg text-neutral-400 font-semibold mb-6 tracking-widest uppercase">{t.menu_subtitle}</p>
-        
+
         {/* LANGUAGE SWITCHER */}
         <div className="relative w-fit mx-auto mb-6 z-20">
-          <button 
+          <button
             onClick={() => setShowLangMenu(!showLangMenu)}
             className="flex items-center justify-between gap-3 px-4 py-2 bg-white border border-neutral-200 rounded-xl shadow-sm text-xs font-bold tracking-widest uppercase hover:bg-neutral-50 hover:border-neutral-300 transition-all text-[#1D1D1F]"
           >
             <span>{language}</span>
             <Icons.ChevronDown className={`w-3 h-3 transition-transform ${showLangMenu ? 'rotate-180' : ''}`} />
           </button>
-          
+
           <AnimatePresence>
             {showLangMenu && (
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, y: -5, scale: 0.95 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: -5, scale: 0.95 }}
                 className="absolute top-10 inset-x-0 w-full bg-white border border-neutral-200 rounded-xl shadow-xl overflow-hidden flex flex-col items-stretch"
               >
                 {(['en', 'tr', 'de', 'ja', 'pt'] as LanguageCode[]).map(lang => (
-                  <button 
-                    key={lang} 
+                  <button
+                    key={lang}
                     onClick={() => { setLanguage(lang); setShowLangMenu(false); }}
                     className={`py-2 text-xs font-bold tracking-widest uppercase transition-colors ${language === lang ? 'bg-neutral-100 text-amber-500' : 'text-neutral-500 hover:bg-neutral-50 hover:text-[#1D1D1F]'}`}
                   >
@@ -290,7 +290,7 @@ function MenuScreen({ startGame }: { startGame: (asDev?: boolean) => void }) {
           </AnimatePresence>
         </div>
 
-        <button 
+        <button
           onClick={() => startGame(false)}
           className="w-full py-6 bg-[#1D1D1F] text-white rounded-full font-bold tracking-[0.2em] text-xl shadow-[0_10px_30px_rgba(0,0,0,0.2)] hover:scale-105 active:scale-95 transition-all"
         >
@@ -300,13 +300,13 @@ function MenuScreen({ startGame }: { startGame: (asDev?: boolean) => void }) {
         {/* BOTTOM ACTION BUTTONS */}
         <div className="flex justify-center gap-4 mt-6">
           <button onClick={toggleMute} className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center shadow-md border border-neutral-100 text-neutral-500 hover:text-black hover:-translate-y-1 transition-all">
-             {muteAudio ? <Icons.MusicOff className="w-6 h-6" /> : <Icons.MusicOn className="w-6 h-6" />}
+            {muteAudio ? <Icons.MusicOff className="w-6 h-6" /> : <Icons.MusicOn className="w-6 h-6" />}
           </button>
           <button onClick={() => setShowLeaderboard(true)} className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center shadow-md border border-neutral-100 text-amber-500 hover:text-amber-600 hover:-translate-y-1 transition-all">
-             <Icons.Trophy className="w-6 h-6" />
+            <Icons.Trophy className="w-6 h-6" />
           </button>
           <button onClick={() => setShowInfo(true)} className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center shadow-md border border-neutral-100 text-neutral-500 hover:text-black hover:-translate-y-1 transition-all">
-             <Icons.Info className="w-6 h-6" />
+            <Icons.Info className="w-6 h-6" />
           </button>
         </div>
 
@@ -322,9 +322,9 @@ function MenuScreen({ startGame }: { startGame: (asDev?: boolean) => void }) {
       <AnimatePresence>
         {showInfo && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 pointer-events-auto">
-            <motion.div 
-              initial={{ scale: 0.9, opacity: 0 }} 
-              animate={{ scale: 1, opacity: 1, transition: { duration: 0.2 } }} 
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1, transition: { duration: 0.2 } }}
               exit={{ scale: 0.95, opacity: 0, transition: { duration: 0.1 } }}
               className="bg-white rounded-3xl p-5 w-full max-w-[340px] shadow-2xl relative"
             >
@@ -377,8 +377,8 @@ function MenuScreen({ startGame }: { startGame: (asDev?: boolean) => void }) {
               </div>
 
               <div className="text-center mb-6">
-                 <span className="text-[10px] font-black tracking-widest text-neutral-400 uppercase block mb-1">{t.info_dev}</span>
-                 <span className="text-sm font-bold text-[#1D1D1F]">ARCN Games</span>
+                <span className="text-[10px] font-black tracking-widest text-neutral-400 uppercase block mb-1">{t.info_dev}</span>
+                <span className="text-sm font-bold text-[#1D1D1F]">ARCN Games</span>
               </div>
               <button onClick={() => setShowInfo(false)} className="w-full py-3 bg-neutral-100 text-neutral-800 rounded-xl font-bold tracking-wider text-sm hover:bg-neutral-200">
                 {t.info_close}
@@ -392,14 +392,14 @@ function MenuScreen({ startGame }: { startGame: (asDev?: boolean) => void }) {
       <AnimatePresence>
         {showLeaderboard && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 pointer-events-auto">
-            <motion.div 
-              initial={{ scale: 0.9, opacity: 0, y: 20 }} 
-              animate={{ scale: 1, opacity: 1, y: 0, transition: { duration: 0.2 } }} 
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0, transition: { duration: 0.2 } }}
               exit={{ scale: 0.95, opacity: 0, y: 10, transition: { duration: 0.1 } }}
               className="bg-white rounded-3xl w-full max-w-[360px] shadow-2xl flex flex-col overflow-hidden max-h-[85dvh]"
             >
               <div className="flex justify-between items-center p-4 border-b border-neutral-100 shrink-0">
-                <h2 className="text-xl font-black text-[#1D1D1F] flex items-center gap-2"><Icons.Trophy className="w-6 h-6 text-amber-500"/> {t.lb_title}</h2>
+                <h2 className="text-xl font-black text-[#1D1D1F] flex items-center gap-2"><Icons.Trophy className="w-6 h-6 text-amber-500" /> {t.lb_title}</h2>
                 <button onClick={() => setShowLeaderboard(false)} className="w-8 h-8 flex items-center justify-center bg-neutral-100 rounded-full hover:bg-neutral-200">
                   <span className="font-bold text-neutral-500 text-xs">✕</span>
                 </button>
@@ -407,7 +407,7 @@ function MenuScreen({ startGame }: { startGame: (asDev?: boolean) => void }) {
 
               <div className="flex border-b border-neutral-100 shrink-0">
                 {(['daily', 'weekly', 'alltime'] as const).map(t => (
-                  <button 
+                  <button
                     key={t} onClick={() => setTab(t)}
                     className={`flex-1 py-3 text-[10px] sm:text-xs font-black tracking-widest uppercase transition-all relative ${tab === t ? 'text-[#1D1D1F]' : 'text-neutral-300 hover:text-neutral-500'}`}
                   >
@@ -493,7 +493,7 @@ function DailyRewardButton() {
   return (
     <>
       <div className="absolute top-4 left-4 z-10">
-        <motion.button 
+        <motion.button
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           onClick={() => setShowModal(true)}
@@ -514,9 +514,9 @@ function DailyRewardButton() {
       <AnimatePresence>
         {showModal && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-            <motion.div 
-               initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
-               className="bg-white rounded-[2rem] p-6 w-full max-w-[320px] shadow-2xl text-center"
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-white rounded-[2rem] p-6 w-full max-w-[320px] shadow-2xl text-center"
             >
               <div className="w-16 h-16 bg-amber-100 text-amber-500 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-amber-200">
                 <Icons.Gift className="w-10 h-10" />
@@ -525,7 +525,7 @@ function DailyRewardButton() {
               <p className="text-sm text-neutral-500 mb-6 font-medium leading-relaxed">
                 {t.daily_gift_desc?.split('100')[0]}<strong className="text-amber-500">100 Coin</strong>{t.daily_gift_desc?.split('100')[1]}
               </p>
-              
+
               <div className="space-y-3">
                 <div className="flex justify-between items-center text-[10px] font-black tracking-widest text-neutral-400 uppercase border-b border-neutral-50 pb-2 mb-2">
                   <span>{t.daily_gift_status}</span>
@@ -533,7 +533,7 @@ function DailyRewardButton() {
                 </div>
 
                 {canClaim ? (
-                  <button 
+                  <button
                     onClick={handleWatch}
                     disabled={isWatching}
                     className="w-full py-4 bg-[#1D1D1F] text-white rounded-2xl font-bold tracking-widest text-sm flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all shadow-lg"
@@ -545,7 +545,7 @@ function DailyRewardButton() {
                     {dailyRewardsToday >= 3 ? t.daily_gift_limit : `${getTimeRemaining()}${t.daily_gift_comeback}`}
                   </div>
                 )}
-                
+
                 <button onClick={() => setShowModal(false)} className="w-full py-3 text-neutral-400 font-bold text-xs uppercase hover:text-neutral-600 transition">{t.daily_gift_close}</button>
               </div>
             </motion.div>
@@ -554,14 +554,14 @@ function DailyRewardButton() {
 
         {showSuccess && (
           <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-            <motion.div 
-               initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 50, opacity: 0 }}
-               className="bg-white rounded-[2rem] p-8 w-full max-w-[300px] shadow-2xl text-center border-b-8 border-amber-400"
+            <motion.div
+              initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 50, opacity: 0 }}
+              className="bg-white rounded-[2rem] p-8 w-full max-w-[300px] shadow-2xl text-center border-b-8 border-amber-400"
             >
               <div className="text-5xl mb-4">✨</div>
               <h3 className="text-2xl font-black mb-1">{t.congrats_title}</h3>
               <p className="text-neutral-500 font-bold mb-6 text-sm">{t.congrats_desc}</p>
-              <button 
+              <button
                 onClick={() => setShowSuccess(false)}
                 className="w-full py-4 bg-amber-400 text-white rounded-2xl font-black tracking-widest text-sm shadow-lg shadow-amber-200"
               >
@@ -601,10 +601,10 @@ function GameOverScreen({ level, totalTimeSpent, expected, isDevMode, hasRevived
     if (isDevMode) { goToMenu(); return; }
     const name = playerName.trim();
     if (!name) { setErrorMsg(t.name_empty); return; }
-    
+
     setIsChecking(true);
     setErrorMsg('');
-    
+
     const savedName = Leaderboard.getPlayerName();
     if (name !== savedName) {
       const taken = await Leaderboard.isNameTaken(name);
@@ -636,9 +636,9 @@ function GameOverScreen({ level, totalTimeSpent, expected, isDevMode, hasRevived
     <div className="min-h-[100dvh] bg-[#F5F5F7] text-[#1D1D1F] flex flex-col items-center justify-center font-sans selection:bg-neutral-200 p-2 sm:p-4">
       <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="text-center bg-white p-5 sm:p-6 rounded-[2rem] shadow-2xl w-full max-w-[320px] border border-neutral-100 relative overflow-hidden">
         <div className="absolute top-0 inset-x-0 h-2 bg-red-500"></div>
-        
+
         {isNewBest && (
-          <motion.div initial={{ scale: 0, y: -20 }} animate={{ scale: 1, y: 0 }} 
+          <motion.div initial={{ scale: 0, y: -20 }} animate={{ scale: 1, y: 0 }}
             className="bg-amber-50 border border-amber-200 text-amber-700 rounded-full px-3 py-1 inline-flex items-center gap-1.5 font-bold text-[10px] tracking-widest mb-3 mt-1"
           >
             <span>🏆</span> {t.gameover_newbest}
@@ -666,16 +666,16 @@ function GameOverScreen({ level, totalTimeSpent, expected, isDevMode, hasRevived
           <div className="mb-2">
             {showInput ? (
               <div className="mb-3">
-                <input 
+                <input
                   value={playerName}
                   onChange={e => setPlayerName(e.target.value)}
                   placeholder={t.gameover_name_placeholder}
                   maxLength={15}
                   className="w-full px-4 py-2.5 rounded-xl bg-neutral-50 border border-neutral-200 font-bold text-center text-sm outline-none focus:border-amber-400 focus:bg-white transition"
-                  onKeyDown={e => { if(e.key === 'Enter') handleSaveScore(); }}
+                  onKeyDown={e => { if (e.key === 'Enter') handleSaveScore(); }}
                 />
                 <AnimatePresence>
-                  {errorMsg && <motion.p initial={{opacity:0, y:-5}} animate={{opacity:1, y:0}} className="text-red-500 text-[10px] mt-1 font-bold">{errorMsg}</motion.p>}
+                  {errorMsg && <motion.p initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} className="text-red-500 text-[10px] mt-1 font-bold">{errorMsg}</motion.p>}
                 </AnimatePresence>
               </div>
             ) : (
@@ -684,16 +684,16 @@ function GameOverScreen({ level, totalTimeSpent, expected, isDevMode, hasRevived
                 <button onClick={() => setShowInput(true)} className="text-[9px] font-bold text-amber-500 underline uppercase tracking-wider shrink-0 ml-2">{t.gameover_name_change}</button>
               </div>
             )}
-            
-            <button 
+
+            <button
               onClick={handleSaveScore}
               disabled={isChecking}
               className={`w-full py-3.5 text-white rounded-2xl font-black tracking-widest text-xs shadow-lg transition-all ${isChecking ? 'bg-neutral-400 scale-95 pointer-events-none' : 'bg-[#1D1D1F] hover:scale-[1.02] active:scale-95'}`}
             >
               {isChecking ? t.gameover_save_checking : t.gameover_save_btn}
             </button>
-            
-            <button 
+
+            <button
               onClick={goToMenu}
               className="w-full mt-2.5 py-1 text-[9px] font-bold tracking-widest text-neutral-400 uppercase hover:text-neutral-700 transition"
             >
@@ -701,7 +701,7 @@ function GameOverScreen({ level, totalTimeSpent, expected, isDevMode, hasRevived
             </button>
           </div>
         ) : (
-          <button 
+          <button
             onClick={() => goToMenu()}
             className="w-full py-3.5 bg-[#1D1D1F] text-white rounded-2xl font-black tracking-widest text-xs shadow-lg hover:scale-[1.02] active:scale-95 transition-all mt-1"
           >
@@ -713,7 +713,7 @@ function GameOverScreen({ level, totalTimeSpent, expected, isDevMode, hasRevived
           {!hasRevivedInCurrentGame ? (
             <>
               <p className="text-[9px] font-black text-amber-500 uppercase tracking-widest mb-2">{t.gameover_revive_title}</p>
-              <button 
+              <button
                 onClick={handleRevive}
                 disabled={isWatchingRevive}
                 className="w-full py-3.5 bg-gradient-to-r from-amber-400 to-orange-400 text-white rounded-2xl font-black tracking-widest text-xs flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-amber-100"
@@ -738,7 +738,7 @@ function GameOverScreen({ level, totalTimeSpent, expected, isDevMode, hasRevived
 }
 
 export default function App() {
-  const { 
+  const {
     gameState, level, totalTimeSpent, currentValue, timeLeft, maxTime, coins, previousAnswers, hideIntro, isDevMode, hasRevivedInCurrentGame, language,
     startNewLevel, setCurrentValue, tickTimer, addLevelTime, setHideIntro, startGame, goToMenu, devAdvanceLevel
   } = useGameStore();
@@ -748,7 +748,7 @@ export default function App() {
   const [expected, setExpected] = useState<number>(0);
   const [showSolution, setShowSolution] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
-  
+
   // Modals
   const [showTutorialModal, setShowTutorialModal] = useState(false);
   const [showIntroModal, setShowIntroModal] = useState(false);
@@ -805,7 +805,7 @@ export default function App() {
 
   const handleLevelComplete = () => {
     playSound('success');
-    addLevelTime(Number((maxTime - timeLeft).toFixed(2))); 
+    addLevelTime(Number((maxTime - timeLeft).toFixed(2)));
     useGameStore.setState(s => ({
       level: s.level + 1,
       coins: s.coins + 5,
@@ -818,13 +818,13 @@ export default function App() {
   const handleSubmission = () => {
     if (isSubmitting) return;
     setIsSubmitting(true);
-    
+
     if (currentValue === expected) {
       handleLevelComplete();
     } else {
       handleGameOver();
     }
-    
+
     // Release lock slightly after state transition
     setTimeout(() => setIsSubmitting(false), 300);
   };
@@ -842,20 +842,20 @@ export default function App() {
 
   if (gameState === 'GAMEOVER') {
     return (
-      <GameOverScreen 
-        level={level} 
-        totalTimeSpent={totalTimeSpent} 
-        expected={expected} 
-        isDevMode={isDevMode} 
+      <GameOverScreen
+        level={level}
+        totalTimeSpent={totalTimeSpent}
+        expected={expected}
+        isDevMode={isDevMode}
         hasRevivedInCurrentGame={hasRevivedInCurrentGame}
-        goToMenu={goToMenu} 
+        goToMenu={goToMenu}
       />
     );
   }
 
   return (
     <div className="h-[100dvh] w-full bg-[#F5F5F7] text-[#1D1D1F] flex flex-col font-sans selection:bg-neutral-200 overflow-hidden relative">
-      
+
       {/* HEADER */}
       <header className="flex justify-between items-center px-4 py-3 md:p-6 w-full max-w-3xl mx-auto z-10 shrink-0">
         <div className="flex flex-col">
@@ -876,7 +876,7 @@ export default function App() {
       {/* DEV MODE CONTROLS */}
       {isDevMode && (
         <div className="flex flex-col items-center gap-3 mb-2 mx-auto z-20 w-full px-4 border-b border-amber-200 pb-3 shrink-0">
-          
+
           {/* QUICK JUMP BAR */}
           <div className="w-full overflow-x-auto hide-scrollbar pb-1">
             <div className="flex items-center gap-2 min-w-max">
@@ -884,12 +884,12 @@ export default function App() {
               <button onClick={() => devAdvanceLevel(1)} className="px-3 py-1.5 bg-neutral-200 rounded-lg text-[11px] font-bold transition hover:bg-neutral-300 shrink-0">{t.dev_jump_1}</button>
               <button onClick={() => devAdvanceLevel(120)} className="px-3 py-1.5 bg-neutral-200 rounded-lg text-[11px] font-bold transition hover:bg-neutral-300 shrink-0">{t.dev_jump_max}</button>
               <button onClick={() => devAdvanceLevel(500)} className="px-3 py-1.5 bg-amber-200 rounded-lg text-[11px] font-bold shadow-sm transition hover:bg-amber-300 shrink-0">{t.dev_jump_inf}</button>
-              
+
               <div className="flex shrink-0 border border-neutral-300 rounded-lg overflow-hidden">
-                <input 
+                <input
                   id="devLevelInput"
-                  type="number" 
-                  placeholder="Bölüm" 
+                  type="number"
+                  placeholder="Bölüm"
                   className="w-16 px-2 py-1.5 text-[11px] font-bold text-center outline-none focus:bg-amber-50"
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {
@@ -898,11 +898,11 @@ export default function App() {
                     }
                   }}
                 />
-                <button 
+                <button
                   onClick={() => {
                     const val = parseInt((document.getElementById('devLevelInput') as HTMLInputElement).value);
                     if (!isNaN(val) && val > 0) devAdvanceLevel(val);
-                  }} 
+                  }}
                   className="px-3 py-1.5 bg-[#1D1D1F] text-white text-[11px] font-bold transition hover:bg-black"
                 >
                   GİT
@@ -911,7 +911,7 @@ export default function App() {
               <button onClick={() => goToMenu()} className="px-3 py-1.5 bg-red-100 text-red-600 rounded-lg text-[11px] font-bold transition hover:bg-red-200 shrink-0">EXIT DEV</button>
             </div>
           </div>
-          
+
           {/* TUTORIALS BAR */}
           <div className="w-full overflow-x-auto hide-scrollbar pb-1">
             <div className="flex items-center gap-2 min-w-max">
@@ -931,14 +931,14 @@ export default function App() {
 
       {/* MAIN PLAY AREA */}
       <main className="flex-1 min-h-0 flex flex-col items-center justify-center px-2 md:px-4 w-full max-w-4xl mx-auto relative z-10 pb-2">
-        
+
         {/* SEQUENCE DISPLAY */}
-        <motion.div 
+        <motion.div
           layout
           className="flex-1 min-h-0 flex flex-wrap justify-center content-center items-center gap-[2px] md:gap-2 mb-2 md:mb-6 px-2 py-4 md:px-8 md:py-8 rounded-3xl bg-white shadow-[0_20px_40px_rgb(0,0,0,0.04)] border border-neutral-100 w-full relative overflow-y-auto"
         >
           <div className="absolute inset-0 bg-gradient-to-b from-transparent to-neutral-50/50 pointer-events-none"></div>
-          
+
           <AnimatePresence mode="popLayout">
             {sequence.map((sym, i) => {
               if (sym === 'ReverseNext') {
@@ -950,7 +950,7 @@ export default function App() {
                 );
               }
               if (i > 0 && sequence[i - 1] === 'ReverseNext' && sym !== 'InvertAll') return null;
-              
+
               return (
                 <div key={`${level}-${i}-${sym}`} className="shrink-0 flex items-center">
                   <SymbolDisplay type={sym} />
@@ -962,7 +962,7 @@ export default function App() {
 
         {/* INPUT AREA */}
         <div className="flex items-center justify-center gap-4 md:gap-16 my-1 md:my-4 shrink-0 select-none">
-          <motion.button 
+          <motion.button
             whileHover={{ scale: 1.15, x: -5 }}
             whileTap={{ scale: 0.9 }}
             onClick={() => adjustValue(-1)}
@@ -987,7 +987,7 @@ export default function App() {
             </AnimatePresence>
           </div>
 
-          <motion.button 
+          <motion.button
             whileHover={{ scale: 1.15, x: 5 }}
             whileTap={{ scale: 0.9 }}
             onClick={() => adjustValue(+1)}
@@ -1014,10 +1014,10 @@ export default function App() {
 
       {/* FOOTER & TIMER */}
       <footer className="w-full max-w-3xl mx-auto px-4 pb-4 md:px-6 md:pb-8 flex flex-col gap-4 md:gap-6 z-10 relative shrink-0">
-        
+
         {/* TIMER BAR */}
         <div className="w-full h-3 bg-neutral-200/60 rounded-full overflow-hidden shadow-inner flex-shrink-0">
-          <motion.div 
+          <motion.div
             className={`h-full ${isDevMode ? 'bg-amber-400' : (timeLeft < 5 ? 'bg-red-500' : 'bg-[#1D1D1F]')}`}
             animate={{ width: `${timePercent}%` }}
             transition={{ ease: "linear", duration: 0.1 }}
@@ -1026,7 +1026,7 @@ export default function App() {
 
         {/* POWERUPS */}
         <div className="grid grid-cols-3 gap-2 w-full">
-          <button 
+          <button
             onClick={() => {
               if (isDevMode) return;
               if (isPaused) {
@@ -1042,17 +1042,17 @@ export default function App() {
             <span>{isPaused ? t.btn_resume : t.btn_pause}</span>
             <span className="text-[8px] md:text-[10px] text-amber-600 bg-amber-50 px-1.5 py-0.5 md:py-1 rounded-full">{isDevMode || isPaused ? t.btn_free : '50C'}</span>
           </button>
-          
-          <button 
+
+          <button
             onClick={() => useGameStore.getState().addTime(10)}
             disabled={isPaused || showTutorialModal || showIntroModal || isDevMode || coins < 10}
             className="flex flex-col md:flex-row items-center justify-center gap-1 p-2 md:p-4 rounded-xl md:rounded-2xl bg-white shadow-sm border border-neutral-100 font-bold text-[9px] md:text-xs tracking-widest hover:bg-neutral-50 transition active:scale-95 disabled:opacity-30 disabled:pointer-events-none"
           >
-            <span>{t.btn_plus10}</span> 
+            <span>{t.btn_plus10}</span>
             <span className="text-[8px] md:text-[10px] text-amber-600 bg-amber-50 px-1.5 py-0.5 md:py-1 rounded-full">10C</span>
           </button>
 
-          <button 
+          <button
             onClick={() => {
               if (coins >= 50 || isDevMode) {
                 useGameStore.getState().showSolution();
@@ -1070,15 +1070,15 @@ export default function App() {
 
       {/* OVERLAYS */}
       <AnimatePresence>
-        
+
         {showIntroModal && (
-          <motion.div 
-            initial={{ opacity: 0, backdropFilter: 'blur(0px)' }} 
-            animate={{ opacity: 1, backdropFilter: 'blur(8px)' }} 
+          <motion.div
+            initial={{ opacity: 0, backdropFilter: 'blur(0px)' }}
+            animate={{ opacity: 1, backdropFilter: 'blur(8px)' }}
             exit={{ opacity: 0 }}
             className="absolute inset-0 bg-black/60 z-50 flex flex-col items-center justify-center p-4 text-center"
           >
-            <motion.div 
+            <motion.div
               initial={{ scale: 0.9, y: 20 }}
               animate={{ scale: 1, y: 0 }}
               className="bg-white p-5 md:p-8 rounded-3xl shadow-2xl max-w-[320px] w-full max-h-[85dvh] overflow-y-auto"
@@ -1099,11 +1099,11 @@ export default function App() {
               <p className="text-neutral-500 font-medium leading-relaxed mb-6 text-xs md:text-sm px-1">
                 {t.intro_p1}
               </p>
-              
+
               <div className="flex items-center justify-center gap-2 mb-6 bg-neutral-100/50 p-3 rounded-lg cursor-pointer" onClick={() => setIntroCheckbox(!introCheckbox)}>
-                <input 
-                  type="checkbox" 
-                  checked={introCheckbox} 
+                <input
+                  type="checkbox"
+                  checked={introCheckbox}
                   onChange={(e) => setIntroCheckbox(e.target.checked)}
                   onClick={(e) => e.stopPropagation()}
                   className="w-4 h-4 accent-[#1D1D1F] cursor-pointer"
@@ -1111,7 +1111,7 @@ export default function App() {
                 <label className="font-bold tracking-wide text-[10px] text-neutral-600 cursor-pointer select-none uppercase">{t.intro_checkbox}</label>
               </div>
 
-              <button 
+              <button
                 onClick={() => {
                   if (introCheckbox) setHideIntro(true);
                   setShowIntroModal(false);
@@ -1127,13 +1127,13 @@ export default function App() {
 
         {/* TUTORIAL MODAL WITH DESCRIPTIONS */}
         {showTutorialModal && (
-          <motion.div 
-            initial={{ opacity: 0, backdropFilter: 'blur(0px)' }} 
-            animate={{ opacity: 1, backdropFilter: 'blur(8px)' }} 
+          <motion.div
+            initial={{ opacity: 0, backdropFilter: 'blur(0px)' }}
+            animate={{ opacity: 1, backdropFilter: 'blur(8px)' }}
             exit={{ opacity: 0 }}
             className="absolute inset-0 bg-black/60 z-50 flex flex-col items-center justify-center p-4 text-center overflow-hidden"
           >
-            <motion.div 
+            <motion.div
               initial={{ scale: 0.9, y: 20 }}
               animate={{ scale: 1, y: 0 }}
               className="bg-white p-5 md:p-6 rounded-3xl shadow-2xl max-w-[340px] w-full flex flex-col items-center max-h-[85dvh] overflow-y-auto overflow-x-hidden"
@@ -1161,7 +1161,7 @@ export default function App() {
 
               {TUTORIAL_DATA[level]?.exampleSequence && (
                 <div className="shrink-0 w-full mb-4">
-                  <TutorialExample 
+                  <TutorialExample
                     text={t[('tut_' + level + '_ex') as LanguageCode]}
                     sequence={TUTORIAL_DATA[level].exampleSequence}
                     result={TUTORIAL_DATA[level].exampleResult}
@@ -1169,7 +1169,7 @@ export default function App() {
                 </div>
               )}
 
-              <button 
+              <button
                 onClick={() => {
                   setShowTutorialModal(false);
                   initLevel();
@@ -1184,7 +1184,7 @@ export default function App() {
 
         {/* SOLUTION POPUP */}
         {showSolution && !isPaused && (
-           <motion.div 
+          <motion.div
             initial={{ y: -50, opacity: 0, x: '-50%' }} animate={{ y: 0, opacity: 1, x: '-50%' }} exit={{ y: -50, opacity: 0, x: '-50%' }}
             className="absolute top-20 md:top-24 left-1/2 bg-[#1D1D1F] text-white px-8 py-3 md:py-4 rounded-full font-bold shadow-2xl z-40 whitespace-nowrap tracking-wide text-sm md:text-base pointer-events-none"
           >

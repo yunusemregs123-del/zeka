@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Zeka</string>
+    <string name="title_activity_main">Zeka</string>
+    <string name="package_name">com.zeka.app</string>
+    <string name="custom_url_scheme">com.zeka.app</string>
+</resources>
