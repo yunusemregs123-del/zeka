@@ -55,8 +55,8 @@ export const evaluateSequence = (sequence: SymbolType[], prevAnswers: number[]):
     
     if (sym === 'TriangleUp') { runningTotal += 1 * modifier; applied = true; }
     if (sym === 'TriangleDown') { runningTotal -= 1 * modifier; applied = true; }
-    if (sym === 'Prev1') { runningTotal += (prevAnswers[0] || 1) * modifier; applied = true; }
-    if (sym === 'Prev2') { runningTotal += (prevAnswers[1] || 1) * modifier; applied = true; }
+    if (sym === 'Prev1') { runningTotal += (prevAnswers[0] ?? 0) * modifier; applied = true; }
+    if (sym === 'Prev2') { runningTotal += (prevAnswers[1] ?? 0) * modifier; applied = true; }
 
     if (sym === 'Mul2') {
       runningTotal = runningTotal * (isReverseActive ? 0.5 : 2);
