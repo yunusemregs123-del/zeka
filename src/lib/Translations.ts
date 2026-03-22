@@ -108,7 +108,11 @@ export const Translations: Record<LanguageCode, Record<string, string>> = {
     gameover_revive_used_desc: "You have already used your life for this game.",
     gameover_revive_desc: "Continue from the beginning of the level and see the correct answer.",
     name_empty: "Nickname cannot be empty.",
-    name_taken: "This nickname is taken by someone else!"
+    name_taken: "This nickname is taken by someone else!",
+    privacy_policy: "Privacy Policy",
+    att_title: "Keep the Game Free",
+    att_desc: "We use ads to keep the game completely free and continuously updated. On the next screen, please allow tracking to see ads that are more relevant to you.",
+    att_continue: "Continue",
   },
   tr: {
     "btn_plus10": "+10 SN",
@@ -217,7 +221,11 @@ export const Translations: Record<LanguageCode, Record<string, string>> = {
     gameover_revive_used_desc: "Bu oyun için can hakkını zaten kullandın.",
     gameover_revive_desc: "Bölüm başından devam edersin ve doğru cevabı görebilirsin.",
     name_empty: "Takma ad boş olamaz.",
-    name_taken: "Bu takma ad başkası tarafından kullanılıyor!"
+    name_taken: "Bu takma ad başkası tarafından kullanılıyor!",
+    privacy_policy: "Gizlilik Politikası",
+    att_title: "Oyunu Ücretsiz Tut",
+    att_desc: "Oyunu tamamen ücretsiz tutabilmek ve yeni bölümler ekleyebilmek için reklamları kullanıyoruz. Sana daha uygun reklamlar sunabilmemiz için lütfen sonraki ekranda takibe izin ver.",
+    att_continue: "Devam Et",
   },
   de: {
     "btn_plus10": "+10 SEK",
@@ -326,7 +334,11 @@ export const Translations: Record<LanguageCode, Record<string, string>> = {
     gameover_revive_used_desc: "Du hast dein Leben für dieses Spiel bereits verwendet.",
     gameover_revive_desc: "Mach vom Anfang des Levels weiter und sieh die richtige Antwort.",
     name_empty: "Spitzname darf nicht leer sein.",
-    name_taken: "Dieser Spitzname ist bereits vergeben!"
+    name_taken: "Dieser Spitzname ist bereits vergeben!",
+    privacy_policy: "Datenschutzrichtlinie",
+    att_title: "Spiel Kostenlos Halten",
+    att_desc: "Wir verwenden Werbung, um das Spiel völlig kostenlos zu halten und ständig zu aktualisieren. Erlaube bitte auf dem nächsten Bildschirm das Tracking, um relevantere Werbung zu sehen.",
+    att_continue: "Weiter",
   },
   ja: {
     "btn_plus10": "+10 秒",
@@ -435,7 +447,11 @@ export const Translations: Record<LanguageCode, Record<string, string>> = {
     gameover_revive_used_desc: "このゲームのライフはすでに使用されています。",
     gameover_revive_desc: "レベルの初めから再開し、正しい答えを見ることができます。",
     name_empty: "ニックネームは空にできません。",
-    name_taken: "このニックネームはすでに使用されています！"
+    name_taken: "このニックネームはすでに使用されています！",
+    privacy_policy: "プライバシーポリシー",
+    att_title: "ゲームを無料に保つ",
+    att_desc: "私たちはゲームを完全に無料で保ち、継続的に更新するために広告を使用しています。関連性の高い広告を表示するため、次の画面でトラッキングを許可してください。",
+    att_continue: "続ける",
   },
   pt: {
     "btn_plus10": "+10 SEG",
@@ -544,6 +560,10 @@ export const Translations: Record<LanguageCode, Record<string, string>> = {
     gameover_revive_used_desc: "Você já usou sua vida para este jogo.",
     gameover_revive_desc: "Continue do início do nível e veja a resposta correta.",
     name_empty: "O apelido não pode estar vazio.",
-    name_taken: "Este apelido já está em uso!"
+    name_taken: "Este apelido já está em uso!",
+    privacy_policy: "Política de Privacidade",
+    att_title: "Mantenha o Jogo Grátis",
+    att_desc: "Usamos anúncios para manter o jogo totalmente gratuito e atualizá-lo sempre. Na próxima tela, permita o rastreamento para ver anúncios mais relevantes para você.",
+    att_continue: "Continuar",
   }
 };

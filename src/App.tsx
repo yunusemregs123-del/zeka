@@ -881,6 +881,7 @@ export default function App() {
   };
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showTrackingModal, setShowTrackingModal] = useState(false);
 
   const handleSubmission = () => {
     if (isSubmitting) return;
@@ -983,6 +984,12 @@ export default function App() {
           <div className="w-full overflow-x-auto hide-scrollbar pb-1">
             <div className="flex items-center gap-2 min-w-max">
               <span className="text-[10px] font-black text-amber-500 uppercase tracking-widest shrink-0 bg-amber-50 px-2 py-1 rounded">MODALS</span>
+              <button 
+                onClick={() => setShowTrackingModal(true)} 
+                className="px-2 py-1 bg-amber-100 border border-amber-300 text-amber-800 rounded text-[10px] font-black hover:bg-amber-200 transition shrink-0 whitespace-nowrap"
+              >
+                ATT (Tracking)
+              </button>
               {[11, 36, 51, 61, 76, 91, 111, 131].map(lvl => (
                 <button key={lvl} onClick={() => devAdvanceLevel(lvl)} className="px-2 py-1 bg-white border border-neutral-200 rounded text-[10px] font-bold hover:bg-neutral-50 transition shrink-0 whitespace-nowrap">
                   {(t[('tut_' + lvl + '_title') as keyof typeof t])?.split(':')[0] || `Level ${lvl}`}
@@ -1137,6 +1144,36 @@ export default function App() {
 
       {/* OVERLAYS */}
       <AnimatePresence>
+
+        {showTrackingModal && (
+          <motion.div
+            initial={{ opacity: 0, backdropFilter: 'blur(0px)' }}
+            animate={{ opacity: 1, backdropFilter: 'blur(8px)' }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 bg-black/60 z-50 flex flex-col items-center justify-center p-4 text-center"
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              className="bg-white p-6 md:p-8 rounded-[2rem] shadow-2xl max-w-[320px] w-full"
+            >
+              <div className="w-16 h-16 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center mx-auto mb-4 border-4 border-blue-100">
+                <span className="text-3xl font-black block leading-none select-none -mt-1">Z</span>
+              </div>
+              <h2 className="text-[17px] font-black tracking-tight mb-3 text-[#1D1D1F] uppercase">{t.att_title || "Oyunu Ücretsiz Tut"}</h2>
+              <p className="text-neutral-500 font-medium leading-relaxed mb-6 text-xs px-1">
+                {t.att_desc || "Oyunu tamamen ücretsiz tutabilmek ve yeni bölümler ekleyebilmek için reklamları kullanıyoruz. Sana daha uygun reklamlar sunabilmemiz için lütfen sonraki ekranda takibe izin ver."}
+              </p>
+
+              <button
+                onClick={() => setShowTrackingModal(false)}
+                className="w-full py-3 bg-blue-500 text-white rounded-full font-black tracking-widest uppercase shadow-lg shadow-blue-500/30 hover:bg-blue-600 transition-colors text-xs"
+              >
+                {t.att_continue || "Devam Et"}
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
 
         {showIntroModal && (
           <motion.div
