@@ -145,6 +145,7 @@ function MenuScreen({ startGame }: { startGame: (asDev?: boolean) => void }) {
   const [tab, setTab] = useState<'daily' | 'weekly' | 'alltime'>('daily');
   const [showLangMenu, setShowLangMenu] = useState(false);
   const [showMedals, setShowMedals] = useState(false);
+  const [selectedMedal, setSelectedMedal] = useState<any>(null);
   const [scores, setScores] = useState<Leaderboard.ScoreEntry[]>([]);
   const [personalRankData, setPersonalRankData] = useState<{rank: number, row: Leaderboard.ScoreEntry} | null>(null);
   const [loading, setLoading] = useState(true);
@@ -399,38 +400,60 @@ function MenuScreen({ startGame }: { startGame: (asDev?: boolean) => void }) {
                 </div>
               </div>
 
-              <div className="grid grid-cols-4 gap-3 overflow-y-auto pr-1 custom-scrollbar pb-4">
+              <div className="grid grid-cols-4 gap-2.5 overflow-y-auto pr-1 custom-scrollbar pb-4 max-h-[45vh]">
                 {ACHIEVEMENTS.map(med => {
                   const unlocked = useGameStore.getState().medals.includes(med.id);
                   return (
                     <motion.div 
                       key={med.id}
-                      whileHover={unlocked ? { scale: 1.1 } : {}}
-                      className="group relative flex flex-col items-center gap-1.5"
+                      onClick={() => setSelectedMedal(med)}
+                      whileHover={unlocked ? { scale: 1.05 } : { scale: 1.02 }}
+                      className="group relative flex flex-col items-center gap-1 cursor-pointer"
                     >
-                      <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border-2 transition-all ${unlocked ? 'bg-[#1D1D1F] border-[#1D1D1F] text-white shadow-lg' : 'bg-white border-neutral-100 text-neutral-200 opacity-40'}`}>
-                        <Icons.Medal className="w-7 h-7" />
-                        {unlocked && (
-                          <div className="absolute -top-1 -right-1 bg-amber-400 text-white rounded-full p-0.5 shadow-sm">
-                            <Icons.Plus className="w-2.5 h-2.5" strokeWidth={5} />
-                          </div>
-                        )}
+                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center border-2 transition-all ${unlocked ? 'bg-[#1D1D1F] border-[#1D1D1F] text-white shadow-md' : 'bg-white border-neutral-100 text-neutral-200'}`}>
+                        <Icons.Medal className={`w-6 h-6 ${unlocked ? 'opacity-100' : 'opacity-30'}`} />
                       </div>
-                      
-                      {/* Tooltip on long press / hover simplified */}
-                      <div className="w-full text-center">
-                        <span className={`text-[7px] font-black uppercase tracking-tighter block leading-tight ${unlocked ? 'text-neutral-900' : 'text-neutral-300'}`}>
-                          {t[med.key]}
-                        </span>
-                      </div>
+                      <span className={`text-[6.5px] font-black uppercase tracking-tighter text-center leading-none mt-0.5 ${unlocked ? 'text-neutral-900' : 'text-neutral-300'}`}>
+                        {t[med.key]}
+                      </span>
                     </motion.div>
                   );
                 })}
               </div>
 
+              {/* MEDAL DETAIL OVERLAY */}
+              <AnimatePresence>
+                {selectedMedal && (
+                  <motion.div 
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    className="absolute inset-0 bg-white/95 z-20 rounded-[2.5rem] p-8 flex flex-col items-center justify-center text-center"
+                  >
+                    <div className={`w-24 h-24 rounded-3xl flex items-center justify-center mb-6 border-4 ${useGameStore.getState().medals.includes(selectedMedal.id) ? 'bg-[#1D1D1F] border-[#1D1D1F] text-white' : 'bg-white border-neutral-100 text-neutral-200'}`}>
+                      <Icons.Medal className="w-12 h-12" />
+                    </div>
+                    <h3 className="text-xl font-black mb-2 uppercase tracking-tight">{t[selectedMedal.key]}</h3>
+                    <p className="text-xs font-bold text-neutral-500 mb-6 leading-relaxed px-4">
+                      {t[selectedMedal.key + '_desc'] || "???"}
+                    </p>
+                    <div className="bg-amber-50 px-4 py-2 rounded-full border border-amber-100 flex items-center gap-2 mb-8">
+                       <span className="text-[10px] font-black text-amber-600 uppercase tracking-widest">{t.med_reward}:</span>
+                       <span className="text-sm font-black text-amber-600">{selectedMedal.reward} COIN</span>
+                    </div>
+                    <button 
+                      onClick={() => setSelectedMedal(null)}
+                      className="w-full py-4 bg-[#1D1D1F] text-white rounded-2xl font-black tracking-widest text-xs shadow-lg hover:scale-105 active:scale-95 transition-all"
+                    >
+                      {t.info_close || "GERİ"}
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
               <div className="mt-4 pt-4 border-t border-neutral-100">
-                <button onClick={() => setShowMedals(false)} className="w-full py-4 bg-[#1D1D1F] text-white rounded-2xl font-black tracking-widest text-xs shadow-lg hover:scale-105 active:scale-95 transition-all">
-                  {t.info_close || "TAMAM"}
+                <button onClick={() => setShowMedals(false)} className="w-full py-4 bg-neutral-100 text-neutral-400 rounded-2xl font-black tracking-widest text-[10px] hover:bg-neutral-200 transition-all">
+                  {t.info_close || "KAPAT"}
                 </button>
               </div>
             </motion.div>
