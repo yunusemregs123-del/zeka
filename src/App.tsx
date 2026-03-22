@@ -349,8 +349,11 @@ function MenuScreen({ startGame }: { startGame: (asDev?: boolean) => void }) {
           <button onClick={() => setShowLeaderboard(true)} className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-md border border-neutral-100 text-amber-500 hover:text-amber-600 hover:-translate-y-1 transition-all">
             <Icons.Trophy className="w-5 h-5" />
           </button>
-          <button onClick={() => setShowMedals(true)} className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-md border border-neutral-100 text-[#1D1D1F] hover:text-black hover:-translate-y-1 transition-all">
-            <Icons.Medal className="w-5 h-5" />
+          <button onClick={() => setShowMedals(true)} className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-md border border-neutral-100 text-[#1D1D1F] hover:text-black hover:-translate-y-1 transition-all relative group">
+            <Icons.Medal className={`w-5 h-5 ${medals.length > claimedMedals.length ? 'animate-bounce' : ''}`} />
+            {medals.length > claimedMedals.length && (
+              <div className="absolute top-1 right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white animate-pulse" />
+            )}
           </button>
           <button onClick={() => setShowInfo(true)} className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-md border border-neutral-100 text-neutral-500 hover:text-black hover:-translate-y-1 transition-all">
             <Icons.Info className="w-5 h-5" />

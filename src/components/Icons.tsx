@@ -150,7 +150,8 @@ export const ChevronDown = ({ className }: { className?: string }) => (
 );
 export const Medal = (props: IconProps) => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-    <path d="M12 2l3 6 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1 3-6z" />
-    <circle cx="12" cy="12" r="3" />
+    <path d="M8.21 2L12 10.5L15.79 2M7.21 2h9.58" strokeWidth="2" />
+    <circle cx="12" cy="14.5" r="7.5" fill="currentColor" />
+    <path d="M12 11.5l1 2 2.2.3-1.6 1.5.4 2.2-2-1-2 1 .4-2.2-1.6-1.5 2.2-.3z" fill="white" stroke="none" />
   </svg>
 );
