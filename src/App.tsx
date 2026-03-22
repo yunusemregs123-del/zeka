@@ -559,7 +559,7 @@ function DailyRewardButton() {
 
   return (
     <>
-      <div className="absolute top-4 left-4 z-10">
+      <div className="absolute left-4 z-10 pt-[env(safe-area-inset-top,0px)]" style={{ top: '1.5rem' }}>
         <motion.button
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
