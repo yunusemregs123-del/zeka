@@ -14,6 +14,16 @@ export interface ScoreEntry {
 const PLAYER_NAME_KEY = 'zeka_player_name';
 const PERSONAL_BEST_KEY = 'zeka_personal_best';
 const PLAYER_COUNTRY_KEY = 'zeka_player_country';
+const DEVICE_ID_KEY = 'zeka_device_id';
+
+export function getDeviceId(): string {
+  let id = localStorage.getItem(DEVICE_ID_KEY);
+  if (!id) {
+    id = crypto.randomUUID();
+    localStorage.setItem(DEVICE_ID_KEY, id);
+  }
+  return id;
+}
 
 export function getPlayerName(): string {
   return localStorage.getItem(PLAYER_NAME_KEY) || '';
@@ -94,15 +104,15 @@ export async function isNameTaken(name: string): Promise<boolean> {
   return data && data.length > 0;
 }
 
-export async function addScore(playerName: string, level: number, totalTime: number, oldName?: string): Promise<ScoreEntry | null> {
+export async function addScore(playerName: string, level: number, totalTime: number): Promise<ScoreEntry | null> {
   const nameToUse = playerName.trim().substring(0, 15) || 'Anonim';
-  const nameToUpdate = oldName || nameToUse;
   const countryCode = getCachedCountry();
+  const deviceId = getDeviceId();
 
   const { data: existing } = await supabase
     .from('scores')
     .select('*')
-    .ilike('player_name', nameToUpdate)
+    .eq('device_id', deviceId)
     .limit(1);
 
   if (existing && existing.length > 0) {
@@ -111,12 +121,14 @@ export async function addScore(playerName: string, level: number, totalTime: num
 
     const updates: any = {};
     if (nameToUse !== row.player_name) updates.player_name = nameToUse;
-
+    
+    // Always update if it's a better score
     if (isBetter) {
       updates.level = level;
       updates.total_time = Number(totalTime.toFixed(2));
       updates.created_at = new Date().toISOString();
     }
+    
     if (countryCode && countryCode !== row.country_code) {
       updates.country_code = countryCode;
     }
@@ -132,6 +144,7 @@ export async function addScore(playerName: string, level: number, totalTime: num
     .from('scores')
     .insert({
       player_name: nameToUse,
+      device_id: deviceId,
       level,
       total_time: Number(totalTime.toFixed(2)),
       country_code: countryCode || null
@@ -211,7 +224,7 @@ export async function getPersonalScoreAndRank(period: 'daily'|'weekly'|'alltime'
   const nameToSearch = playerName.trim();
   if(!nameToSearch) return null;
   
-  let query = supabase.from('scores').select('*').ilike('player_name', nameToSearch).limit(1);
+  let query = supabase.from('scores').select('*').eq('device_id', getDeviceId()).limit(1);
   if (period === 'daily') {
     const today = new Date(); today.setHours(0,0,0,0);
     query = query.gte('created_at', today.toISOString());

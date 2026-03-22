@@ -455,10 +455,16 @@ function MenuScreen({ startGame }: { startGame: (asDev?: boolean) => void }) {
                 {(['daily', 'weekly', 'alltime'] as const).map(t => (
                   <button
                     key={t} onClick={() => setTab(t)}
-                    className={`flex-1 py-3 text-[10px] sm:text-xs font-black tracking-widest uppercase transition-all relative ${tab === t ? 'text-[#1D1D1F]' : 'text-neutral-300 hover:text-neutral-500'}`}
+                    className={`flex-1 py-3 text-[10px] sm:text-xs font-black tracking-widest uppercase transition-colors relative ${tab === t ? 'text-[#1D1D1F]' : 'text-neutral-300 hover:text-neutral-500'}`}
                   >
                     {tabLabels[t]}
-                    {tab === t && <motion.div layoutId="tabIndicator" className="absolute bottom-0 inset-x-4 h-[3px] bg-[#1D1D1F] rounded-full" />}
+                    {tab === t && (
+                      <motion.div 
+                        layoutId="tabIndicator" 
+                        transition={{ type: 'spring', bounce: 0.2, duration: 0.3 }}
+                        className="absolute bottom-0 inset-x-4 h-[3px] bg-[#1D1D1F] rounded-full" 
+                      />
+                    )}
                   </button>
                 ))}
               </div>
@@ -650,7 +656,7 @@ function GameOverScreen({ level, totalTimeSpent, expected, isDevMode, hasRevived
   const t = Translations[language];
   const hasSavedName = !!Leaderboard.getPlayerName();
   const [playerName, setPlayerName] = useState(Leaderboard.getPlayerName() || '');
-  const [showInput, setShowInput] = useState(!hasSavedName);
+  const [showInput] = useState(!hasSavedName);
   const [errorMsg, setErrorMsg] = useState('');
   const [isChecking, setIsChecking] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -746,9 +752,9 @@ function GameOverScreen({ level, totalTimeSpent, expected, isDevMode, hasRevived
                 </AnimatePresence>
               </div>
             ) : (
-              <div className="mb-3 bg-neutral-100 rounded-xl px-3 py-2 flex items-center justify-between">
-                <span className="font-bold text-[11px] block truncate text-left">{playerName}</span>
-                <button onClick={() => setShowInput(true)} className="text-[9px] font-bold text-amber-500 underline uppercase tracking-wider shrink-0 ml-2">{t.gameover_name_change}</button>
+              <div className="mb-3 bg-neutral-100 rounded-xl px-4 py-3 flex items-center justify-center">
+                <span className="font-black text-xs block truncate text-[#1D1D1F] uppercase tracking-wider">{playerName}</span>
+                {/* 1 Cihaz 1 Kullanıcı: İsim değiştirme butonunu kaldırdık */}
               </div>
             )}
 

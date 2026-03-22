@@ -6,6 +6,7 @@ DROP TABLE IF EXISTS scores CASCADE;
 CREATE TABLE scores (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   player_name TEXT NOT NULL,
+  device_id TEXT, -- Unique ID for each device/context
   level INTEGER NOT NULL,
   total_time DECIMAL(10,2) NOT NULL,
   country_code TEXT,
