@@ -206,3 +206,37 @@ export function formatDate(isoDate: string): string {
   const minutes = d.getMinutes().toString().padStart(2, '0');
   return `${day}.${month} ${hours}:${minutes}`;
 }
+
+export async function getPersonalScoreAndRank(period: 'daily'|'weekly'|'alltime', playerName: string): Promise<{rank: number, row: ScoreEntry} | null> {
+  const nameToSearch = playerName.trim();
+  if(!nameToSearch) return null;
+  
+  let query = supabase.from('scores').select('*').ilike('player_name', nameToSearch).limit(1);
+  if (period === 'daily') {
+    const today = new Date(); today.setHours(0,0,0,0);
+    query = query.gte('created_at', today.toISOString());
+  } else if (period === 'weekly') {
+    const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    query = query.gte('created_at', weekAgo.toISOString());
+  }
+
+  const { data: myData, error } = await query;
+  if (!myData || myData.length === 0 || error) return null;
+  
+  const myRow = myData[0] as ScoreEntry;
+  const orFilter = `level.gt.${myRow.level},and(level.eq.${myRow.level},total_time.lt.${myRow.total_time})`;
+  
+  let countQuery = supabase.from('scores').select('*', { count: 'exact', head: true }).or(orFilter);
+
+  if (period === 'daily') {
+    const today = new Date(); today.setHours(0,0,0,0);
+    countQuery = countQuery.gte('created_at', today.toISOString());
+  } else if (period === 'weekly') {
+    const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    countQuery = countQuery.gte('created_at', weekAgo.toISOString());
+  }
+
+  const { count } = await countQuery;
+  const rank = (count !== null ? count : 0) + 1;
+  return { rank, row: myRow };
+}

@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import { StatusBar } from '@capacitor/status-bar';
+import { App as CapApp } from '@capacitor/app';
 import { useGameStore } from './store/useGameStore';
 import { generatePuzzle, isTutorialLevel, getTutorialSymbols, type SymbolType } from './lib/LevelEngine';
 import * as Leaderboard from './lib/Leaderboard';
@@ -142,6 +144,7 @@ function MenuScreen({ startGame }: { startGame: (asDev?: boolean) => void }) {
   const [tab, setTab] = useState<'daily' | 'weekly' | 'alltime'>('daily');
   const [showLangMenu, setShowLangMenu] = useState(false);
   const [scores, setScores] = useState<Leaderboard.ScoreEntry[]>([]);
+  const [personalRankData, setPersonalRankData] = useState<{rank: number, row: Leaderboard.ScoreEntry} | null>(null);
   const [loading, setLoading] = useState(true);
   const personalBest = Leaderboard.getPersonalBest();
 
@@ -157,6 +160,13 @@ function MenuScreen({ startGame }: { startGame: (asDev?: boolean) => void }) {
   };
 
   useEffect(() => {
+    const hideStatusBar = async () => {
+      try { await StatusBar.hide(); } catch(e) {}
+    }
+    hideStatusBar();
+  }, []);
+
+  useEffect(() => {
     setLoading(true);
     const fetch = async () => {
       let data: Leaderboard.ScoreEntry[];
@@ -164,6 +174,15 @@ function MenuScreen({ startGame }: { startGame: (asDev?: boolean) => void }) {
       else if (tab === 'weekly') data = await Leaderboard.getWeeklyScores();
       else data = await Leaderboard.getAllTimeScores();
       setScores(data);
+
+      const pName = Leaderboard.getPlayerName();
+      if (pName) {
+        const pr = await Leaderboard.getPersonalScoreAndRank(tab, pName);
+        setPersonalRankData(pr);
+      } else {
+        setPersonalRankData(null);
+      }
+
       setLoading(false);
     };
     fetch();
@@ -225,6 +244,26 @@ function MenuScreen({ startGame }: { startGame: (asDev?: boolean) => void }) {
     }
   }, [muteAudio]);
 
+  // Arka planda müzik durdurma
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.hidden) ambientMusic?.stop();
+      else if (!muteAudio && audioCtx?.state === 'running') ambientMusic?.play();
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+
+    let appStateListener: any;
+    CapApp.addListener('appStateChange', ({ isActive }) => {
+      if (!isActive) ambientMusic?.stop();
+      else if (!muteAudio && audioCtx?.state === 'running') ambientMusic?.play();
+    }).then(listener => appStateListener = listener);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibility);
+      if (appStateListener) appStateListener.remove();
+    };
+  }, [muteAudio]);
+
   const tabLabels = { daily: t.menu_daily_tab, weekly: t.menu_weekly_tab, alltime: t.menu_alltime_tab };
 
   return (
@@ -234,6 +273,7 @@ function MenuScreen({ startGame }: { startGame: (asDev?: boolean) => void }) {
       <DailyRewardButton />
 
       {/* DEV BUTTON - TOP RIGHT */}
+      {import.meta.env.DEV && (
       <div className="absolute top-4 right-4 z-10">
         <button
           onClick={() => startGame(true)}
@@ -242,6 +282,7 @@ function MenuScreen({ startGame }: { startGame: (asDev?: boolean) => void }) {
           DEV
         </button>
       </div>
+      )}
 
       <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="text-center w-full max-w-sm z-0">
 
@@ -362,15 +403,15 @@ function MenuScreen({ startGame }: { startGame: (asDev?: boolean) => void }) {
                   <div className="w-8 h-8 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center scale-90 md:scale-100"><SymbolDisplay type="ReverseNext" /></div>
                   <span className="text-[8px] md:text-[9px] font-bold text-neutral-500 text-center tracking-tighter leading-tight whitespace-pre-line">{t.info_sym7}</span>
                 </div>
-                <div className="flex flex-col items-center gap-1">
+                <div className="flex flex-col items-center gap-1 pb-2">
                   <div className="w-8 h-8 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center scale-90 md:scale-100"><SymbolDisplay type="Star" /></div>
                   <span className="text-[8px] md:text-[9px] font-bold text-neutral-500 text-center tracking-tighter leading-tight whitespace-pre-line">{t.info_sym8}</span>
                 </div>
-                <div className="flex flex-col items-center gap-1">
+                <div className="flex flex-col items-center gap-1 pb-2">
                   <div className="w-8 h-8 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center scale-90 md:scale-100"><SymbolDisplay type="InvertAll" /></div>
                   <span className="text-[8px] md:text-[9px] font-bold text-neutral-500 text-center tracking-tighter leading-tight whitespace-pre-line">{t.info_sym9}</span>
                 </div>
-                <div className="flex flex-col items-center gap-1">
+                <div className="flex flex-col items-center gap-1 pb-2">
                   <div className="w-8 h-8 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center scale-90 md:scale-100"><SymbolDisplay type="Heart" /></div>
                   <span className="text-[8px] md:text-[9px] font-bold text-neutral-500 text-center tracking-tighter leading-tight whitespace-pre-line">{t.info_sym10}</span>
                 </div>
@@ -380,9 +421,14 @@ function MenuScreen({ startGame }: { startGame: (asDev?: boolean) => void }) {
                 <span className="text-[10px] font-black tracking-widest text-neutral-400 uppercase block mb-1">{t.info_dev}</span>
                 <span className="text-sm font-bold text-[#1D1D1F]">ARCN Games</span>
               </div>
-              <button onClick={() => setShowInfo(false)} className="w-full py-3 bg-neutral-100 text-neutral-800 rounded-xl font-bold tracking-wider text-sm hover:bg-neutral-200">
-                {t.info_close}
-              </button>
+              <div className="flex flex-col gap-2">
+                <button onClick={() => window.open('https://your-privacy-policy-link-here.com', '_blank')} className="w-full py-2 bg-neutral-50 text-blue-500 rounded-xl font-bold tracking-wider text-xs md:text-sm hover:bg-neutral-100 border border-neutral-200">
+                  {t.privacy_policy || "Gizlilik Politikası (Privacy Policy)"} ↗
+                </button>
+                <button onClick={() => setShowInfo(false)} className="w-full py-3 bg-neutral-100 text-neutral-800 rounded-xl font-bold tracking-wider text-sm hover:bg-neutral-200">
+                  {t.info_close}
+                </button>
+              </div>
             </motion.div>
           </div>
         )}
@@ -448,6 +494,27 @@ function MenuScreen({ startGame }: { startGame: (asDev?: boolean) => void }) {
                         </div>
                       </div>
                     ))}
+                    {personalRankData && !scores.some(s => s.player_name === personalRankData.row.player_name) && (
+                      <>
+                        <div className="my-2 border-t-2 border-dashed border-neutral-200"></div>
+                        <div className="flex items-center gap-2 p-2 sm:p-3 rounded-xl bg-blue-50 border border-blue-100">
+                          <span className="w-6 h-6 rounded-full flex items-center justify-center font-black text-[10px] shrink-0 bg-blue-400 text-white shadow-sm ring-2 ring-blue-100">
+                            {personalRankData.rank > 999 ? '999+' : personalRankData.rank}
+                          </span>
+                          <div className="flex-1 min-w-0 pr-1">
+                            <span className="font-bold text-xs sm:text-sm text-blue-800 block truncate flex items-center gap-1">
+                              {personalRankData.row.country_code && <span className="text-[10px]">{personalRankData.row.country_code.toUpperCase().replace(/./g, char => String.fromCodePoint(char.charCodeAt(0) + 127397))}</span>}
+                              {personalRankData.row.player_name} <span className="text-[9px] ml-1 bg-blue-100 text-blue-600 px-1.5 py-0.5 rounded-full uppercase tracking-wider">{t.lb_you || "(Sen)"}</span>
+                            </span>
+                            <span className="text-[9px] sm:text-[10px] text-blue-400/80 font-medium">{Leaderboard.formatDate(personalRankData.row.created_at)}</span>
+                          </div>
+                          <div className="text-right shrink-0">
+                            <span className="font-black text-xs sm:text-sm block text-blue-800">{t.lb_b_level} {personalRankData.row.level}</span>
+                            <span className="text-[9px] sm:text-[10px] text-blue-400/80 font-semibold">{Leaderboard.formatTime(personalRankData.row.total_time)}</span>
+                          </div>
+                        </div>
+                      </>
+                    )}
                   </div>
                 )}
               </div>

@@ -15,10 +15,13 @@ class AdsService {
   private static instance: AdsService;
   private isLoaded: boolean = false;
 
-  // REKLAM AYARLARI (Burayı Google panelindeki bilgilerle doldurun)
+  // REKLAM AYARLARI (AdMob'dan aldığınız Unit ID'leri buraya yapıştırın)
+  // Dev modunda veya test aşamasında false yapın ki gerçek reklam gösterip banlanmayın.
   private config = {
-    rewardedAdId: 'YOUR_REWARDED_AD_ID', // Örn: ca-app-pub-XXXXXXXXXXXXXXXX/YYYYYYYYYY
-    isEnabled: true // Geliştirme aşamasında false yapabilirsiniz
+    // ÖRNEK TEST ID'leri: (Canlıya alırken kendi AdMob "Ödüllü" reklam ID'nizi buraya yazın)
+    rewardedAdIdAndroid: 'ca-app-pub-3940256099942544/5224354917', // <-- YAPIŞTIRILACAK YER (ANDROID)
+    rewardedAdIdIOS: 'ca-app-pub-3940256099942544/1712485313',     // <-- YAPIŞTIRILACAK YER (IOS)
+    isEnabled: true 
   };
 
   private constructor() {

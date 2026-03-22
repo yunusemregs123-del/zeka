@@ -11,8 +11,10 @@
   },
   "dependencies": {
     "@capacitor/android": "^8.2.0",
+    "@capacitor/app": "^8.0.1",
     "@capacitor/core": "^8.2.0",
     "@capacitor/ios": "^8.2.0",
+    "@capacitor/status-bar": "^8.0.1",
     "@supabase/supabase-js": "^2.99.3",
     "@types/howler": "^2.2.12",
     "clsx": "^2.1.1",
