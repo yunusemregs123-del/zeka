@@ -140,7 +140,7 @@ const TutorialExample = ({ text, sequence, result }: { text?: string, sequence?:
 
 // ─── MENU SCREEN ──────────────────────────────────────
 function MenuScreen({ startGame }: { startGame: (asDev?: boolean) => void }) {
-  const { language, setLanguage } = useGameStore();
+  const { language, setLanguage, medals, claimedMedals, claimMedalReward } = useGameStore();
   const t = Translations[language];
   const [tab, setTab] = useState<'daily' | 'weekly' | 'alltime'>('daily');
   const [showLangMenu, setShowLangMenu] = useState(false);
@@ -389,12 +389,12 @@ function MenuScreen({ startGame }: { startGame: (asDev?: boolean) => void }) {
               <div className="mb-6 bg-neutral-50 p-4 rounded-2xl border border-neutral-100">
                 <div className="flex justify-between items-end mb-2">
                   <span className="text-[10px] font-black text-neutral-400 uppercase tracking-widest">Kazanılanlar</span>
-                  <span className="text-lg font-black text-[#1D1D1F]">{useGameStore.getState().medals.length} / 20</span>
+                  <span className="text-lg font-black text-[#1D1D1F]">{medals.length} / 12</span>
                 </div>
                 <div className="h-2 w-full bg-neutral-200 rounded-full overflow-hidden">
                   <motion.div 
                     initial={{ width: 0 }}
-                    animate={{ width: `${(useGameStore.getState().medals.length / 20) * 100}%` }}
+                    animate={{ width: `${(medals.length / 12) * 100}%` }}
                     className="h-full bg-[#1D1D1F]"
                   />
                 </div>
@@ -402,16 +402,20 @@ function MenuScreen({ startGame }: { startGame: (asDev?: boolean) => void }) {
 
               <div className="grid grid-cols-4 gap-2.5 overflow-y-auto pr-1 custom-scrollbar pb-4 max-h-[45vh]">
                 {ACHIEVEMENTS.map(med => {
-                  const unlocked = useGameStore.getState().medals.includes(med.id);
+                  const unlocked = medals.includes(med.id);
+                  const claimed = claimedMedals.includes(med.id);
                   return (
                     <motion.div 
                       key={med.id}
                       onClick={() => setSelectedMedal(med)}
-                      whileHover={unlocked ? { scale: 1.05 } : { scale: 1.02 }}
+                      whileHover={{ scale: 1.05 }}
                       className="group relative flex flex-col items-center gap-1 cursor-pointer"
                     >
-                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center border-2 transition-all ${unlocked ? 'bg-[#1D1D1F] border-[#1D1D1F] text-white shadow-md' : 'bg-white border-neutral-100 text-neutral-200'}`}>
+                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center border-2 transition-all ${unlocked ? (claimed ? 'bg-neutral-800 border-neutral-800 text-white' : 'bg-amber-400 border-amber-400 text-white') : 'bg-white border-neutral-100 text-neutral-200'}`}>
                         <Icons.Medal className={`w-6 h-6 ${unlocked ? 'opacity-100' : 'opacity-30'}`} />
+                        {unlocked && !claimed && (
+                          <div className="absolute -top-1 -right-1 bg-red-500 w-3 h-3 rounded-full border-2 border-white animate-bounce" />
+                        )}
                       </div>
                       <span className={`text-[6.5px] font-black uppercase tracking-tighter text-center leading-none mt-0.5 ${unlocked ? 'text-neutral-900' : 'text-neutral-300'}`}>
                         {t[med.key]}
@@ -430,20 +434,35 @@ function MenuScreen({ startGame }: { startGame: (asDev?: boolean) => void }) {
                     exit={{ opacity: 0, scale: 0.95 }}
                     className="absolute inset-0 bg-white/95 z-20 rounded-[2.5rem] p-8 flex flex-col items-center justify-center text-center"
                   >
-                    <div className={`w-24 h-24 rounded-3xl flex items-center justify-center mb-6 border-4 ${useGameStore.getState().medals.includes(selectedMedal.id) ? 'bg-[#1D1D1F] border-[#1D1D1F] text-white' : 'bg-white border-neutral-100 text-neutral-200'}`}>
+                    <div className={`w-24 h-24 rounded-3xl flex items-center justify-center mb-6 border-4 ${medals.includes(selectedMedal.id) ? 'bg-[#1D1D1F] border-[#1D1D1F] text-white' : 'bg-white border-neutral-100 text-neutral-200'}`}>
                       <Icons.Medal className="w-12 h-12" />
                     </div>
                     <h3 className="text-xl font-black mb-2 uppercase tracking-tight">{t[selectedMedal.key]}</h3>
                     <p className="text-xs font-bold text-neutral-500 mb-6 leading-relaxed px-4">
                       {t[selectedMedal.key + '_desc'] || "???"}
                     </p>
+                    
                     <div className="bg-amber-50 px-4 py-2 rounded-full border border-amber-100 flex items-center gap-2 mb-8">
                        <span className="text-[10px] font-black text-amber-600 uppercase tracking-widest">{t.med_reward}:</span>
                        <span className="text-sm font-black text-amber-600">{selectedMedal.reward} COIN</span>
                     </div>
+
+                    {medals.includes(selectedMedal.id) && !claimedMedals.includes(selectedMedal.id) ? (
+                      <button 
+                        onClick={() => { claimMedalReward(selectedMedal.id, selectedMedal.reward); playSound('success'); }}
+                        className="w-full py-4 bg-amber-400 text-white rounded-2xl font-black tracking-widest text-xs shadow-lg hover:scale-105 active:scale-95 transition-all mb-3"
+                      >
+                         ÖDÜLÜ TOPLA
+                      </button>
+                    ) : claimedMedals.includes(selectedMedal.id) ? (
+                      <div className="w-full py-4 bg-neutral-100 text-neutral-400 rounded-2xl font-black tracking-widest text-xs mb-3">
+                         ÖDÜL ALINDI ✓
+                      </div>
+                    ) : null}
+
                     <button 
                       onClick={() => setSelectedMedal(null)}
-                      className="w-full py-4 bg-[#1D1D1F] text-white rounded-2xl font-black tracking-widest text-xs shadow-lg hover:scale-105 active:scale-95 transition-all"
+                      className="w-full py-4 bg-neutral-800 text-white rounded-2xl font-black tracking-widest text-xs shadow-md hover:scale-105 active:scale-95 transition-all text-[10px]"
                     >
                       {t.info_close || "GERİ"}
                     </button>
@@ -917,7 +936,7 @@ export default function App() {
   const {
     gameState, level, totalTimeSpent, currentValue, timeLeft, maxTime, coins, previousAnswers, hideIntro, isDevMode, hasRevivedInCurrentGame, language,
     streak, helpCount, langsUsed,
-    startNewLevel, setCurrentValue, tickTimer, addLevelTime, setHideIntro, startGame, goToMenu, devAdvanceLevel, resetStreak
+    startNewLevel, setCurrentValue, tickTimer, addLevelTime, setHideIntro, startGame, goToMenu, devAdvanceLevel, resetStreak, unlockMedal
   } = useGameStore();
   const t = Translations[language];
 
@@ -1000,10 +1019,11 @@ export default function App() {
       achievementsCount: s.medals.length,
       totalTimeSpent: s.totalTimeSpent,
       lastTime: s.lastLevelTime,
+      dailyRewardsTotal: s.dailyRewardsTotal,
     };
     ACHIEVEMENTS.forEach(med => {
       if (!s.medals.includes(med.id) && med.condition(stats)) {
-        s.unlockMedal(med.id, med.reward);
+        unlockMedal(med.id);
       }
     });
   }, [level, coins, streak, helpCount, langsUsed.length, totalTimeSpent]);

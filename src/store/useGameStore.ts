@@ -17,15 +17,18 @@ interface GameState {
   lastRewardTime: number | null;
   dailyRewardsToday: number;
   medals: string[]; // List of unlocked medal IDs
+  claimedMedals: string[]; // List of medal IDs where reward was claimed
   streak: number; // Correct answers in a row
   helpCount: number; // Times Solution revealed
   langsUsed: string[]; // Languages tried
+  dailyRewardsTotal: number; // Lifetime daily rewards claimed
   lastLevelTime: number; // Time taken for the last level completed
 
   // Actions
   setLanguage: (lang: 'en' | 'tr' | 'de' | 'ja' | 'pt') => void;
   goToMenu: () => void;
-  unlockMedal: (id: string, reward: number) => void;
+  unlockMedal: (id: string) => void;
+  claimMedalReward: (id: string, reward: number) => void;
   startGame: (asDev?: boolean) => void;
   incrementStreak: () => void;
   resetStreak: () => void;
@@ -84,9 +87,11 @@ export const useGameStore = create<GameState>((set, get) => ({
   hasRevivedInCurrentGame: false,
   language: getInitialLanguage(),
   medals: JSON.parse(localStorage.getItem('zeka_medals') || '[]'),
+  claimedMedals: JSON.parse(localStorage.getItem('zeka_medals_claimed') || '[]'),
   streak: 0,
   helpCount: Number(localStorage.getItem('zeka_help_count')) || 0,
   langsUsed: JSON.parse(localStorage.getItem('zeka_langs_used') || '[]'),
+  dailyRewardsTotal: Number(localStorage.getItem('zeka_daily_total')) || 0,
   lastLevelTime: 0,
   ...getDailyRewardState(),
 
@@ -198,19 +203,34 @@ export const useGameStore = create<GameState>((set, get) => ({
 
   claimDailyReward: () => {
     const now = Date.now();
-    const newState = { lastRewardTime: now, dailyRewardsToday: get().dailyRewardsToday + 1 };
+    const total = get().dailyRewardsTotal + 1;
+    const newState = { 
+      lastRewardTime: now, 
+      dailyRewardsToday: get().dailyRewardsToday + 1,
+      dailyRewardsTotal: total 
+    };
     localStorage.setItem('dailyRewardState', JSON.stringify(newState));
+    localStorage.setItem('zeka_daily_total', String(total));
     set(newState);
     get().addCoins(100);
   },
 
-  unlockMedal: (id, reward) => {
+  unlockMedal: (id) => {
     const currentMedals = get().medals;
     if (currentMedals.includes(id)) return;
     
     const newMedals = [...currentMedals, id];
     localStorage.setItem('zeka_medals', JSON.stringify(newMedals));
     set({ medals: newMedals });
+  },
+
+  claimMedalReward: (id, reward) => {
+    const claimed = get().claimedMedals;
+    if (claimed.includes(id)) return;
+
+    const newClaimed = [...claimed, id];
+    localStorage.setItem('zeka_medals_claimed', JSON.stringify(newClaimed));
+    set({ claimedMedals: newClaimed });
     get().addCoins(reward);
   },
 
