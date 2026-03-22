@@ -371,11 +371,13 @@ function MenuScreen({ startGame }: { startGame: (asDev?: boolean) => void }) {
       {/* MEDALS MODAL */}
       <AnimatePresence>
         {showMedals && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm pointer-events-auto">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 pointer-events-auto">
             <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
+              key="medals-modal"
+              initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              transition={{ duration: 0.2 }}
               className="bg-white rounded-[2.5rem] p-6 w-full max-w-[360px] shadow-2xl relative flex flex-col max-h-[85vh]"
             >
               <div className="flex justify-between items-center mb-6">
@@ -432,9 +434,11 @@ function MenuScreen({ startGame }: { startGame: (asDev?: boolean) => void }) {
               <AnimatePresence>
                 {selectedMedal && (
                   <motion.div 
+                    key="medal-detail-overlay"
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.95 }}
+                    transition={{ duration: 0.2 }}
                     className="absolute inset-0 bg-white/95 z-20 rounded-[2.5rem] p-8 flex flex-col items-center justify-center text-center"
                   >
                     <div className={`w-24 h-24 rounded-3xl flex items-center justify-center mb-6 border-4 ${medals.includes(selectedMedal.id) ? 'bg-[#1D1D1F] border-[#1D1D1F] text-white' : 'bg-white border-neutral-100 text-neutral-200'}`}>
@@ -486,11 +490,13 @@ function MenuScreen({ startGame }: { startGame: (asDev?: boolean) => void }) {
       {/* INFO MODAL */}
       <AnimatePresence>
         {showInfo && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 pointer-events-auto">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 pointer-events-auto">
             <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1, transition: { duration: 0.2 } }}
-              exit={{ scale: 0.95, opacity: 0, transition: { duration: 0.1 } }}
+              key="info-modal"
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              transition={{ duration: 0.2 }}
               className="bg-white rounded-3xl p-5 w-full max-w-[340px] shadow-2xl relative"
             >
               <h2 className="text-xl font-black mb-3">{t.info_title}</h2>
@@ -561,11 +567,13 @@ function MenuScreen({ startGame }: { startGame: (asDev?: boolean) => void }) {
       {/* LEADERBOARD MODAL */}
       <AnimatePresence>
         {showLeaderboard && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 pointer-events-auto">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 pointer-events-auto">
             <motion.div
-              initial={{ scale: 0.9, opacity: 0, y: 20 }}
-              animate={{ scale: 1, opacity: 1, y: 0, transition: { duration: 0.2 } }}
-              exit={{ scale: 0.95, opacity: 0, y: 10, transition: { duration: 0.1 } }}
+              key="lb-modal"
+              initial={{ scale: 0.95, opacity: 0, y: 10 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 10 }}
+              transition={{ duration: 0.2 }}
               className="bg-white rounded-3xl w-full max-w-[360px] shadow-2xl flex flex-col overflow-hidden max-h-[85dvh]"
             >
               <div className="flex justify-between items-center p-4 border-b border-neutral-100 shrink-0">
@@ -710,9 +718,13 @@ function DailyRewardButton() {
 
       <AnimatePresence>
         {showModal && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70">
             <motion.div
-              initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
+              key="daily-gift-modal"
+              initial={{ scale: 0.95, opacity: 0 }} 
+              animate={{ scale: 1, opacity: 1 }} 
+              exit={{ scale: 0.95, opacity: 0 }}
+              transition={{ duration: 0.2 }}
               className="bg-white rounded-[2rem] p-6 w-full max-w-[320px] shadow-2xl text-center"
             >
               <div className="w-16 h-16 bg-amber-100 text-amber-500 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-amber-200">
@@ -750,9 +762,13 @@ function DailyRewardButton() {
         )}
 
         {showSuccess && (
-          <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/70">
             <motion.div
-              initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 50, opacity: 0 }}
+              key="reward-success-modal"
+              initial={{ y: 20, opacity: 0 }} 
+              animate={{ y: 0, opacity: 1 }} 
+              exit={{ y: 20, opacity: 0 }}
+              transition={{ duration: 0.2 }}
               className="bg-white rounded-[2rem] p-8 w-full max-w-[300px] shadow-2xl text-center border-b-8 border-amber-400"
             >
               <div className="text-5xl mb-4">✨</div>
