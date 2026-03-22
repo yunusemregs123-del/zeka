@@ -822,6 +822,8 @@ export default function App() {
   const [expected, setExpected] = useState<number>(0);
   const [showSolution, setShowSolution] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showTrackingModal, setShowTrackingModal] = useState(false);
 
   // Modals
   const [showTutorialModal, setShowTutorialModal] = useState(false);
@@ -863,6 +865,27 @@ export default function App() {
     }
   }, [Math.floor(timeLeft), gameState, isPaused, showTutorialModal, showIntroModal, isDevMode]);
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const isModalOpen = showTutorialModal || showIntroModal;
+      if (gameState !== 'PLAYING' || isPaused || isModalOpen) return;
+
+      if (e.key === 'ArrowUp' || e.key === 'ArrowRight') {
+        e.preventDefault();
+        adjustValue(1);
+      } else if (e.key === 'ArrowDown' || e.key === 'ArrowLeft') {
+        e.preventDefault();
+        adjustValue(-1);
+      } else if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        handleSubmission();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [gameState, isPaused, showTutorialModal, showIntroModal, currentValue, expected, isSubmitting]);
+
   const initLevel = () => {
     const puzzle = generatePuzzle(level, previousAnswers);
     setSequence(puzzle.sequence);
@@ -887,8 +910,6 @@ export default function App() {
     }));
   };
 
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showTrackingModal, setShowTrackingModal] = useState(false);
 
   const handleSubmission = () => {
     if (isSubmitting) return;
