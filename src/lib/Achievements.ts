@@ -16,6 +16,6 @@ export const ACHIEVEMENTS: Achievement[] = [
   { id: '8', key: 'med_loyal_5', reward: 250, condition: (s) => s.dailyRewardsTotal >= 5 },
   { id: '9', key: 'med_hard_60', reward: 100, condition: (s) => s.level >= 60 },
   { id: '10', key: 'med_veteran_150', reward: 300, condition: (s) => s.level >= 150 },
-  { id: '11', key: 'med_help_10', reward: 100, condition: (s) => s.helpCount >= 10 },
+  { id: '11', key: 'med_help_10', reward: 500, condition: (s) => s.helpCount >= 10 },
   { id: '12', key: 'med_mastery', reward: 1000, condition: (s) => s.achievementsCount >= 11 }
 ];
