@@ -400,7 +400,7 @@ function MenuScreen({ startGame }: { startGame: (asDev?: boolean) => void }) {
                 </div>
               </div>
 
-              <div className="grid grid-cols-4 gap-2.5 overflow-y-auto pr-1 custom-scrollbar pb-4 max-h-[45vh]">
+              <div className="grid grid-cols-4 gap-2.5 overflow-y-auto pr-1 custom-scrollbar pb-4 max-h-[45vh] pt-2">
                 {ACHIEVEMENTS.map(med => {
                   const unlocked = medals.includes(med.id);
                   const claimed = claimedMedals.includes(med.id);
@@ -414,7 +414,7 @@ function MenuScreen({ startGame }: { startGame: (asDev?: boolean) => void }) {
                       <div className={`w-12 h-12 rounded-xl flex items-center justify-center border-2 transition-all ${unlocked ? (claimed ? 'bg-neutral-800 border-neutral-800 text-white' : 'bg-amber-400 border-amber-400 text-white') : 'bg-white border-neutral-100 text-neutral-200'}`}>
                         <Icons.Medal className={`w-6 h-6 ${unlocked ? 'opacity-100' : 'opacity-30'}`} />
                         {unlocked && !claimed && (
-                          <div className="absolute -top-1 -right-1 bg-red-500 w-3 h-3 rounded-full border-2 border-white animate-bounce" />
+                          <div className="absolute top-0 right-0 bg-red-500 w-3 h-3 rounded-full border-2 border-white animate-bounce" />
                         )}
                       </div>
                       <span className={`text-[6.5px] font-black uppercase tracking-tighter text-center leading-none mt-0.5 ${unlocked ? 'text-neutral-900' : 'text-neutral-300'}`}>
