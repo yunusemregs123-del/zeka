@@ -16,11 +16,20 @@ interface GameState {
   
   lastRewardTime: number | null;
   dailyRewardsToday: number;
+  medals: string[]; // List of unlocked medal IDs
+  streak: number; // Correct answers in a row
+  helpCount: number; // Times Solution revealed
+  langsUsed: string[]; // Languages tried
+  lastLevelTime: number; // Time taken for the last level completed
 
   // Actions
   setLanguage: (lang: 'en' | 'tr' | 'de' | 'ja' | 'pt') => void;
   goToMenu: () => void;
+  unlockMedal: (id: string, reward: number) => void;
   startGame: (asDev?: boolean) => void;
+  incrementStreak: () => void;
+  resetStreak: () => void;
+  useHelp: () => void;
   startNewLevel: (isRetry?: boolean) => void;
   submitAnswer: (answer: number) => void;
   setCurrentValue: (val: number) => void;
@@ -74,11 +83,23 @@ export const useGameStore = create<GameState>((set, get) => ({
   isDevMode: false,
   hasRevivedInCurrentGame: false,
   language: getInitialLanguage(),
+  medals: JSON.parse(localStorage.getItem('zeka_medals') || '[]'),
+  streak: 0,
+  helpCount: Number(localStorage.getItem('zeka_help_count')) || 0,
+  langsUsed: JSON.parse(localStorage.getItem('zeka_langs_used') || '[]'),
+  lastLevelTime: 0,
   ...getDailyRewardState(),
 
   setLanguage: (lang) => {
     localStorage.setItem('zeka_lang', lang);
-    set({ language: lang });
+    const used = get().langsUsed;
+    if (!used.includes(lang)) {
+      const newUsed = [...used, lang];
+      localStorage.setItem('zeka_langs_used', JSON.stringify(newUsed));
+      set({ language: lang, langsUsed: newUsed });
+    } else {
+      set({ language: lang });
+    }
   },
 
   goToMenu: () => set({ gameState: 'MENU' }),
@@ -90,7 +111,8 @@ export const useGameStore = create<GameState>((set, get) => ({
       previousAnswers: [0,0], 
       gameState: 'PLAYING',
       isDevMode: asDev,
-      hasRevivedInCurrentGame: false
+      hasRevivedInCurrentGame: false,
+      streak: 0, // Reset session streak
     });
     get().startNewLevel(true);
   },
@@ -145,8 +167,10 @@ export const useGameStore = create<GameState>((set, get) => ({
   showSolution: () => set((state) => {
     if (state.coins >= 50) {
       const newCoins = state.coins - 50;
+      const newHelpCount = state.helpCount + 1;
       localStorage.setItem('zeka_coins', String(newCoins));
-      return { coins: newCoins };
+      localStorage.setItem('zeka_help_count', String(newHelpCount));
+      return { coins: newCoins, helpCount: newHelpCount };
     }
     return state;
   }),
@@ -178,5 +202,19 @@ export const useGameStore = create<GameState>((set, get) => ({
     localStorage.setItem('dailyRewardState', JSON.stringify(newState));
     set(newState);
     get().addCoins(100);
-  }
+  },
+
+  unlockMedal: (id, reward) => {
+    const currentMedals = get().medals;
+    if (currentMedals.includes(id)) return;
+    
+    const newMedals = [...currentMedals, id];
+    localStorage.setItem('zeka_medals', JSON.stringify(newMedals));
+    set({ medals: newMedals });
+    get().addCoins(reward);
+  },
+
+  incrementStreak: () => set(s => ({ streak: s.streak + 1 })),
+  resetStreak: () => set({ streak: 0 }),
+  useHelp: () => set(s => ({ helpCount: s.helpCount + 1 }))
 }));

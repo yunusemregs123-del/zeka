@@ -148,3 +148,9 @@ export const ChevronDown = ({ className }: { className?: string }) => (
     <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
   </svg>
 );
+export const Medal = (props: IconProps) => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <path d="M12 2l3 6 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1 3-6z" />
+    <circle cx="12" cy="12" r="3" />
+  </svg>
+);

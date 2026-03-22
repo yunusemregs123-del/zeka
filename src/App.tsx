@@ -9,6 +9,7 @@ import { motion, AnimatePresence, useAnimation } from 'framer-motion';
 import { AmbientMusic } from './lib/AmbientMusic';
 import { Ads } from './lib/Ads';
 import { Translations, type LanguageCode } from './lib/Translations';
+import { ACHIEVEMENTS } from './lib/Achievements';
 
 let audioCtx: AudioContext | null = null;
 let ambientMusic: AmbientMusic | null = null;
@@ -143,6 +144,7 @@ function MenuScreen({ startGame }: { startGame: (asDev?: boolean) => void }) {
   const t = Translations[language];
   const [tab, setTab] = useState<'daily' | 'weekly' | 'alltime'>('daily');
   const [showLangMenu, setShowLangMenu] = useState(false);
+  const [showMedals, setShowMedals] = useState(false);
   const [scores, setScores] = useState<Leaderboard.ScoreEntry[]>([]);
   const [personalRankData, setPersonalRankData] = useState<{rank: number, row: Leaderboard.ScoreEntry} | null>(null);
   const [loading, setLoading] = useState(true);
@@ -339,15 +341,18 @@ function MenuScreen({ startGame }: { startGame: (asDev?: boolean) => void }) {
         </button>
 
         {/* BOTTOM ACTION BUTTONS */}
-        <div className="flex justify-center gap-4 mt-6">
-          <button onClick={toggleMute} className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center shadow-md border border-neutral-100 text-neutral-500 hover:text-black hover:-translate-y-1 transition-all">
-            {muteAudio ? <Icons.MusicOff className="w-6 h-6" /> : <Icons.MusicOn className="w-6 h-6" />}
+        <div className="flex justify-center gap-3 mt-6">
+          <button onClick={toggleMute} className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-md border border-neutral-100 text-neutral-500 hover:text-black hover:-translate-y-1 transition-all">
+            {muteAudio ? <Icons.MusicOff className="w-5 h-5" /> : <Icons.MusicOn className="w-5 h-5" />}
           </button>
-          <button onClick={() => setShowLeaderboard(true)} className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center shadow-md border border-neutral-100 text-amber-500 hover:text-amber-600 hover:-translate-y-1 transition-all">
-            <Icons.Trophy className="w-6 h-6" />
+          <button onClick={() => setShowLeaderboard(true)} className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-md border border-neutral-100 text-amber-500 hover:text-amber-600 hover:-translate-y-1 transition-all">
+            <Icons.Trophy className="w-5 h-5" />
           </button>
-          <button onClick={() => setShowInfo(true)} className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center shadow-md border border-neutral-100 text-neutral-500 hover:text-black hover:-translate-y-1 transition-all">
-            <Icons.Info className="w-6 h-6" />
+          <button onClick={() => setShowMedals(true)} className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-md border border-neutral-100 text-[#1D1D1F] hover:text-black hover:-translate-y-1 transition-all">
+            <Icons.Medal className="w-5 h-5" />
+          </button>
+          <button onClick={() => setShowInfo(true)} className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-md border border-neutral-100 text-neutral-500 hover:text-black hover:-translate-y-1 transition-all">
+            <Icons.Info className="w-5 h-5" />
           </button>
         </div>
 
@@ -358,6 +363,80 @@ function MenuScreen({ startGame }: { startGame: (asDev?: boolean) => void }) {
           </div>
         )}
       </motion.div>
+
+      {/* MEDALS MODAL */}
+      <AnimatePresence>
+        {showMedals && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm pointer-events-auto">
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-white rounded-[2.5rem] p-6 w-full max-w-[360px] shadow-2xl relative flex flex-col max-h-[85vh]"
+            >
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-black tracking-tighter flex items-center gap-2">
+                  <Icons.Medal className="w-6 h-6 text-[#1D1D1F]" />
+                  {t.medals_title}
+                </h2>
+                <button onClick={() => setShowMedals(false)} className="w-10 h-10 flex items-center justify-center bg-neutral-100 rounded-full hover:bg-neutral-200 transition-colors">
+                  <span className="font-bold text-neutral-500 text-sm">✕</span>
+                </button>
+              </div>
+
+              {/* Progress Bar */}
+              <div className="mb-6 bg-neutral-50 p-4 rounded-2xl border border-neutral-100">
+                <div className="flex justify-between items-end mb-2">
+                  <span className="text-[10px] font-black text-neutral-400 uppercase tracking-widest">Kazanılanlar</span>
+                  <span className="text-lg font-black text-[#1D1D1F]">{useGameStore.getState().medals.length} / 20</span>
+                </div>
+                <div className="h-2 w-full bg-neutral-200 rounded-full overflow-hidden">
+                  <motion.div 
+                    initial={{ width: 0 }}
+                    animate={{ width: `${(useGameStore.getState().medals.length / 20) * 100}%` }}
+                    className="h-full bg-[#1D1D1F]"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-4 gap-3 overflow-y-auto pr-1 custom-scrollbar pb-4">
+                {ACHIEVEMENTS.map(med => {
+                  const unlocked = useGameStore.getState().medals.includes(med.id);
+                  return (
+                    <motion.div 
+                      key={med.id}
+                      whileHover={unlocked ? { scale: 1.1 } : {}}
+                      className="group relative flex flex-col items-center gap-1.5"
+                    >
+                      <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border-2 transition-all ${unlocked ? 'bg-[#1D1D1F] border-[#1D1D1F] text-white shadow-lg' : 'bg-white border-neutral-100 text-neutral-200 opacity-40'}`}>
+                        <Icons.Medal className="w-7 h-7" />
+                        {unlocked && (
+                          <div className="absolute -top-1 -right-1 bg-amber-400 text-white rounded-full p-0.5 shadow-sm">
+                            <Icons.Plus className="w-2.5 h-2.5" strokeWidth={5} />
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Tooltip on long press / hover simplified */}
+                      <div className="w-full text-center">
+                        <span className={`text-[7px] font-black uppercase tracking-tighter block leading-tight ${unlocked ? 'text-neutral-900' : 'text-neutral-300'}`}>
+                          {t[med.key]}
+                        </span>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </div>
+
+              <div className="mt-4 pt-4 border-t border-neutral-100">
+                <button onClick={() => setShowMedals(false)} className="w-full py-4 bg-[#1D1D1F] text-white rounded-2xl font-black tracking-widest text-xs shadow-lg hover:scale-105 active:scale-95 transition-all">
+                  {t.info_close || "TAMAM"}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* INFO MODAL */}
       <AnimatePresence>
@@ -814,7 +893,8 @@ function GameOverScreen({ level, totalTimeSpent, expected, isDevMode, hasRevived
 export default function App() {
   const {
     gameState, level, totalTimeSpent, currentValue, timeLeft, maxTime, coins, previousAnswers, hideIntro, isDevMode, hasRevivedInCurrentGame, language,
-    startNewLevel, setCurrentValue, tickTimer, addLevelTime, setHideIntro, startGame, goToMenu, devAdvanceLevel
+    streak, helpCount, langsUsed,
+    startNewLevel, setCurrentValue, tickTimer, addLevelTime, setHideIntro, startGame, goToMenu, devAdvanceLevel, resetStreak
   } = useGameStore();
   const t = Translations[language];
 
@@ -886,6 +966,25 @@ export default function App() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [gameState, isPaused, showTutorialModal, showIntroModal, currentValue, expected, isSubmitting]);
 
+  useEffect(() => {
+    const s = useGameStore.getState();
+    const stats = {
+      level: s.level,
+      coins: s.coins,
+      streak: s.streak,
+      helpCount: s.helpCount,
+      langsUsed: s.langsUsed.length,
+      achievementsCount: s.medals.length,
+      totalTimeSpent: s.totalTimeSpent,
+      lastTime: s.lastLevelTime,
+    };
+    ACHIEVEMENTS.forEach(med => {
+      if (!s.medals.includes(med.id) && med.condition(stats)) {
+        s.unlockMedal(med.id, med.reward);
+      }
+    });
+  }, [level, coins, streak, helpCount, langsUsed.length, totalTimeSpent]);
+
   const initLevel = () => {
     const puzzle = generatePuzzle(level, previousAnswers);
     setSequence(puzzle.sequence);
@@ -897,12 +996,16 @@ export default function App() {
 
   const handleGameOver = () => {
     playSound('fail');
+    resetStreak();
     useGameStore.setState({ gameState: 'GAMEOVER' });
   };
 
   const handleLevelComplete = () => {
     playSound('success');
-    addLevelTime(Number((maxTime - timeLeft).toFixed(2)));
+    const timeSpent = Number((maxTime - timeLeft).toFixed(2));
+    addLevelTime(timeSpent);
+    useGameStore.setState({ lastLevelTime: timeSpent });
+    useGameStore.getState().incrementStreak();
     useGameStore.setState(s => ({
       level: s.level + 1,
       coins: s.coins + 5,
