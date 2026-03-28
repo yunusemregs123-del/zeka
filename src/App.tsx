@@ -1607,38 +1607,38 @@ export default function App() {
           </div>
         )}
 
-        {/* EXIT CONFIRMATION MODAL - PREMIUM MINIMALIST REDESIGN */}
+        {/* EXIT CONFIRMATION MODAL - COMPACT & REFINED */}
         {showExitConfirm && (
           <div className="fixed inset-0 z-[120] flex items-center justify-center p-6 bg-black/40 backdrop-blur-md pointer-events-auto">
             <motion.div
-              initial={{ scale: 0.9, y: 20, opacity: 0 }}
+              initial={{ scale: 0.9, y: 10, opacity: 0 }}
               animate={{ scale: 1, y: 0, opacity: 1 }}
-              exit={{ scale: 0.9, y: 20, opacity: 0 }}
-              className="bg-white/95 backdrop-blur-xl rounded-[2.5rem] p-10 w-full max-w-[320px] text-center shadow-[0_32px_64px_-16px_rgba(0,0,0,0.3)] border border-white/20"
+              exit={{ scale: 0.9, y: 10, opacity: 0 }}
+              className="bg-white/95 backdrop-blur-xl rounded-[2rem] p-8 w-full max-w-[280px] text-center shadow-[0_24px_48px_-12px_rgba(0,0,0,0.25)] border border-white/20"
             >
-              <div className="w-20 h-20 bg-neutral-900 text-white rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-xl rotate-3">
-                <Icons.Home className="w-10 h-10" />
+              <div className="w-14 h-14 bg-neutral-900 text-white rounded-2xl flex items-center justify-center mx-auto mb-6">
+                <Icons.Home className="w-7 h-7" />
               </div>
               
-              <h2 className="text-2xl font-black mb-3 text-neutral-900 tracking-tight leading-tight">
+              <h2 className="text-xl font-black mb-2 text-neutral-900 tracking-tight leading-tight">
                 {t.exit_confirm_title}
               </h2>
-              <p className="text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-10 px-4">
+              <p className="text-[9px] font-black text-neutral-400 uppercase tracking-widest mb-8 px-2">
                 {t.exit_confirm_desc}
               </p>
 
-              <div className="flex flex-col gap-3">
-                <button
-                  onClick={() => { setShowExitConfirm(false); goToMenu(); }}
-                  className="w-full py-5 bg-neutral-900 text-white rounded-2xl font-black text-xs tracking-[0.2em] shadow-lg shadow-neutral-200 hover:scale-[1.02] active:scale-95 transition-all"
-                >
-                  {t.exit_confirm_yes}
-                </button>
+              <div className="flex flex-col gap-2.5">
                 <button
                   onClick={() => setShowExitConfirm(false)}
-                  className="w-full py-5 bg-neutral-100 text-neutral-400 rounded-2xl font-black text-xs tracking-[0.2em] hover:bg-neutral-200 transition-colors"
+                  className="w-full py-4 bg-neutral-900 text-white rounded-xl font-black text-xs tracking-[0.2em] shadow-lg shadow-neutral-200 hover:scale-[1.02] active:scale-95 transition-all"
                 >
                   {t.exit_confirm_no}
+                </button>
+                <button
+                  onClick={() => { setShowExitConfirm(false); goToMenu(); }}
+                  className="w-full py-4 bg-neutral-100 text-neutral-400 rounded-xl font-black text-xs tracking-[0.2em] hover:bg-neutral-200 transition-colors"
+                >
+                  {t.exit_confirm_yes}
                 </button>
               </div>
             </motion.div>
