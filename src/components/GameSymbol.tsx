@@ -86,36 +86,20 @@ export const GameSymbol = ({ type, size = 'normal', className = '' }: GameSymbol
     case 'Prev1':
       return (
         <div className={containerClass} style={containerStyle}>
-          <div style={{ width: shapeSize, height: shapeSize, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <div style={{
-              position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
-              border: `${strokeW}px solid ${c}`, borderRightColor: 'transparent',
-              borderRadius: '50%', transform: 'rotate(-45deg)', boxSizing: 'border-box'
-            }} />
-            <div style={{
-              position: 'absolute', top: -2.25 * scaleRef, left: 6 * scaleRef,
-              borderTop: `${3.5 * scaleRef}px solid transparent`, borderBottom: `${3.5 * scaleRef}px solid transparent`,
-              borderRight: `${5.5 * scaleRef}px solid ${c}`
-            }} />
-            <span style={{ fontSize: `${13 * scaleRef}px`, fontWeight: 900, color: c, fontFamily: 'system-ui, -apple-system, sans-serif', lineHeight: 1, marginTop: '2px' }}>1</span>
+          <div style={{ position: 'relative', width: shapeSize, height: shapeSize, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            {/* Simple text return arrow glyph */}
+            <span style={{ fontSize: `${28 * scaleRef}px`, color: c, lineHeight: 1, marginTop: -2 * scaleRef, fontFamily: 'system-ui, -apple-system, sans-serif' }}>↺&#xFE0E;</span>
+            <span style={{ position: 'absolute', fontSize: `${11 * scaleRef}px`, fontWeight: 900, color: c, fontFamily: 'system-ui, -apple-system, sans-serif', marginTop: 1 * scaleRef }}>1</span>
           </div>
         </div>
       );
     case 'Prev2':
       return (
         <div className={containerClass} style={containerStyle}>
-          <div style={{ width: shapeSize, height: shapeSize, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <div style={{
-              position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
-              border: `${strokeW}px solid ${c}`, borderRightColor: 'transparent',
-              borderRadius: '50%', transform: 'rotate(-45deg)', boxSizing: 'border-box'
-            }} />
-            <div style={{
-              position: 'absolute', top: -2.25 * scaleRef, left: 6 * scaleRef,
-              borderTop: `${3.5 * scaleRef}px solid transparent`, borderBottom: `${3.5 * scaleRef}px solid transparent`,
-              borderRight: `${5.5 * scaleRef}px solid ${c}`
-            }} />
-            <span style={{ fontSize: `${13 * scaleRef}px`, fontWeight: 900, color: c, fontFamily: 'system-ui, -apple-system, sans-serif', lineHeight: 1, marginTop: '2px' }}>2</span>
+          <div style={{ position: 'relative', width: shapeSize, height: shapeSize, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            {/* Simple text return arrow glyph */}
+            <span style={{ fontSize: `${28 * scaleRef}px`, color: c, lineHeight: 1, marginTop: -2 * scaleRef, fontFamily: 'system-ui, -apple-system, sans-serif' }}>↺&#xFE0E;</span>
+            <span style={{ position: 'absolute', fontSize: `${11 * scaleRef}px`, fontWeight: 900, color: c, fontFamily: 'system-ui, -apple-system, sans-serif', marginTop: 1 * scaleRef }}>2</span>
           </div>
         </div>
       );
