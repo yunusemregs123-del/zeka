@@ -1377,61 +1377,65 @@ export default function App() {
             <motion.div
               initial={{ scale: 0.95, y: 10 }}
               animate={{ scale: 1, y: 0 }}
-              className="bg-white p-5 md:p-8 rounded-3xl shadow-2xl max-w-[320px] w-full max-h-[85dvh] overflow-y-auto"
+              className="bg-white p-5 rounded-3xl shadow-2xl max-w-[300px] w-full"
             >
-              <h2 className="text-xl font-black tracking-tight mb-4 text-[#1D1D1F]">{t.intro_title}</h2>
+              <h2 className="text-lg font-black tracking-tight mb-2.5 text-[#1D1D1F]">{t.intro_title}</h2>
               
-              {/* Symbol explanation */}
-              <div className="flex justify-center gap-6 mb-4 bg-neutral-50 rounded-xl p-4 border border-neutral-100">
-                <div className="flex flex-col items-center gap-2">
-                  <div className="p-2 bg-white border border-neutral-200 shadow-sm rounded-full"><SymbolDisplay type="CircleFilled" /></div>
-                  <span className="font-bold text-lg text-green-600">+1</span>
-                  <span className="text-[10px] text-neutral-400 font-bold uppercase tracking-widest">{t.intro_full}</span>
+              {/* Symbol legend — compact row */}
+              <div className="flex justify-center gap-5 mb-2.5 bg-neutral-50 rounded-xl p-2.5 border border-neutral-100">
+                <div className="flex items-center gap-2">
+                  <div className="p-1 bg-white border border-neutral-200 shadow-sm rounded-full"><SymbolDisplay type="CircleFilled" /></div>
+                  <div className="text-left">
+                    <span className="font-black text-sm text-green-600 block leading-none">+1</span>
+                    <span className="text-[8px] text-neutral-400 font-bold uppercase tracking-wider">{t.intro_full}</span>
+                  </div>
                 </div>
-                <div className="flex flex-col items-center gap-2">
-                  <div className="p-2 bg-white border border-neutral-200 shadow-sm rounded-full"><SymbolDisplay type="CircleEmpty" /></div>
-                  <span className="font-bold text-lg text-red-500">-1</span>
-                  <span className="text-[10px] text-neutral-400 font-bold uppercase tracking-widest">{t.intro_empty}</span>
+                <div className="flex items-center gap-2">
+                  <div className="p-1 bg-white border border-neutral-200 shadow-sm rounded-full"><SymbolDisplay type="CircleEmpty" /></div>
+                  <div className="text-left">
+                    <span className="font-black text-sm text-red-500 block leading-none">-1</span>
+                    <span className="text-[8px] text-neutral-400 font-bold uppercase tracking-wider">{t.intro_empty}</span>
+                  </div>
                 </div>
               </div>
 
-              <p className="text-neutral-500 font-medium leading-relaxed mb-4 text-xs md:text-sm px-1">
+              <p className="text-neutral-500 font-medium leading-snug mb-2.5 text-[11px] px-1">
                 {t.intro_p1}
               </p>
 
-              {/* EXAMPLE 1: ● + ● = +2 */}
-              <div className="w-full bg-neutral-50/80 border border-neutral-100 rounded-2xl p-3 mb-2 text-left shadow-[inset_0_2px_10px_rgb(0,0,0,0.02)]">
-                <span className="block text-[10px] font-black text-amber-500 tracking-widest uppercase mb-2">{t.intro_ex1}: ● + ● = ?</span>
-                <div className="flex items-center justify-center gap-1 pb-1">
-                  <div className="bg-white shadow-sm border border-neutral-100 rounded-xl"><SymbolDisplay type="CircleFilled" /></div>
-                  <Icons.Plus className="w-4 h-4 text-neutral-300" />
-                  <div className="bg-white shadow-sm border border-neutral-100 rounded-xl"><SymbolDisplay type="CircleFilled" /></div>
-                  <span className="text-xl font-black text-neutral-300 mx-1">=</span>
-                  <span className="text-2xl font-black text-green-500">+2</span>
+              {/* Examples — side by side */}
+              <div className="flex gap-2 mb-3">
+                <div className="flex-1 bg-neutral-50 border border-neutral-100 rounded-xl p-2">
+                  <span className="block text-[8px] font-black text-amber-500 tracking-widest uppercase mb-1">{t.intro_ex1}</span>
+                  <div className="flex items-center justify-center gap-0.5">
+                    <div className="bg-white shadow-sm border border-neutral-100 rounded-lg scale-75"><SymbolDisplay type="CircleFilled" /></div>
+                    <span className="text-[10px] text-neutral-300 font-bold">+</span>
+                    <div className="bg-white shadow-sm border border-neutral-100 rounded-lg scale-75"><SymbolDisplay type="CircleFilled" /></div>
+                    <span className="text-sm font-black text-neutral-300 mx-0.5">=</span>
+                    <span className="text-lg font-black text-green-500">2</span>
+                  </div>
+                </div>
+                <div className="flex-1 bg-neutral-50 border border-neutral-100 rounded-xl p-2">
+                  <span className="block text-[8px] font-black text-amber-500 tracking-widest uppercase mb-1">{t.intro_ex2}</span>
+                  <div className="flex items-center justify-center gap-0.5">
+                    <div className="bg-white shadow-sm border border-neutral-100 rounded-lg scale-75"><SymbolDisplay type="CircleFilled" /></div>
+                    <span className="text-[10px] text-neutral-300 font-bold">+</span>
+                    <div className="bg-white shadow-sm border border-neutral-100 rounded-lg scale-75"><SymbolDisplay type="CircleEmpty" /></div>
+                    <span className="text-sm font-black text-neutral-300 mx-0.5">=</span>
+                    <span className="text-lg font-black text-amber-500">0</span>
+                  </div>
                 </div>
               </div>
 
-              {/* EXAMPLE 2: ● + ○ = 0 */}
-              <div className="w-full bg-neutral-50/80 border border-neutral-100 rounded-2xl p-3 mb-5 text-left shadow-[inset_0_2px_10px_rgb(0,0,0,0.02)]">
-                <span className="block text-[10px] font-black text-amber-500 tracking-widest uppercase mb-2">{t.intro_ex2}: ● + ○ = ?</span>
-                <div className="flex items-center justify-center gap-1 pb-1">
-                  <div className="bg-white shadow-sm border border-neutral-100 rounded-xl"><SymbolDisplay type="CircleFilled" /></div>
-                  <Icons.Plus className="w-4 h-4 text-neutral-300" />
-                  <div className="bg-white shadow-sm border border-neutral-100 rounded-xl"><SymbolDisplay type="CircleEmpty" /></div>
-                  <span className="text-xl font-black text-neutral-300 mx-1">=</span>
-                  <span className="text-2xl font-black text-amber-500">0</span>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-center gap-2 mb-5 bg-neutral-100/50 p-3 rounded-lg cursor-pointer" onClick={() => setIntroCheckbox(!introCheckbox)}>
+              <div className="flex items-center justify-center gap-2 mb-3 bg-neutral-100/50 p-2 rounded-lg cursor-pointer" onClick={() => setIntroCheckbox(!introCheckbox)}>
                 <input
                   type="checkbox"
                   checked={introCheckbox}
                   onChange={(e) => setIntroCheckbox(e.target.checked)}
                   onClick={(e) => e.stopPropagation()}
-                  className="w-4 h-4 accent-[#1D1D1F] cursor-pointer"
+                  className="w-3.5 h-3.5 accent-[#1D1D1F] cursor-pointer"
                 />
-                <label className="font-bold tracking-wide text-[10px] text-neutral-600 cursor-pointer select-none uppercase">{t.intro_checkbox}</label>
+                <label className="font-bold tracking-wide text-[9px] text-neutral-600 cursor-pointer select-none uppercase">{t.intro_checkbox}</label>
               </div>
 
               <button
@@ -1440,7 +1444,7 @@ export default function App() {
                   setShowIntroModal(false);
                   initLevel();
                 }}
-                className="w-full py-3.5 bg-[#1D1D1F] text-white rounded-full font-bold tracking-[0.2em] shadow-xl hover:scale-105 active:scale-95 transition-all text-xs"
+                className="w-full py-3 bg-[#1D1D1F] text-white rounded-full font-bold tracking-[0.2em] shadow-xl hover:scale-105 active:scale-95 transition-all text-xs"
               >
                 {t.intro_btn}
               </button>
