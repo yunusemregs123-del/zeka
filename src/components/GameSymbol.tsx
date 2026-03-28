@@ -81,36 +81,22 @@ export const GameSymbol = ({ type, size = 'normal', className = '' }: GameSymbol
     case 'Prev1':
       return (
         <div className={containerClass} style={containerStyle}>
-          <div style={{ position: 'relative', width: baseSize, height: baseSize }}>
-            {/* The circular loop track for the arrow (18x18 bounds, r=9, center=12,12) */}
-            <div style={{ position: 'absolute', top: 3 * scaleRef, left: 3 * scaleRef, width: 18 * scaleRef, height: 18 * scaleRef, border: `${strokeW}px solid ${c}`, borderTopColor: 'transparent', borderRadius: '50%', transform: 'rotate(-45deg)', boxSizing: 'border-box' }} />
-            
-            {/* The Gap Filler (Yuvarlağın devamı) bridging Y=8 and Y=12 */}
-            <div style={{ position: 'absolute', top: 8 * scaleRef, left: 3 * scaleRef, width: strokeW, height: 4.5 * scaleRef, backgroundColor: c }} />
-            
-            {/* The line-art arrowhead (M3 3v5h5) */}
-            <div style={{ position: 'absolute', top: 3 * scaleRef, left: 3 * scaleRef, width: 5 * scaleRef, height: 5 * scaleRef, borderLeft: `${strokeW}px solid ${c}`, borderBottom: `${strokeW}px solid ${c}`, borderRadius: 1, boxSizing: 'border-box' }} />
-            
-            {/* Number 1 centered */}
-            <span style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', fontSize: `${13 * scaleRef}px`, fontWeight: 900, color: c, fontFamily: 'system-ui, -apple-system, sans-serif' }}>1</span>
+          <div style={{ position: 'relative', width: baseSize, height: baseSize, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            {/* Elegant, thin Unicode return arrow to keep arrowhead small */}
+            <span style={{ fontSize: `${30 * scaleRef}px`, fontWeight: 300, color: c, lineHeight: 1, marginTop: -2 * scaleRef, fontFamily: 'system-ui, -apple-system, sans-serif' }}>↺&#xFE0E;</span>
+            {/* Giant prominent centered number */}
+            <span style={{ position: 'absolute', fontSize: `${14 * scaleRef}px`, fontWeight: 900, color: c, fontFamily: 'system-ui, -apple-system, sans-serif', marginTop: 1 * scaleRef }}>1</span>
           </div>
         </div>
       );
     case 'Prev2':
       return (
         <div className={containerClass} style={containerStyle}>
-          <div style={{ position: 'relative', width: baseSize, height: baseSize }}>
-            {/* The circular loop track */}
-            <div style={{ position: 'absolute', top: 3 * scaleRef, left: 3 * scaleRef, width: 18 * scaleRef, height: 18 * scaleRef, border: `${strokeW}px solid ${c}`, borderTopColor: 'transparent', borderRadius: '50%', transform: 'rotate(-45deg)', boxSizing: 'border-box' }} />
-            
-            {/* Gap Filler linking Circle to Arrowhead */}
-            <div style={{ position: 'absolute', top: 8 * scaleRef, left: 3 * scaleRef, width: strokeW, height: 4.5 * scaleRef, backgroundColor: c }} />
-            
-            {/* The line-art arrowhead */}
-            <div style={{ position: 'absolute', top: 3 * scaleRef, left: 3 * scaleRef, width: 5 * scaleRef, height: 5 * scaleRef, borderLeft: `${strokeW}px solid ${c}`, borderBottom: `${strokeW}px solid ${c}`, borderRadius: 1, boxSizing: 'border-box' }} />
-            
-            {/* Number 2 centered */}
-            <span style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', fontSize: `${13 * scaleRef}px`, fontWeight: 900, color: c, fontFamily: 'system-ui, -apple-system, sans-serif' }}>2</span>
+          <div style={{ position: 'relative', width: baseSize, height: baseSize, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            {/* Elegant, thin Unicode return arrow */}
+            <span style={{ fontSize: `${30 * scaleRef}px`, fontWeight: 300, color: c, lineHeight: 1, marginTop: -2 * scaleRef, fontFamily: 'system-ui, -apple-system, sans-serif' }}>↺&#xFE0E;</span>
+            {/* Giant prominent centered number */}
+            <span style={{ position: 'absolute', fontSize: `${14 * scaleRef}px`, fontWeight: 900, color: c, fontFamily: 'system-ui, -apple-system, sans-serif', marginTop: 1 * scaleRef }}>2</span>
           </div>
         </div>
       );
