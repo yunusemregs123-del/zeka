@@ -16,7 +16,6 @@ export const GameSymbol = ({ type, size = 'normal', className = '' }: GameSymbol
 
   // Helper values scoped to scale
   const strokeW = 2.5 * scaleRef;
-  const shapeSize = 20 * scaleRef;
 
   // NUCLEAR DOM FIX:
   // Render ONLY pure HTML/CSS elements (divs, borders, text).
@@ -28,58 +27,54 @@ export const GameSymbol = ({ type, size = 'normal', className = '' }: GameSymbol
     case 'CircleFilled':
       return (
         <div className={containerClass} style={containerStyle}>
-          <div style={{ width: shapeSize, height: shapeSize, backgroundColor: c, borderRadius: '50%' }} />
+          <div style={{ position: 'relative', width: baseSize, height: baseSize }}>
+            <div style={{ position: 'absolute', top: 2 * scaleRef, left: 2 * scaleRef, width: 20 * scaleRef, height: 20 * scaleRef, backgroundColor: c, borderRadius: '50%' }} />
+          </div>
         </div>
       );
     case 'CircleEmpty':
       return (
         <div className={containerClass} style={containerStyle}>
-          <div style={{ width: shapeSize, height: shapeSize, border: `${strokeW}px solid ${c}`, borderRadius: '50%', boxSizing: 'border-box' }} />
+          <div style={{ position: 'relative', width: baseSize, height: baseSize }}>
+            <div style={{ position: 'absolute', top: 3 * scaleRef, left: 3 * scaleRef, width: 18 * scaleRef, height: 18 * scaleRef, border: `${strokeW}px solid ${c}`, borderRadius: '50%', boxSizing: 'border-box' }} />
+          </div>
         </div>
       );
     case 'TriangleUp':
       return (
         <div className={containerClass} style={containerStyle}>
-          <div style={{ 
-            width: 0, height: 0, 
-            borderLeft: `${11 * scaleRef}px solid transparent`,
-            borderRight: `${11 * scaleRef}px solid transparent`,
-            borderBottom: `${19 * scaleRef}px solid ${c}`
-          }} />
+          <div style={{ position: 'relative', width: baseSize, height: baseSize }}>
+            {/* Equilateral triangle pointing up: top: 2.5, width: 19, height: 16.5 approx */}
+            <div style={{ position: 'absolute', top: 2.5 * scaleRef, left: '50%', transform: 'translateX(-50%)', borderLeft: `${9.5 * scaleRef}px solid transparent`, borderRight: `${9.5 * scaleRef}px solid transparent`, borderBottom: `${16.5 * scaleRef}px solid ${c}` }} />
+          </div>
         </div>
       );
     case 'TriangleDown':
       return (
         <div className={containerClass} style={containerStyle}>
-          <div style={{ 
-            width: 0, height: 0, 
-            borderLeft: `${11 * scaleRef}px solid transparent`,
-            borderRight: `${11 * scaleRef}px solid transparent`,
-            borderTop: `${19 * scaleRef}px solid ${c}`
-          }} />
+          <div style={{ position: 'relative', width: baseSize, height: baseSize }}>
+            {/* Equilateral triangle pointing down: top: 5, width: 19, height: 16.5 approx */}
+            <div style={{ position: 'absolute', top: 5 * scaleRef, left: '50%', transform: 'translateX(-50%)', borderLeft: `${9.5 * scaleRef}px solid transparent`, borderRight: `${9.5 * scaleRef}px solid transparent`, borderTop: `${16.5 * scaleRef}px solid ${c}` }} />
+          </div>
         </div>
       );
     case 'Mul2':
       return (
         <div className={containerClass} style={containerStyle}>
-          <div style={{ 
-            width: shapeSize, height: shapeSize, 
-            border: `${strokeW}px solid ${c}`, borderRadius: `${6 * scaleRef}px`, 
-            display: 'flex', alignItems: 'center', justifyContent: 'center', boxSizing: 'border-box' 
-          }}>
-            <span style={{ fontSize: `${13 * scaleRef}px`, fontWeight: 900, color: c, fontFamily: 'system-ui, -apple-system, sans-serif', letterSpacing: '-0.02em', lineHeight: 1 }}>x2</span>
+          <div style={{ position: 'relative', width: baseSize, height: baseSize }}>
+            <div style={{ position: 'absolute', top: 2 * scaleRef, left: 2 * scaleRef, width: 20 * scaleRef, height: 20 * scaleRef, border: `${strokeW}px solid ${c}`, borderRadius: `${4 * scaleRef}px`, display: 'flex', alignItems: 'center', justifyContent: 'center', boxSizing: 'border-box' }}>
+              <span style={{ fontSize: `${13 * scaleRef}px`, fontWeight: 900, color: c, fontFamily: 'system-ui, -apple-system, sans-serif', letterSpacing: '-0.02em', lineHeight: 1 }}>x2</span>
+            </div>
           </div>
         </div>
       );
     case 'Div2':
       return (
         <div className={containerClass} style={containerStyle}>
-          <div style={{ 
-            width: shapeSize, height: shapeSize, 
-            border: `${strokeW}px solid ${c}`, borderRadius: `${6 * scaleRef}px`, 
-            display: 'flex', alignItems: 'center', justifyContent: 'center', boxSizing: 'border-box' 
-          }}>
-            <span style={{ fontSize: `${13 * scaleRef}px`, fontWeight: 900, color: c, fontFamily: 'system-ui, -apple-system, sans-serif', letterSpacing: '-0.02em', lineHeight: 1, marginTop: '-2px', marginLeft: '1px' }}>/2</span>
+          <div style={{ position: 'relative', width: baseSize, height: baseSize }}>
+            <div style={{ position: 'absolute', top: 2 * scaleRef, left: 2 * scaleRef, width: 20 * scaleRef, height: 20 * scaleRef, border: `${strokeW}px solid ${c}`, borderRadius: `${4 * scaleRef}px`, display: 'flex', alignItems: 'center', justifyContent: 'center', boxSizing: 'border-box' }}>
+              <span style={{ fontSize: `${13 * scaleRef}px`, fontWeight: 900, color: c, fontFamily: 'system-ui, -apple-system, sans-serif', letterSpacing: '-0.02em', lineHeight: 1, marginTop: '-2px', marginLeft: '1px' }}>/2</span>
+            </div>
           </div>
         </div>
       );
@@ -87,10 +82,10 @@ export const GameSymbol = ({ type, size = 'normal', className = '' }: GameSymbol
       return (
         <div className={containerClass} style={containerStyle}>
           <div style={{ position: 'relative', width: baseSize, height: baseSize }}>
-            {/* The circular loop track for the arrow (18x18 bounds, r=9, center=12,12) */}
+            {/* The circular loop track for the arrow (18x18 bounds, r=9, left: 3) */}
             <div style={{ position: 'absolute', top: 3 * scaleRef, left: 3 * scaleRef, width: 18 * scaleRef, height: 18 * scaleRef, border: `${strokeW}px solid ${c}`, borderTopColor: 'transparent', borderRadius: '50%', transform: 'rotate(-45deg)', boxSizing: 'border-box' }} />
-            {/* The line-art arrowhead (M3 3v5h5). It's literally an L-shape at (3,3) going 5px down and 5px right! */}
-            <div style={{ position: 'absolute', top: 3 * scaleRef, left: 3 * scaleRef, width: 5 * scaleRef, height: 5 * scaleRef, borderLeft: `${strokeW}px solid ${c}`, borderBottom: `${strokeW}px solid ${c}`, borderRadius: 1, boxSizing: 'border-box' }} />
+            {/* The line-art arrowhead perfectly bridging the gap at Y=12 */}
+            <div style={{ position: 'absolute', top: 11.5 * scaleRef, left: 1 * scaleRef, width: 5 * scaleRef, height: 5 * scaleRef, borderLeft: `${strokeW}px solid ${c}`, borderTop: `${strokeW}px solid ${c}`, borderRadius: 1, transform: 'rotate(25deg)', boxSizing: 'border-box' }} />
             {/* Number 1 centered */}
             <span style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', fontSize: `${13 * scaleRef}px`, fontWeight: 900, color: c, fontFamily: 'system-ui, -apple-system, sans-serif' }}>1</span>
           </div>
@@ -102,8 +97,8 @@ export const GameSymbol = ({ type, size = 'normal', className = '' }: GameSymbol
           <div style={{ position: 'relative', width: baseSize, height: baseSize }}>
             {/* The circular loop track */}
             <div style={{ position: 'absolute', top: 3 * scaleRef, left: 3 * scaleRef, width: 18 * scaleRef, height: 18 * scaleRef, border: `${strokeW}px solid ${c}`, borderTopColor: 'transparent', borderRadius: '50%', transform: 'rotate(-45deg)', boxSizing: 'border-box' }} />
-            {/* The line-art arrowhead */}
-            <div style={{ position: 'absolute', top: 3 * scaleRef, left: 3 * scaleRef, width: 5 * scaleRef, height: 5 * scaleRef, borderLeft: `${strokeW}px solid ${c}`, borderBottom: `${strokeW}px solid ${c}`, borderRadius: 1, boxSizing: 'border-box' }} />
+            {/* The line-art arrowhead perfectly bridging the gap at Y=12 */}
+            <div style={{ position: 'absolute', top: 11.5 * scaleRef, left: 1 * scaleRef, width: 5 * scaleRef, height: 5 * scaleRef, borderLeft: `${strokeW}px solid ${c}`, borderTop: `${strokeW}px solid ${c}`, borderRadius: 1, transform: 'rotate(25deg)', boxSizing: 'border-box' }} />
             {/* Number 2 centered */}
             <span style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', fontSize: `${13 * scaleRef}px`, fontWeight: 900, color: c, fontFamily: 'system-ui, -apple-system, sans-serif' }}>2</span>
           </div>
@@ -112,15 +107,14 @@ export const GameSymbol = ({ type, size = 'normal', className = '' }: GameSymbol
     case 'ReverseNext':
       return (
         <div className={containerClass} style={containerStyle}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: `${4 * scaleRef}px`, alignItems: 'center', width: shapeSize, height: shapeSize, justifyContent: 'center' }}>
-            {/* Top Arrow (Left pointing) */}
-            <div style={{ position: 'relative', width: `${15 * scaleRef}px`, height: `${strokeW}px`, backgroundColor: c, borderRadius: 1 }}>
-              <div style={{ position: 'absolute', left: 0, top: '50%', width: `${5 * scaleRef}px`, height: `${5 * scaleRef}px`, borderTop: `${strokeW}px solid ${c}`, borderLeft: `${strokeW}px solid ${c}`, transform: 'translate(1px, -50%) rotate(-45deg)', borderRadius: '1px' }} />
-            </div>
-            {/* Bottom Arrow (Right pointing) */}
-            <div style={{ position: 'relative', width: `${15 * scaleRef}px`, height: `${strokeW}px`, backgroundColor: c, borderRadius: 1 }}>
-              <div style={{ position: 'absolute', right: 0, top: '50%', width: `${5 * scaleRef}px`, height: `${5 * scaleRef}px`, borderTop: `${strokeW}px solid ${c}`, borderRight: `${strokeW}px solid ${c}`, transform: 'translate(-1px, -50%) rotate(45deg)', borderRadius: '1px' }} />
-            </div>
+          <div style={{ position: 'relative', width: baseSize, height: baseSize }}>
+            {/* Top arrow right, Y=10 */}
+            <div style={{ position: 'absolute', top: (10 - 1.25) * scaleRef, left: 5 * scaleRef, width: 14 * scaleRef, height: strokeW, backgroundColor: c, borderRadius: 1 }} />
+            <div style={{ position: 'absolute', top: (10 - 2.5) * scaleRef, left: (19 - 4) * scaleRef, width: 5 * scaleRef, height: 5 * scaleRef, borderTop: `${strokeW}px solid ${c}`, borderRight: `${strokeW}px solid ${c}`, transform: 'rotate(45deg)', borderRadius: 1 }} />
+
+            {/* Bottom arrow left, Y=14 */}
+            <div style={{ position: 'absolute', top: (14 - 1.25) * scaleRef, left: 5 * scaleRef, width: 14 * scaleRef, height: strokeW, backgroundColor: c, borderRadius: 1 }} />
+            <div style={{ position: 'absolute', top: (14 - 2.5) * scaleRef, left: 4 * scaleRef, width: 5 * scaleRef, height: 5 * scaleRef, borderBottom: `${strokeW}px solid ${c}`, borderLeft: `${strokeW}px solid ${c}`, transform: 'rotate(45deg)', borderRadius: 1 }} />
           </div>
         </div>
       );
