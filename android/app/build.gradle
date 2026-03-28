@@ -4,7 +4,7 @@ android {
     namespace = "com.zeka.app"
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "com.zeka.app"
+        applicationId "com.zeka.app2"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 2

@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.zeka.app',
+  appId: 'com.zeka.app2',
   appName: 'Zeka',
   webDir: 'dist',
   plugins: {
