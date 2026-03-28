@@ -106,10 +106,21 @@ const TUTORIAL_DATA: Record<number, { exampleSequence?: SymbolType[], exampleRes
   131: { exampleSequence: ['CircleEmpty', 'Plus', 'Heart'], exampleResult: 0 }
 };
 
-const SymbolDisplay = ({ type, size = 'normal' }: { type: SymbolType, size?: 'small' | 'normal' | 'large' }) => {
+const SymbolDisplay = ({ type, size = 'normal', disableAnimation = false }: { type: SymbolType, size?: 'small' | 'normal' | 'large', disableAnimation?: boolean }) => {
   const Icon = Icons[type as keyof typeof Icons];
   if (!Icon) return null;
   if (type === 'Plus') return <Icon className={`mx-[2px] md:mx-1 text-neutral-300 shrink-0 ${size === 'small' ? 'w-3 h-3 md:w-4 md:h-4' : 'w-4 h-4 md:w-5 md:h-5'}`} />;
+  
+  const iconContent = <Icon className={`text-neutral-900 drop-shadow-sm ${size === 'small' ? 'w-5 h-5 md:w-6 md:h-6' : size === 'large' ? 'w-10 h-10 md:w-12 md:h-12' : 'w-7 h-7 md:w-8 md:h-8'}`} />;
+
+  if (disableAnimation) {
+    return (
+      <div className="flex items-center justify-center p-[2px]">
+        {iconContent}
+      </div>
+    );
+  }
+
   return (
     <motion.div
       key={type}
@@ -117,7 +128,7 @@ const SymbolDisplay = ({ type, size = 'normal' }: { type: SymbolType, size?: 'sm
       animate={{ scale: 1, y: 0, opacity: 1 }}
       className="flex items-center justify-center p-[2px]"
     >
-      <Icon className={`text-neutral-900 drop-shadow-sm ${size === 'small' ? 'w-5 h-5 md:w-6 md:h-6' : size === 'large' ? 'w-10 h-10 md:w-12 md:h-12' : 'w-7 h-7 md:w-8 md:h-8'}`} />
+      {iconContent}
     </motion.div>
   );
 };
@@ -529,53 +540,53 @@ function MenuScreen({
 
               <div className="grid grid-cols-4 gap-2 mb-6 bg-neutral-50 rounded-2xl p-3 border border-neutral-100 place-items-center">
                 <div className="flex flex-col items-center gap-1">
-                  <div className="w-9 h-9 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center"><SymbolDisplay type="CircleFilled" size="small" /></div>
+                  <div className="w-9 h-9 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center"><SymbolDisplay type="CircleFilled" size="small" disableAnimation /></div>
                   <span className="text-[7px] md:text-[8px] font-bold text-neutral-500 text-center tracking-tighter leading-tight">{t.info_sym1}</span>
                 </div>
                 <div className="flex flex-col items-center gap-1">
-                  <div className="w-9 h-9 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center"><SymbolDisplay type="CircleEmpty" size="small" /></div>
+                  <div className="w-9 h-9 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center"><SymbolDisplay type="CircleEmpty" size="small" disableAnimation /></div>
                   <span className="text-[7px] md:text-[8px] font-bold text-neutral-500 text-center tracking-tighter leading-tight">{t.info_sym1_neg}</span>
                 </div>
                 <div className="flex flex-col items-center gap-1">
-                  <div className="w-9 h-9 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center"><SymbolDisplay type="TriangleUp" size="small" /></div>
+                  <div className="w-9 h-9 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center"><SymbolDisplay type="TriangleUp" size="small" disableAnimation /></div>
                   <span className="text-[7px] md:text-[8px] font-bold text-neutral-500 text-center tracking-tighter leading-tight">{t.info_sym2}</span>
                 </div>
                 <div className="flex flex-col items-center gap-1">
-                  <div className="w-9 h-9 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center"><SymbolDisplay type="TriangleDown" size="small" /></div>
+                  <div className="w-9 h-9 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center"><SymbolDisplay type="TriangleDown" size="small" disableAnimation /></div>
                   <span className="text-[7px] md:text-[8px] font-bold text-neutral-500 text-center tracking-tighter leading-tight">{t.info_sym2_neg}</span>
                 </div>
 
                 <div className="flex flex-col items-center gap-1">
-                  <div className="w-9 h-9 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center"><SymbolDisplay type="Prev1" size="small" /></div>
+                  <div className="w-9 h-9 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center"><SymbolDisplay type="Prev1" size="small" disableAnimation /></div>
                   <span className="text-[7px] md:text-[8px] font-bold text-neutral-500 text-center tracking-tighter leading-tight">{t.info_sym3}</span>
                 </div>
                 <div className="flex flex-col items-center gap-1">
-                  <div className="w-9 h-9 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center"><SymbolDisplay type="Prev2" size="small" /></div>
+                  <div className="w-9 h-9 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center"><SymbolDisplay type="Prev2" size="small" disableAnimation /></div>
                   <span className="text-[7px] md:text-[8px] font-bold text-neutral-500 text-center tracking-tighter leading-tight">{t.info_sym4}</span>
                 </div>
                 <div className="flex flex-col items-center gap-1">
-                  <div className="w-9 h-9 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center"><SymbolDisplay type="Mul2" size="small" /></div>
+                  <div className="w-9 h-9 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center"><SymbolDisplay type="Mul2" size="small" disableAnimation /></div>
                   <span className="text-[7px] md:text-[8px] font-bold text-neutral-500 text-center tracking-tighter leading-tight">{t.info_sym5}</span>
                 </div>
                 <div className="flex flex-col items-center gap-1">
-                  <div className="w-9 h-9 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center"><SymbolDisplay type="Div2" size="small" /></div>
+                  <div className="w-9 h-9 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center"><SymbolDisplay type="Div2" size="small" disableAnimation /></div>
                   <span className="text-[7px] md:text-[8px] font-bold text-neutral-500 text-center tracking-tighter leading-tight">{t.info_sym6}</span>
                 </div>
 
                 <div className="flex flex-col items-center gap-1">
-                  <div className="w-9 h-9 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center"><SymbolDisplay type="ReverseNext" size="small" /></div>
+                  <div className="w-9 h-9 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center"><SymbolDisplay type="ReverseNext" size="small" disableAnimation /></div>
                   <span className="text-[7px] md:text-[8px] font-bold text-neutral-500 text-center tracking-tighter leading-tight">{t.info_sym7}</span>
                 </div>
                 <div className="flex flex-col items-center gap-1">
-                  <div className="w-9 h-9 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center"><SymbolDisplay type="Star" size="small" /></div>
+                  <div className="w-9 h-9 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center"><SymbolDisplay type="Star" size="small" disableAnimation /></div>
                   <span className="text-[7px] md:text-[8px] font-bold text-neutral-500 text-center tracking-tighter leading-tight">{t.info_sym8}</span>
                 </div>
                 <div className="flex flex-col items-center gap-1">
-                  <div className="w-9 h-9 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center"><SymbolDisplay type="InvertAll" size="small" /></div>
+                  <div className="w-9 h-9 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center"><SymbolDisplay type="InvertAll" size="small" disableAnimation /></div>
                   <span className="text-[7px] md:text-[8px] font-bold text-neutral-500 text-center tracking-tighter leading-tight">{t.info_sym9}</span>
                 </div>
                 <div className="flex flex-col items-center gap-1">
-                  <div className="w-9 h-9 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center"><SymbolDisplay type="Heart" size="small" /></div>
+                  <div className="w-9 h-9 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center"><SymbolDisplay type="Heart" size="small" disableAnimation /></div>
                   <span className="text-[7px] md:text-[8px] font-bold text-neutral-500 text-center tracking-tighter leading-tight">{t.info_sym10}</span>
                 </div>
               </div>
