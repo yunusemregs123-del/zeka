@@ -16,13 +16,13 @@ export type SymbolType =
 export const getUnlockedSymbols = (level: number): SymbolType[] => {
   const symbols: SymbolType[] = ['CircleFilled', 'CircleEmpty'];
   if (level >= 11) symbols.push('TriangleUp', 'TriangleDown');
-  if (level >= 36) symbols.push('Prev1', 'Prev1', 'Prev1', 'Prev2'); // Make Prev1 3x more likely!
-  if (level >= 45) symbols.push('Prev2');
-  if (level >= 61) symbols.push('Mul2', 'Div2');
-  if (level >= 76) symbols.push('ReverseNext');
-  if (level >= 91) symbols.push('Star');
-  if (level >= 111) symbols.push('InvertAll');
-  if (level >= 131) symbols.push('Heart');
+  if (level >= 31) symbols.push('Mul2', 'Div2');
+  if (level >= 51) symbols.push('Prev1', 'Prev1'); // Make Prev1 weight heavier
+  if (level >= 71) symbols.push('ReverseNext');
+  if (level >= 91) symbols.push('InvertAll');
+  if (level >= 101) symbols.push('Star');
+  if (level >= 111) symbols.push('Heart');
+  if (level >= 131) symbols.push('Prev2');
   return symbols;
 };
 
@@ -113,12 +113,12 @@ export const generatePuzzle = (level: number, previousResults: number[]): { sequ
     // Dedicated Memory Symbol Logic (Prev1 = ~33%, Prev2 = ~6.6%)
     let memorySymbolToAdd: 'Prev1' | 'Prev2' | null = null;
     
-    // Prev2 intro modal is at 51. Give 2 levels grace period (51, 52) so it first appears at 53.
-    if (level >= 53 && Math.random() < 0.066) {
+    // Prev2 intro modal is at 131. Give 2 levels grace period (131, 132) so it first appears at 133.
+    if (level >= 133 && Math.random() < 0.08) {
       memorySymbolToAdd = 'Prev2';
     } 
-    // Prev1 intro modal is at 36. Give 1 level grace period (36) so it first appears at 37.
-    else if (level >= 37 && Math.random() < 0.333) {
+    // Prev1 intro modal is at 51. Give 1 level grace period (51) so it first appears at 52.
+    else if (level >= 52 && Math.random() < 0.35) {
       memorySymbolToAdd = 'Prev1';
     }
     
@@ -207,13 +207,13 @@ export const generatePuzzle = (level: number, previousResults: number[]): { sequ
 export const getTutorialSymbols = (level: number): SymbolType[] => {
   if (level === 1) return ['CircleFilled', 'CircleEmpty'];
   if (level === 11) return ['TriangleUp', 'TriangleDown'];
-  if (level === 36) return ['Prev1'];
-  if (level === 51) return ['Prev2'];
-  if (level === 61) return ['Mul2', 'Div2'];
-  if (level === 76) return ['ReverseNext'];
-  if (level === 91) return ['Star'];
-  if (level === 111) return ['InvertAll'];
-  if (level === 131) return ['Heart'];
+  if (level === 31) return ['Mul2', 'Div2'];
+  if (level === 51) return ['Prev1'];
+  if (level === 71) return ['ReverseNext'];
+  if (level === 91) return ['InvertAll'];
+  if (level === 101) return ['Star'];
+  if (level === 111) return ['Heart'];
+  if (level === 131) return ['Prev2'];
   return [];
 };
 

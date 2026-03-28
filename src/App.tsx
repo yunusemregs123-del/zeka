@@ -97,13 +97,13 @@ const playSound = (type: 'click' | 'success' | 'fail' | 'tick' | 'intro') => {
 
 const TUTORIAL_DATA: Record<number, { exampleSequence?: SymbolType[], exampleResult?: number | string }> = {
   11: { exampleSequence: ['CircleFilled', 'Plus', 'TriangleUp'], exampleResult: 2 },
-  36: { exampleSequence: ['CircleFilled', 'Plus', 'Prev1'], exampleResult: 6 },
-  51: { exampleSequence: ['TriangleUp', 'Plus', 'Prev2'], exampleResult: 4 },
-  61: { exampleSequence: ['CircleFilled', 'CircleFilled', 'Plus', 'Mul2'], exampleResult: 4 },
-  76: { exampleSequence: ['CircleFilled', 'Plus', 'ReverseNext', 'TriangleUp'], exampleResult: 0 },
-  91: { exampleSequence: ['TriangleUp', 'Plus', 'Star'], exampleResult: 0 },
-  111: { exampleSequence: ['CircleFilled', 'CircleFilled', 'Plus', 'InvertAll'], exampleResult: -2 },
-  131: { exampleSequence: ['CircleEmpty', 'Plus', 'Heart'], exampleResult: 0 }
+  31: { exampleSequence: ['CircleFilled', 'CircleFilled', 'Plus', 'Mul2'], exampleResult: 4 },
+  51: { exampleSequence: ['CircleFilled', 'Plus', 'Prev1'], exampleResult: 6 },
+  71: { exampleSequence: ['CircleFilled', 'Plus', 'ReverseNext', 'TriangleUp'], exampleResult: 0 },
+  91: { exampleSequence: ['CircleFilled', 'CircleFilled', 'Plus', 'InvertAll'], exampleResult: -2 },
+  101: { exampleSequence: ['TriangleUp', 'Plus', 'Star'], exampleResult: 0 },
+  111: { exampleSequence: ['CircleEmpty', 'Plus', 'Heart'], exampleResult: 0 },
+  131: { exampleSequence: ['TriangleUp', 'Plus', 'Prev2'], exampleResult: 4 }
 };
 
 const SymbolDisplay = ({ type, size = 'normal', disableAnimation = false }: { type: SymbolType, size?: 'small' | 'normal' | 'large', disableAnimation?: boolean }) => {
@@ -544,14 +544,14 @@ function MenuScreen({
                   { icon: Icons.CircleEmpty, label: t.info_sym1_neg, desc: t.info_sym1_neg_desc || Translations['en'].info_sym1_neg_desc },
                   { icon: Icons.TriangleUp, label: t.info_sym2, desc: t.info_sym2_desc || Translations['en'].info_sym2_desc },
                   { icon: Icons.TriangleDown, label: t.info_sym2_neg, desc: t.info_sym2_neg_desc || Translations['en'].info_sym2_neg_desc },
-                  { icon: Icons.Prev1, label: t.info_sym3, desc: t.info_sym3_desc || Translations['en'].info_sym3_desc },
-                  { icon: Icons.Prev2, label: t.info_sym4, desc: t.info_sym4_desc || Translations['en'].info_sym4_desc },
                   { icon: Icons.Mul2, label: t.info_sym5, desc: t.info_sym5_desc || Translations['en'].info_sym5_desc },
                   { icon: Icons.Div2, label: t.info_sym6, desc: t.info_sym6_desc || Translations['en'].info_sym6_desc },
+                  { icon: Icons.Prev1, label: t.info_sym3, desc: t.info_sym3_desc || Translations['en'].info_sym3_desc },
                   { icon: Icons.ReverseNext, label: t.info_sym7, desc: t.info_sym7_desc || Translations['en'].info_sym7_desc },
-                  { icon: Icons.Star, label: t.info_sym8, desc: t.info_sym8_desc || Translations['en'].info_sym8_desc },
                   { icon: Icons.InvertAll, label: t.info_sym9, desc: t.info_sym9_desc || Translations['en'].info_sym9_desc },
+                  { icon: Icons.Star, label: t.info_sym8, desc: t.info_sym8_desc || Translations['en'].info_sym8_desc },
                   { icon: Icons.Heart, label: t.info_sym10, desc: t.info_sym10_desc || Translations['en'].info_sym10_desc },
+                  { icon: Icons.Prev2, label: t.info_sym4, desc: t.info_sym4_desc || Translations['en'].info_sym4_desc },
                 ].map((item, i) => {
                   const IconComp = item.icon;
                   return (
