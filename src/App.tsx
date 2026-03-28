@@ -1607,31 +1607,36 @@ export default function App() {
           </div>
         )}
 
-        {/* EXIT CONFIRMATION MODAL */}
+        {/* EXIT CONFIRMATION MODAL - PREMIUM MINIMALIST REDESIGN */}
         {showExitConfirm && (
-          <div className="fixed inset-0 z-[120] flex items-center justify-center p-6 bg-black/80 backdrop-blur-sm pointer-events-auto">
+          <div className="fixed inset-0 z-[120] flex items-center justify-center p-6 bg-black/40 backdrop-blur-md pointer-events-auto">
             <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-white rounded-[2rem] p-8 w-full max-w-xs text-center shadow-2xl"
+              initial={{ scale: 0.9, y: 20, opacity: 0 }}
+              animate={{ scale: 1, y: 0, opacity: 1 }}
+              exit={{ scale: 0.9, y: 20, opacity: 0 }}
+              className="bg-white/95 backdrop-blur-xl rounded-[2.5rem] p-10 w-full max-w-[320px] text-center shadow-[0_32px_64px_-16px_rgba(0,0,0,0.3)] border border-white/20"
             >
-              <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-6">
-                <Icons.Home className="w-8 h-8" />
+              <div className="w-20 h-20 bg-neutral-900 text-white rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-xl rotate-3">
+                <Icons.Home className="w-10 h-10" />
               </div>
-              <h2 className="text-xl font-black mb-2 text-neutral-900 leading-tight">{t.exit_confirm_title}</h2>
-              <p className="text-xs font-bold text-neutral-500 mb-8 px-2">{t.exit_confirm_desc}</p>
+              
+              <h2 className="text-2xl font-black mb-3 text-neutral-900 tracking-tight leading-tight">
+                {t.exit_confirm_title}
+              </h2>
+              <p className="text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-10 px-4">
+                {t.exit_confirm_desc}
+              </p>
 
               <div className="flex flex-col gap-3">
                 <button
                   onClick={() => { setShowExitConfirm(false); goToMenu(); }}
-                  className="w-full py-4 bg-red-500 text-white rounded-2xl font-black text-xs tracking-widest shadow-lg shadow-red-200"
+                  className="w-full py-5 bg-neutral-900 text-white rounded-2xl font-black text-xs tracking-[0.2em] shadow-lg shadow-neutral-200 hover:scale-[1.02] active:scale-95 transition-all"
                 >
                   {t.exit_confirm_yes}
                 </button>
                 <button
                   onClick={() => setShowExitConfirm(false)}
-                  className="w-full py-4 bg-neutral-100 text-neutral-500 rounded-2xl font-black text-xs tracking-widest"
+                  className="w-full py-5 bg-neutral-100 text-neutral-400 rounded-2xl font-black text-xs tracking-[0.2em] hover:bg-neutral-200 transition-colors"
                 >
                   {t.exit_confirm_no}
                 </button>
