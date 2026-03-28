@@ -278,10 +278,10 @@ function MenuScreen({ startGame, openDailyReward, coins }: { startGame: (asDev?:
         {/* LEFT: DAILY REWARD */}
         <DailyRewardButton onClick={openDailyReward} />
 
-        {/* RIGHT: COINS - HIGH CONTRAST */}
-        <div className="pointer-events-auto flex items-center gap-2.5 bg-[#1D1D1F] px-5 py-2.5 rounded-2xl shadow-xl border border-neutral-700/50 transform active:scale-95 transition-all text-white">
-          <div className="w-3 h-3 rounded-full bg-amber-400 shadow-[0_0_12px_rgba(251,191,36,0.8)] shrink-0"></div>
-          <span className="font-black text-base md:text-xl tabular-nums leading-none tracking-tight">{coins}</span>
+        {/* RIGHT: COINS - MINIMAL CLEAN */}
+        <div className="pointer-events-auto flex items-center gap-2 bg-white px-4 py-2 rounded-full border border-neutral-200/60 shadow-sm transform active:scale-95 transition-all">
+          <div className="w-2.5 h-2.5 rounded-full bg-amber-400 shrink-0"></div>
+          <span className="font-bold text-sm md:text-base text-[#1D1D1F] tabular-nums leading-none">{coins}</span>
         </div>
       </div>
 
@@ -1082,10 +1082,10 @@ export default function App() {
                 {t.header_time} <span className="text-neutral-900">{isDevMode ? '∞' : `${totalTimeSpent.toFixed(2)}s`}</span>
               </span>
             </div>
-            {/* COIN COUNTER - HIGH CONTRAST */}
-            <div className="flex items-center gap-2.5 bg-[#1D1D1F] px-5 py-2.5 rounded-2xl shadow-xl border border-neutral-700/50 text-white">
-              <div className="w-3 h-3 rounded-full bg-amber-400 shadow-[0_0_12px_rgba(251,191,36,0.8)] shrink-0"></div>
-              <span className="font-black text-lg md:text-xl tabular-nums leading-none tracking-tight">{coins}</span>
+            {/* COIN COUNTER - MINIMAL CLEAN */}
+            <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-full border border-neutral-200/60 shadow-sm">
+              <div className="w-2.5 h-2.5 rounded-full bg-amber-400 shrink-0"></div>
+              <span className="font-bold text-sm md:text-base text-[#1D1D1F] tabular-nums leading-none">{coins}</span>
             </div>
           </header>
 
