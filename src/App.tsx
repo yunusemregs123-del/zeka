@@ -1,5 +1,5 @@
 import { createPortal } from 'react-dom';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { StatusBar } from '@capacitor/status-bar';
 import { App as CapApp } from '@capacitor/app';
 import { useGameStore } from './store/useGameStore';
@@ -108,7 +108,7 @@ const TUTORIAL_DATA: Record<number, { exampleSequence?: SymbolType[], exampleRes
 };
 
 const SymbolDisplay = ({ type, size = 'normal', disableAnimation = false }: { type: SymbolType, size?: 'small' | 'normal' | 'large', disableAnimation?: boolean }) => {
-  const src = getSymbolSrc(type);
+  const src = useMemo(() => getSymbolSrc(type), [type]);
   if (!src) return null;
 
   const sizeClass = type === 'Plus'
