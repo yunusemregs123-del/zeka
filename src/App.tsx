@@ -139,20 +139,30 @@ const TutorialExample = ({ text, sequence, result }: { text?: string, sequence?:
 };
 
 // ─── MENU SCREEN ──────────────────────────────────────
-function MenuScreen({ startGame, openDailyReward, coins }: { startGame: (asDev?: boolean) => void, openDailyReward: () => void, coins: number }) {
+function MenuScreen({
+  startGame, openDailyReward, coins,
+  showInfo, setShowInfo,
+  showLeaderboard, setShowLeaderboard,
+  showMedals, setShowMedals,
+  selectedMedal, setSelectedMedal,
+  showLangMenu, setShowLangMenu
+}: {
+  startGame: (asDev?: boolean) => void,
+  openDailyReward: () => void,
+  coins: number,
+  showInfo: boolean, setShowInfo: (v: boolean) => void,
+  showLeaderboard: boolean, setShowLeaderboard: (v: boolean) => void,
+  showMedals: boolean, setShowMedals: (v: boolean) => void,
+  selectedMedal: any, setSelectedMedal: (v: any) => void,
+  showLangMenu: boolean, setShowLangMenu: (v: boolean) => void
+}) {
   const { language, setLanguage, medals, claimedMedals, claimMedalReward } = useGameStore();
   const t = Translations[language];
   const [tab, setTab] = useState<'daily' | 'weekly' | 'alltime'>('daily');
-  const [showLangMenu, setShowLangMenu] = useState(false);
-  const [showMedals, setShowMedals] = useState(false);
-  const [selectedMedal, setSelectedMedal] = useState<any>(null);
   const [scores, setScores] = useState<Leaderboard.ScoreEntry[]>([]);
   const [personalRankData, setPersonalRankData] = useState<{ rank: number, row: Leaderboard.ScoreEntry } | null>(null);
   const [loading, setLoading] = useState(true);
   const personalBest = Leaderboard.getPersonalBest();
-
-  const [showLeaderboard, setShowLeaderboard] = useState(false);
-  const [showInfo, setShowInfo] = useState(false);
   const [muteAudio, setMuteAudio] = useState(localStorage.getItem('zeka_mute') === 'true');
   const logoControls = useAnimation();
 
@@ -515,46 +525,56 @@ function MenuScreen({ startGame, openDailyReward, coins }: { startGame: (asDev?:
                 {t.info_desc}
               </p>
 
-              <div className="grid grid-cols-5 gap-1 mb-6 bg-neutral-50 rounded-2xl p-2 md:p-3 border border-neutral-100 place-items-center">
+              <div className="grid grid-cols-4 gap-2 mb-6 bg-neutral-50 rounded-2xl p-3 border border-neutral-100 place-items-center">
                 <div className="flex flex-col items-center gap-1">
-                  <div className="w-8 h-8 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center"><SymbolDisplay type="CircleFilled" size="small" /></div>
-                  <span className="text-[8px] md:text-[9px] font-bold text-neutral-500 text-center tracking-tighter leading-tight whitespace-pre-line">{t.info_sym1}</span>
-                </div>
-                <div className="flex flex-col items-center gap-1">
-                  <div className="w-8 h-8 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center"><SymbolDisplay type="TriangleUp" size="small" /></div>
-                  <span className="text-[8px] md:text-[9px] font-bold text-neutral-500 text-center tracking-tighter leading-tight whitespace-pre-line">{t.info_sym2}</span>
+                  <div className="w-9 h-9 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center"><SymbolDisplay type="CircleFilled" size="small" /></div>
+                  <span className="text-[7px] md:text-[8px] font-bold text-neutral-500 text-center tracking-tighter leading-tight">{t.info_sym1}</span>
                 </div>
                 <div className="flex flex-col items-center gap-1">
-                  <div className="w-8 h-8 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center"><SymbolDisplay type="Prev1" size="small" /></div>
-                  <span className="text-[8px] md:text-[9px] font-bold text-neutral-500 text-center tracking-tighter leading-tight whitespace-pre-line">{t.info_sym3}</span>
+                  <div className="w-9 h-9 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center"><SymbolDisplay type="CircleEmpty" size="small" /></div>
+                  <span className="text-[7px] md:text-[8px] font-bold text-neutral-500 text-center tracking-tighter leading-tight">{t.info_sym1_neg}</span>
                 </div>
                 <div className="flex flex-col items-center gap-1">
-                  <div className="w-8 h-8 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center"><SymbolDisplay type="Prev2" size="small" /></div>
-                  <span className="text-[8px] md:text-[9px] font-bold text-neutral-500 text-center tracking-tighter leading-tight whitespace-pre-line">{t.info_sym4}</span>
+                  <div className="w-9 h-9 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center"><SymbolDisplay type="TriangleUp" size="small" /></div>
+                  <span className="text-[7px] md:text-[8px] font-bold text-neutral-500 text-center tracking-tighter leading-tight">{t.info_sym2}</span>
                 </div>
                 <div className="flex flex-col items-center gap-1">
-                  <div className="w-8 h-8 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center"><SymbolDisplay type="Mul2" size="small" /></div>
-                  <span className="text-[8px] md:text-[9px] font-bold text-neutral-500 text-center tracking-tighter leading-tight whitespace-pre-line">{t.info_sym5}</span>
+                  <div className="w-9 h-9 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center"><SymbolDisplay type="TriangleDown" size="small" /></div>
+                  <span className="text-[7px] md:text-[8px] font-bold text-neutral-500 text-center tracking-tighter leading-tight">{t.info_sym2_neg}</span>
+                </div>
+
+                <div className="flex flex-col items-center gap-1">
+                  <div className="w-9 h-9 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center"><SymbolDisplay type="Prev1" size="small" /></div>
+                  <span className="text-[7px] md:text-[8px] font-bold text-neutral-500 text-center tracking-tighter leading-tight">{t.info_sym3}</span>
                 </div>
                 <div className="flex flex-col items-center gap-1">
-                  <div className="w-8 h-8 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center"><SymbolDisplay type="Div2" size="small" /></div>
-                  <span className="text-[8px] md:text-[9px] font-bold text-neutral-500 text-center tracking-tighter leading-tight whitespace-pre-line">{t.info_sym6}</span>
+                  <div className="w-9 h-9 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center"><SymbolDisplay type="Prev2" size="small" /></div>
+                  <span className="text-[7px] md:text-[8px] font-bold text-neutral-500 text-center tracking-tighter leading-tight">{t.info_sym4}</span>
                 </div>
                 <div className="flex flex-col items-center gap-1">
-                  <div className="w-8 h-8 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center"><SymbolDisplay type="ReverseNext" size="small" /></div>
-                  <span className="text-[8px] md:text-[9px] font-bold text-neutral-500 text-center tracking-tighter leading-tight whitespace-pre-line">{t.info_sym7}</span>
+                  <div className="w-9 h-9 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center"><SymbolDisplay type="Mul2" size="small" /></div>
+                  <span className="text-[7px] md:text-[8px] font-bold text-neutral-500 text-center tracking-tighter leading-tight">{t.info_sym5}</span>
                 </div>
-                <div className="flex flex-col items-center gap-1 pb-2">
-                  <div className="w-8 h-8 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center"><SymbolDisplay type="Star" size="small" /></div>
-                  <span className="text-[8px] md:text-[9px] font-bold text-neutral-500 text-center tracking-tighter leading-tight whitespace-pre-line">{t.info_sym8}</span>
+                <div className="flex flex-col items-center gap-1">
+                  <div className="w-9 h-9 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center"><SymbolDisplay type="Div2" size="small" /></div>
+                  <span className="text-[7px] md:text-[8px] font-bold text-neutral-500 text-center tracking-tighter leading-tight">{t.info_sym6}</span>
                 </div>
-                <div className="flex flex-col items-center gap-1 pb-2">
-                  <div className="w-8 h-8 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center"><SymbolDisplay type="InvertAll" size="small" /></div>
-                  <span className="text-[8px] md:text-[9px] font-bold text-neutral-500 text-center tracking-tighter leading-tight whitespace-pre-line">{t.info_sym9}</span>
+
+                <div className="flex flex-col items-center gap-1">
+                  <div className="w-9 h-9 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center"><SymbolDisplay type="ReverseNext" size="small" /></div>
+                  <span className="text-[7px] md:text-[8px] font-bold text-neutral-500 text-center tracking-tighter leading-tight">{t.info_sym7}</span>
                 </div>
-                <div className="flex flex-col items-center gap-1 pb-2">
-                  <div className="w-8 h-8 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center"><SymbolDisplay type="Heart" size="small" /></div>
-                  <span className="text-[8px] md:text-[9px] font-bold text-neutral-500 text-center tracking-tighter leading-tight whitespace-pre-line">{t.info_sym10}</span>
+                <div className="flex flex-col items-center gap-1">
+                  <div className="w-9 h-9 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center"><SymbolDisplay type="Star" size="small" /></div>
+                  <span className="text-[7px] md:text-[8px] font-bold text-neutral-500 text-center tracking-tighter leading-tight">{t.info_sym8}</span>
+                </div>
+                <div className="flex flex-col items-center gap-1">
+                  <div className="w-9 h-9 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center"><SymbolDisplay type="InvertAll" size="small" /></div>
+                  <span className="text-[7px] md:text-[8px] font-bold text-neutral-500 text-center tracking-tighter leading-tight">{t.info_sym9}</span>
+                </div>
+                <div className="flex flex-col items-center gap-1">
+                  <div className="w-9 h-9 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center"><SymbolDisplay type="Heart" size="small" /></div>
+                  <span className="text-[7px] md:text-[8px] font-bold text-neutral-500 text-center tracking-tighter leading-tight">{t.info_sym10}</span>
                 </div>
               </div>
 
@@ -888,9 +908,15 @@ export default function App() {
 
   // Modals
   const [showTutorialModal, setShowTutorialModal] = useState(false);
+  const [showExitConfirm, setShowExitConfirm] = useState(false);
   const [showIntroModal, setShowIntroModal] = useState(false);
   const [showDailyRewardGlobal, setShowDailyRewardGlobal] = useState(false);
   const [showSuccessGlobal, setShowSuccessGlobal] = useState(false);
+  const [showInfo, setShowInfo] = useState(false);
+  const [showLeaderboard, setShowLeaderboard] = useState(false);
+  const [showMedals, setShowMedals] = useState(false);
+  const [selectedMedal, setSelectedMedal] = useState<any>(null);
+  const [showLangMenu, setShowLangMenu] = useState(false);
   const [introCheckbox, setIntroCheckbox] = useState(hideIntro);
 
   // BACK BUTTON HANDLING (CAPACITOR)
@@ -899,21 +925,29 @@ export default function App() {
     const setup = async () => {
       backListener = await CapApp.addListener('backButton', () => {
         // Priorities: Close modals -> Pause menu -> Go to main menu -> Exit app
-        if (showTutorialModal) setShowTutorialModal(false);
+        if (showExitConfirm) setShowExitConfirm(false);
+        else if (showTutorialModal) setShowTutorialModal(false);
         else if (showIntroModal) setShowIntroModal(false);
         else if (showTrackingModal) setShowTrackingModal(false);
         else if (showDailyRewardGlobal) setShowDailyRewardGlobal(false);
+        else if (showInfo) setShowInfo(false);
+        else if (showLeaderboard) setShowLeaderboard(false);
+        else if (showMedals) setShowMedals(false);
+        else if (selectedMedal) setSelectedMedal(null);
+        else if (showSuccessGlobal) setShowSuccessGlobal(false);
         else if (gameState === 'PLAYING') {
-          if (isPaused) goToMenu();
-          else setIsPaused(true);
+          // If in game, show exit confirmation instead of instant exit/pause
+          setShowExitConfirm(true);
+        } else if (gameState === 'GAMEOVER') {
+          goToMenu();
         } else {
-          try { CapApp.exitApp(); } catch(e) {}
+          try { CapApp.exitApp(); } catch (e) { }
         }
       });
     };
     setup();
     return () => { if (backListener) backListener.remove(); };
-  }, [showTutorialModal, showIntroModal, showTrackingModal, gameState, isPaused]);
+  }, [showTutorialModal, showIntroModal, showTrackingModal, showDailyRewardGlobal, showSuccessGlobal, showExitConfirm, showInfo, showLeaderboard, showMedals, selectedMedal, gameState, isPaused]);
 
   useEffect(() => {
     if (gameState === 'PLAYING') {
@@ -1058,7 +1092,16 @@ export default function App() {
     <div className="h-[100dvh] w-full bg-[#F5F5F7] text-[#1D1D1F] flex flex-col font-sans selection:bg-neutral-200 overflow-hidden relative">
 
       {gameState === 'MENU' ? (
-        <MenuScreen coins={coins} startGame={startGame} openDailyReward={() => setShowDailyRewardGlobal(true)} />
+        <MenuScreen
+          coins={coins}
+          startGame={startGame}
+          openDailyReward={() => setShowDailyRewardGlobal(true)}
+          showInfo={showInfo} setShowInfo={setShowInfo}
+          showLeaderboard={showLeaderboard} setShowLeaderboard={setShowLeaderboard}
+          showMedals={showMedals} setShowMedals={setShowMedals}
+          selectedMedal={selectedMedal} setSelectedMedal={setSelectedMedal}
+          showLangMenu={showLangMenu} setShowLangMenu={setShowLangMenu}
+        />
       ) : gameState === 'GAMEOVER' ? (
         <GameOverScreen
           level={level}
@@ -1082,10 +1125,21 @@ export default function App() {
                 {t.header_time} <span className="text-neutral-900">{isDevMode ? '∞' : `${totalTimeSpent.toFixed(2)}s`}</span>
               </span>
             </div>
-            {/* COIN COUNTER - FORCED BLACK TEXT */}
-            <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-full border border-neutral-200/60 shadow-sm">
-              <div className="w-2.5 h-2.5 rounded-full bg-amber-400 shrink-0"></div>
-              <span className="font-black text-sm md:text-base tabular-nums leading-none" style={{ color: '#000000', opacity: 1 }}>{coins}</span>
+            <div className="flex items-center gap-3">
+              {/* HOME BUTTON */}
+              <button
+                onClick={() => setShowExitConfirm(true)}
+                className="w-10 h-10 flex items-center justify-center bg-white border border-neutral-200 rounded-2xl shadow-sm text-neutral-400 hover:text-neutral-900 transition-colors"
+                aria-label="Home"
+              >
+                <Icons.Home className="w-5 h-5" />
+              </button>
+
+              {/* COIN COUNTER - FORCED BLACK TEXT */}
+              <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-full border border-neutral-200/60 shadow-sm">
+                <div className="w-2.5 h-2.5 rounded-full bg-amber-400 shrink-0"></div>
+                <span className="font-black text-sm md:text-base tabular-nums leading-none" style={{ color: '#000000', opacity: 1 }}>{coins}</span>
+              </div>
             </div>
           </header>
 
@@ -1549,6 +1603,39 @@ export default function App() {
               >
                 {t.congrats_btn}
               </button>
+            </motion.div>
+          </div>
+        )}
+
+        {/* EXIT CONFIRMATION MODAL */}
+        {showExitConfirm && (
+          <div className="fixed inset-0 z-[120] flex items-center justify-center p-6 bg-black/80 backdrop-blur-sm pointer-events-auto">
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-white rounded-[2rem] p-8 w-full max-w-xs text-center shadow-2xl"
+            >
+              <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Icons.Home className="w-8 h-8" />
+              </div>
+              <h2 className="text-xl font-black mb-2 text-neutral-900 leading-tight">{t.exit_confirm_title}</h2>
+              <p className="text-xs font-bold text-neutral-500 mb-8 px-2">{t.exit_confirm_desc}</p>
+
+              <div className="flex flex-col gap-3">
+                <button
+                  onClick={() => { setShowExitConfirm(false); goToMenu(); }}
+                  className="w-full py-4 bg-red-500 text-white rounded-2xl font-black text-xs tracking-widest shadow-lg shadow-red-200"
+                >
+                  {t.exit_confirm_yes}
+                </button>
+                <button
+                  onClick={() => setShowExitConfirm(false)}
+                  className="w-full py-4 bg-neutral-100 text-neutral-500 rounded-2xl font-black text-xs tracking-widest"
+                >
+                  {t.exit_confirm_no}
+                </button>
+              </div>
             </motion.div>
           </div>
         )}
