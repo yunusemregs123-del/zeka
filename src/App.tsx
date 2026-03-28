@@ -105,17 +105,17 @@ const TUTORIAL_DATA: Record<number, { exampleSequence?: SymbolType[], exampleRes
   131: { exampleSequence: ['CircleEmpty', 'Plus', 'Heart'], exampleResult: 0 }
 };
 
-const SymbolDisplay = ({ type }: { type: SymbolType }) => {
+const SymbolDisplay = ({ type, size = 'normal' }: { type: SymbolType, size?: 'small' | 'normal' | 'large' }) => {
   const Icon = Icons[type as keyof typeof Icons];
   if (!Icon) return null;
-  if (type === 'Plus') return <Icon className="w-4 h-4 mx-[2px] md:mx-1 md:w-6 md:h-6 text-neutral-300 shrink-0" />;
+  if (type === 'Plus') return <Icon className={`mx-[2px] md:mx-1 text-neutral-300 shrink-0 ${size === 'small' ? 'w-3 h-3 md:w-4 md:h-4' : 'w-4 h-4 md:w-5 md:h-5'}`} />;
   return (
     <motion.div
       initial={{ scale: 0, y: 10, opacity: 0 }}
       animate={{ scale: 1, y: 0, opacity: 1 }}
-      className="flex items-center justify-center p-[2px] md:p-1"
+      className="flex items-center justify-center p-[2px]"
     >
-      <Icon className="w-7 h-7 md:w-9 md:h-9 text-neutral-900 drop-shadow-sm" />
+      <Icon className={`text-neutral-900 drop-shadow-sm ${size === 'small' ? 'w-5 h-5 md:w-6 md:h-6' : size === 'large' ? 'w-10 h-10 md:w-12 md:h-12' : 'w-7 h-7 md:w-8 md:h-8'}`} />
     </motion.div>
   );
 };
@@ -275,17 +275,17 @@ function MenuScreen({ startGame }: { startGame: (asDev?: boolean) => void }) {
       {/* DAILY REWARD - TOP LEFT */}
       <DailyRewardButton />
 
-      {/* DEV BUTTON - TOP RIGHT */}
-      {import.meta.env.DEV && (
-      <div className="absolute top-4 right-4 z-10">
-        <button
-          onClick={() => startGame(true)}
-          className="px-3 py-1.5 bg-neutral-200 text-neutral-500 rounded-lg font-bold text-[9px] tracking-widest hover:bg-neutral-300 transition-all opacity-40 hover:opacity-100"
-        >
-          DEV
-        </button>
+      {/* DEV BUTTON - RELATIVE TO CONTENT ON WEB */}
+      <div className="absolute inset-x-0 top-4 z-10 w-full max-w-2xl mx-auto px-4 flex justify-end pointer-events-none">
+        {import.meta.env.DEV && (
+          <button
+            onClick={() => startGame(true)}
+            className="pointer-events-auto px-3 py-1.5 bg-neutral-200 text-neutral-500 rounded-lg font-bold text-[9px] tracking-widest hover:bg-neutral-300 transition-all opacity-40 hover:opacity-100"
+          >
+            DEV
+          </button>
+        )}
       </div>
-      )}
 
       <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="text-center w-full max-w-sm z-0">
 
@@ -507,43 +507,43 @@ function MenuScreen({ startGame }: { startGame: (asDev?: boolean) => void }) {
 
               <div className="grid grid-cols-5 gap-1 mb-6 bg-neutral-50 rounded-2xl p-2 md:p-3 border border-neutral-100 place-items-center">
                 <div className="flex flex-col items-center gap-1">
-                  <div className="w-8 h-8 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center scale-90 md:scale-100"><SymbolDisplay type="CircleFilled" /></div>
+                  <div className="w-8 h-8 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center"><SymbolDisplay type="CircleFilled" size="small" /></div>
                   <span className="text-[8px] md:text-[9px] font-bold text-neutral-500 text-center tracking-tighter leading-tight whitespace-pre-line">{t.info_sym1}</span>
                 </div>
                 <div className="flex flex-col items-center gap-1">
-                  <div className="w-8 h-8 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center scale-90 md:scale-100"><SymbolDisplay type="TriangleUp" /></div>
+                  <div className="w-8 h-8 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center"><SymbolDisplay type="TriangleUp" size="small" /></div>
                   <span className="text-[8px] md:text-[9px] font-bold text-neutral-500 text-center tracking-tighter leading-tight whitespace-pre-line">{t.info_sym2}</span>
                 </div>
                 <div className="flex flex-col items-center gap-1">
-                  <div className="w-8 h-8 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center scale-90 md:scale-100"><SymbolDisplay type="Prev1" /></div>
+                  <div className="w-8 h-8 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center"><SymbolDisplay type="Prev1" size="small" /></div>
                   <span className="text-[8px] md:text-[9px] font-bold text-neutral-500 text-center tracking-tighter leading-tight whitespace-pre-line">{t.info_sym3}</span>
                 </div>
                 <div className="flex flex-col items-center gap-1">
-                  <div className="w-8 h-8 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center scale-90 md:scale-100"><SymbolDisplay type="Prev2" /></div>
+                  <div className="w-8 h-8 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center"><SymbolDisplay type="Prev2" size="small" /></div>
                   <span className="text-[8px] md:text-[9px] font-bold text-neutral-500 text-center tracking-tighter leading-tight whitespace-pre-line">{t.info_sym4}</span>
                 </div>
                 <div className="flex flex-col items-center gap-1">
-                  <div className="w-8 h-8 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center scale-90 md:scale-100"><SymbolDisplay type="Mul2" /></div>
+                  <div className="w-8 h-8 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center"><SymbolDisplay type="Mul2" size="small" /></div>
                   <span className="text-[8px] md:text-[9px] font-bold text-neutral-500 text-center tracking-tighter leading-tight whitespace-pre-line">{t.info_sym5}</span>
                 </div>
                 <div className="flex flex-col items-center gap-1">
-                  <div className="w-8 h-8 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center scale-90 md:scale-100"><SymbolDisplay type="Div2" /></div>
+                  <div className="w-8 h-8 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center"><SymbolDisplay type="Div2" size="small" /></div>
                   <span className="text-[8px] md:text-[9px] font-bold text-neutral-500 text-center tracking-tighter leading-tight whitespace-pre-line">{t.info_sym6}</span>
                 </div>
                 <div className="flex flex-col items-center gap-1">
-                  <div className="w-8 h-8 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center scale-90 md:scale-100"><SymbolDisplay type="ReverseNext" /></div>
+                  <div className="w-8 h-8 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center"><SymbolDisplay type="ReverseNext" size="small" /></div>
                   <span className="text-[8px] md:text-[9px] font-bold text-neutral-500 text-center tracking-tighter leading-tight whitespace-pre-line">{t.info_sym7}</span>
                 </div>
                 <div className="flex flex-col items-center gap-1 pb-2">
-                  <div className="w-8 h-8 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center scale-90 md:scale-100"><SymbolDisplay type="Star" /></div>
+                  <div className="w-8 h-8 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center"><SymbolDisplay type="Star" size="small" /></div>
                   <span className="text-[8px] md:text-[9px] font-bold text-neutral-500 text-center tracking-tighter leading-tight whitespace-pre-line">{t.info_sym8}</span>
                 </div>
                 <div className="flex flex-col items-center gap-1 pb-2">
-                  <div className="w-8 h-8 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center scale-90 md:scale-100"><SymbolDisplay type="InvertAll" /></div>
+                  <div className="w-8 h-8 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center"><SymbolDisplay type="InvertAll" size="small" /></div>
                   <span className="text-[8px] md:text-[9px] font-bold text-neutral-500 text-center tracking-tighter leading-tight whitespace-pre-line">{t.info_sym9}</span>
                 </div>
                 <div className="flex flex-col items-center gap-1 pb-2">
-                  <div className="w-8 h-8 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center scale-90 md:scale-100"><SymbolDisplay type="Heart" /></div>
+                  <div className="w-8 h-8 bg-white border border-neutral-200 shadow-sm rounded-xl flex items-center justify-center"><SymbolDisplay type="Heart" size="small" /></div>
                   <span className="text-[8px] md:text-[9px] font-bold text-neutral-500 text-center tracking-tighter leading-tight whitespace-pre-line">{t.info_sym10}</span>
                 </div>
               </div>
@@ -695,12 +695,12 @@ function DailyRewardButton() {
 
   return (
     <>
-      <div className="absolute left-4 z-10 pt-[env(safe-area-inset-top,0px)]" style={{ top: '1.5rem' }}>
+      <div className="absolute inset-x-0 top-[1.5rem] z-10 px-4 md:p-6 w-full max-w-2xl mx-auto flex justify-between items-start pointer-events-none">
         <motion.button
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           onClick={() => setShowModal(true)}
-          className={`flex items-center gap-2 px-3 py-2 rounded-2xl shadow-sm border transition-all ${canClaim ? 'bg-amber-100 border-amber-200 text-amber-700' : 'bg-white border-neutral-100 text-neutral-400'}`}
+          className={`pointer-events-auto flex items-center gap-2 px-3 py-2 rounded-2xl shadow-sm border transition-all ${canClaim ? 'bg-amber-100 border-amber-200 text-amber-700' : 'bg-white border-neutral-100 text-neutral-400'}`}
         >
           <div className={`p-1 rounded-lg ${canClaim ? 'bg-amber-400 text-white animate-pulse' : 'bg-neutral-100 text-neutral-300'}`}>
             <Icons.Gift className="w-4 h-4" />
@@ -1046,6 +1046,17 @@ export default function App() {
     });
   }, [level, coins, streak, helpCount, langsUsed.length, totalTimeSpent]);
 
+  // AUTO-SHOW TRACKING MODAL FOR NEW PLAYERS
+  useEffect(() => {
+    const hasSeenTracking = localStorage.getItem('zeka_tracking_seen');
+    if (!hasSeenTracking) {
+      setTimeout(() => {
+        setShowTrackingModal(true);
+        localStorage.setItem('zeka_tracking_seen', 'true');
+      }, 2000);
+    }
+  }, []);
+
   const initLevel = () => {
     const puzzle = generatePuzzle(level, previousAnswers);
     setSequence(puzzle.sequence);
@@ -1117,7 +1128,7 @@ export default function App() {
     <div className="h-[100dvh] w-full bg-[#F5F5F7] text-[#1D1D1F] flex flex-col font-sans selection:bg-neutral-200 overflow-hidden relative">
 
       {/* HEADER */}
-      <header className="flex justify-between items-center px-4 py-3 md:p-6 w-full max-w-3xl mx-auto z-10 shrink-0">
+      <header className="flex justify-between items-center px-4 py-3 md:p-6 w-full max-w-2xl mx-auto z-10 shrink-0">
         <div className="flex flex-col">
           <span className="text-4xl font-black tracking-tighter flex items-center gap-3">
             {t.header_level} {level}
@@ -1196,12 +1207,12 @@ export default function App() {
 
 
       {/* MAIN PLAY AREA */}
-      <main className="flex-1 min-h-0 flex flex-col items-center justify-center px-2 md:px-4 w-full max-w-4xl mx-auto relative z-10 pb-2">
+      <main className="flex-1 min-h-0 flex flex-col items-center justify-center px-2 md:px-4 w-full max-w-2xl mx-auto relative z-10 pb-2">
 
         {/* SEQUENCE DISPLAY */}
         <motion.div
           layout
-          className="flex-1 min-h-0 flex flex-wrap justify-center content-center items-center gap-[2px] md:gap-2 mb-2 md:mb-6 px-2 py-4 md:px-8 md:py-8 rounded-3xl bg-white shadow-[0_20px_40px_rgb(0,0,0,0.04)] border border-neutral-100 w-full relative overflow-y-auto"
+          className="flex-1 min-h-0 flex flex-wrap justify-center content-center items-center gap-[2px] md:gap-1.5 mb-2 md:mb-4 px-2 py-4 md:px-6 md:py-6 rounded-3xl bg-white shadow-[0_20px_40px_rgb(0,0,0,0.04)] border border-neutral-100 w-full relative overflow-y-auto"
         >
           <div className="absolute inset-0 bg-gradient-to-b from-transparent to-neutral-50/50 pointer-events-none"></div>
 
@@ -1233,12 +1244,12 @@ export default function App() {
             whileTap={{ scale: 0.9 }}
             onClick={() => adjustValue(-1)}
             disabled={isPaused || showTutorialModal || showIntroModal}
-            className="w-14 h-16 md:w-20 md:h-24 flex items-center justify-center text-neutral-400 hover:text-neutral-900 transition-colors disabled:opacity-20 disabled:hover:text-neutral-400 focus:outline-none"
+            className="w-14 h-16 md:w-16 md:h-20 flex items-center justify-center text-neutral-400 hover:text-neutral-900 transition-colors disabled:opacity-20 disabled:hover:text-neutral-400 focus:outline-none"
           >
-            <Icons.TriangleDown className="w-12 h-12 md:w-16 md:h-16 rotate-90" />
+            <Icons.TriangleDown className="w-12 h-12 md:w-14 md:h-14 rotate-90" />
           </motion.button>
 
-          <div className="relative w-24 h-24 md:w-40 md:h-40 flex items-center justify-center bg-white rounded-full shadow-[inset_0_-8px_16px_rgb(0,0,0,0.04),0_8px_30px_rgb(0,0,0,0.04)] border border-neutral-50 shrink-0">
+          <div className="relative w-24 h-24 md:w-32 md:h-32 flex items-center justify-center bg-white rounded-full shadow-[inset_0_-8px_16px_rgb(0,0,0,0.04),0_8px_30px_rgb(0,0,0,0.04)] border border-neutral-50 shrink-0">
             <AnimatePresence mode="popLayout">
               <motion.div
                 key={currentValue}
@@ -1246,7 +1257,7 @@ export default function App() {
                 animate={{ y: 0, opacity: 1, scale: 1 }}
                 exit={{ y: 20, opacity: 0, scale: 0.8 }}
                 transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-                className="absolute text-5xl md:text-8xl font-black tracking-tighter drop-shadow-sm"
+                className="absolute text-5xl md:text-7xl font-black tracking-tighter drop-shadow-sm"
               >
                 {currentValue > 0 ? `+${currentValue}` : currentValue}
               </motion.div>
@@ -1258,9 +1269,9 @@ export default function App() {
             whileTap={{ scale: 0.9 }}
             onClick={() => adjustValue(+1)}
             disabled={isPaused || showTutorialModal || showIntroModal}
-            className="w-14 h-16 md:w-20 md:h-24 flex items-center justify-center text-neutral-400 hover:text-neutral-900 transition-colors disabled:opacity-20 disabled:hover:text-neutral-400 focus:outline-none"
+            className="w-14 h-16 md:w-16 md:h-20 flex items-center justify-center text-neutral-400 hover:text-neutral-900 transition-colors disabled:opacity-20 disabled:hover:text-neutral-400 focus:outline-none"
           >
-            <Icons.TriangleUp className="w-12 h-12 md:w-16 md:h-16 rotate-90" />
+            <Icons.TriangleUp className="w-12 h-12 md:w-14 md:h-14 rotate-90" />
           </motion.button>
         </div>
 
@@ -1271,7 +1282,7 @@ export default function App() {
             whileTap={{ scale: 0.95 }}
             onClick={handleSubmission}
             disabled={isPaused || showTutorialModal || showIntroModal}
-            className={`px-10 py-3 md:px-16 md:py-5 bg-[#1D1D1F] text-white rounded-full font-bold tracking-[0.2em] text-sm md:text-lg shadow-[0_10px_30px_rgba(0,0,0,0.2)] hover:shadow-[0_20px_40px_rgba(0,0,0,0.3)] transition-all focus:outline-none focus:ring-4 focus:ring-neutral-200 ${isPaused || showTutorialModal || showIntroModal ? 'opacity-20 pointer-events-none scale-95' : 'opacity-100'}`}
+            className={`px-10 py-3 md:px-14 md:py-4 bg-[#1D1D1F] text-white rounded-full font-bold tracking-[0.2em] text-sm md:text-base shadow-[0_10px_30px_rgba(0,0,0,0.2)] hover:shadow-[0_20px_40px_rgba(0,0,0,0.3)] transition-all focus:outline-none focus:ring-4 focus:ring-neutral-200 ${isPaused || showTutorialModal || showIntroModal ? 'opacity-20 pointer-events-none scale-95' : 'opacity-100'}`}
           >
             {t.btn_submit}
           </motion.button>
@@ -1279,7 +1290,7 @@ export default function App() {
       </main>
 
       {/* FOOTER & TIMER */}
-      <footer className="w-full max-w-3xl mx-auto px-4 pb-4 md:px-6 md:pb-8 flex flex-col gap-4 md:gap-6 z-10 relative shrink-0">
+      <footer className="w-full max-w-2xl mx-auto px-4 pb-4 md:px-6 md:pb-6 flex flex-col gap-4 md:gap-4 z-10 relative shrink-0">
 
         {/* TIMER BAR */}
         <div className="w-full h-3 bg-neutral-200/60 rounded-full overflow-hidden shadow-inner flex-shrink-0">
@@ -1303,7 +1314,7 @@ export default function App() {
               }
             }}
             disabled={showTutorialModal || showIntroModal || isDevMode || (!isPaused && coins < 50)}
-            className={`flex flex-col md:flex-row items-center justify-center gap-1 p-2 md:p-4 rounded-xl md:rounded-2xl shadow-sm border font-bold text-[9px] md:text-xs tracking-widest transition active:scale-95 disabled:opacity-30 disabled:pointer-events-none ${isPaused ? 'bg-amber-100 text-amber-900 border-amber-200' : 'bg-white border-neutral-100 hover:bg-neutral-50'}`}
+            className={`flex flex-col md:flex-row items-center justify-center gap-1 p-2 md:p-3 rounded-xl md:rounded-2xl shadow-sm border font-bold text-[9px] md:text-xs tracking-widest transition active:scale-95 disabled:opacity-30 disabled:pointer-events-none ${isPaused ? 'bg-amber-100 text-amber-900 border-amber-200' : 'bg-white border-neutral-100 hover:bg-neutral-50'}`}
           >
             <span>{isPaused ? t.btn_resume : t.btn_pause}</span>
             <span className="text-[8px] md:text-[10px] text-amber-600 bg-amber-50 px-1.5 py-0.5 md:py-1 rounded-full">{isDevMode || isPaused ? t.btn_free : '50C'}</span>
@@ -1312,7 +1323,7 @@ export default function App() {
           <button
             onClick={() => useGameStore.getState().addTime(10)}
             disabled={isPaused || showTutorialModal || showIntroModal || isDevMode || coins < 10}
-            className="flex flex-col md:flex-row items-center justify-center gap-1 p-2 md:p-4 rounded-xl md:rounded-2xl bg-white shadow-sm border border-neutral-100 font-bold text-[9px] md:text-xs tracking-widest hover:bg-neutral-50 transition active:scale-95 disabled:opacity-30 disabled:pointer-events-none"
+            className="flex flex-col md:flex-row items-center justify-center gap-1 p-2 md:p-3 rounded-xl md:rounded-2xl bg-white shadow-sm border border-neutral-100 font-bold text-[9px] md:text-xs tracking-widest hover:bg-neutral-50 transition active:scale-95 disabled:opacity-30 disabled:pointer-events-none"
           >
             <span>{t.btn_plus10}</span>
             <span className="text-[8px] md:text-[10px] text-amber-600 bg-amber-50 px-1.5 py-0.5 md:py-1 rounded-full">10C</span>
@@ -1326,7 +1337,7 @@ export default function App() {
               }
             }}
             disabled={isPaused || showTutorialModal || showIntroModal || (!showSolution && !isDevMode && coins < 50)}
-            className="flex flex-col md:flex-row items-center justify-center gap-1 p-2 md:p-4 rounded-xl md:rounded-2xl bg-white shadow-sm border border-neutral-100 font-bold text-[9px] md:text-xs tracking-widest hover:bg-neutral-50 transition active:scale-95 disabled:opacity-30 disabled:pointer-events-none"
+            className="flex flex-col md:flex-row items-center justify-center gap-1 p-2 md:p-3 rounded-xl md:rounded-2xl bg-white shadow-sm border border-neutral-100 font-bold text-[9px] md:text-xs tracking-widest hover:bg-neutral-50 transition active:scale-95 disabled:opacity-30 disabled:pointer-events-none"
           >
             <span>{showSolution ? t.btn_hide : t.btn_reveal}</span>
             <span className="text-[8px] md:text-[10px] text-amber-600 bg-amber-50 px-1.5 py-0.5 md:py-1 rounded-full">{isDevMode ? t.btn_free : '50C'}</span>
