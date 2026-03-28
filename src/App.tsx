@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom';
 import { useEffect, useState } from 'react';
 import { StatusBar } from '@capacitor/status-bar';
 import { App as CapApp } from '@capacitor/app';
@@ -120,19 +121,19 @@ const SymbolDisplay = ({ type, size = 'normal' }: { type: SymbolType, size?: 'sm
   );
 };
 
-const TutorialExample = ({ text, sequence, result }: { text?: string, sequence?: SymbolType[], result?: number | string }) => {
+const TutorialExample = ({ text, sequence, result, isSmall }: { text?: string, sequence?: SymbolType[], result?: number | string, isSmall?: boolean }) => {
   if (!sequence || result === undefined) return null;
   return (
-    <div className="w-full bg-neutral-50/80 border border-neutral-100 rounded-2xl p-4 mb-2 text-left shadow-[inset_0_2px_10px_rgb(0,0,0,0.02)] overflow-hidden">
-      {text && <span className="block text-[10px] font-black text-amber-500 tracking-widest uppercase mb-3 whitespace-normal">{text}</span>}
-      <div className="flex items-center justify-center gap-1 md:gap-2 pb-1 whitespace-nowrap flex-nowrap w-full scale-[0.80] sm:scale-100 origin-center">
+    <div className={`w-full bg-neutral-50/80 border border-neutral-100 rounded-2xl ${isSmall ? 'p-2 mb-1' : 'p-4 mb-2'} text-left shadow-[inset_0_2px_10px_rgb(0,0,0,0.02)] overflow-hidden`}>
+      {text && <span className={`block ${isSmall ? 'text-[8px] mb-1' : 'text-[10px] mb-3'} font-black text-amber-500 tracking-widest uppercase whitespace-normal`}>{text}</span>}
+      <div className={`flex items-center justify-center gap-1 md:gap-2 pb-1 whitespace-nowrap flex-nowrap w-full ${isSmall ? 'scale-[0.70]' : 'scale-[0.80] sm:scale-100'} origin-center`}>
         {sequence.map((sym, i) => (
           <div key={i} className={`shrink-0 ${sym !== 'Plus' ? 'bg-white shadow-sm border border-neutral-100 rounded-xl' : ''}`}>
-            <SymbolDisplay type={sym} />
+            <SymbolDisplay type={sym} size={isSmall ? "small" : "normal"} />
           </div>
         ))}
-        <span className="text-xl font-black text-neutral-300 mx-1 shrink-0">=</span>
-        <span className="text-2xl md:text-3xl font-black text-amber-500 shrink-0">{result}</span>
+        <span className={`${isSmall ? 'text-sm' : 'text-xl'} font-black text-neutral-300 mx-1 shrink-0`}>=</span>
+        <span className={`${isSmall ? 'text-lg' : 'text-2xl md:text-3xl'} font-black text-amber-500 shrink-0`}>{result}</span>
       </div>
     </div>
   );
@@ -895,13 +896,14 @@ export default function App() {
   const {
     gameState, level, totalTimeSpent, currentValue, timeLeft, maxTime, coins, previousAnswers, hideIntro, isDevMode, hasRevivedInCurrentGame, language,
     streak, helpCount, langsUsed, dailyRewardsToday, lastRewardTime,
-    startNewLevel, setCurrentValue, tickTimer, addLevelTime, setHideIntro, startGame, goToMenu, devAdvanceLevel, resetStreak, unlockMedal, claimDailyReward
+    startNewLevel, setCurrentValue, tickTimer, addLevelTime, setHideIntro, startGame, goToMenu, resetStreak, unlockMedal, claimDailyReward
   } = useGameStore();
   const t = Translations[language];
 
   const [sequence, setSequence] = useState<SymbolType[]>([]);
   const [expected, setExpected] = useState<number>(0);
   const [showSolution, setShowSolution] = useState(false);
+  const [hasPaidForSolution, setHasPaidForSolution] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showTrackingModal, setShowTrackingModal] = useState(false);
@@ -950,6 +952,10 @@ export default function App() {
   }, [showTutorialModal, showIntroModal, showTrackingModal, showDailyRewardGlobal, showSuccessGlobal, showExitConfirm, showInfo, showLeaderboard, showMedals, selectedMedal, gameState, isPaused]);
 
   useEffect(() => {
+    // Reset state immediately on level/state change to ensure clean transition
+    setShowSolution(false);
+    setIsPaused(false);
+    
     if (gameState === 'PLAYING') {
       if (level === 1 && !hideIntro) {
         setShowIntroModal(true);
@@ -960,18 +966,23 @@ export default function App() {
       } else {
         initLevel();
       }
+    } else {
+      // Reset game-local UI states when not in playing mode
+      setShowTutorialModal(false);
+      setShowIntroModal(false);
     }
-  }, [level, gameState]);
+  }, [level, gameState, hideIntro]);
 
 
 
   useEffect(() => {
     let interval: number;
-    const isModalOpen = showTutorialModal || showIntroModal;
+    const isModalOpen = showTutorialModal || showIntroModal; // Intentionally excluding showExitConfirm so timer keeps running
     if (gameState === 'PLAYING' && !isPaused && !isModalOpen && !isDevMode) {
       interval = setInterval(() => {
         tickTimer(0.1);
         if (useGameStore.getState().timeLeft <= 0) {
+          setShowExitConfirm(false); // Close modal if time runs out
           handleGameOver();
         }
       }, 100);
@@ -980,15 +991,15 @@ export default function App() {
   }, [gameState, isPaused, showTutorialModal, showIntroModal, isDevMode]);
 
   useEffect(() => {
-    const isModalOpen = showTutorialModal || showIntroModal;
+    const isModalOpen = showTutorialModal || showIntroModal || showExitConfirm;
     if (gameState === 'PLAYING' && !isPaused && !isModalOpen && !isDevMode && timeLeft < 5 && timeLeft > 0 && Math.floor(timeLeft) === timeLeft) {
       playSound('tick');
     }
-  }, [Math.floor(timeLeft), gameState, isPaused, showTutorialModal, showIntroModal, isDevMode]);
+  }, [Math.floor(timeLeft), gameState, isPaused, showTutorialModal, showIntroModal, showExitConfirm, isDevMode]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      const isModalOpen = showTutorialModal || showIntroModal;
+      const isModalOpen = showTutorialModal || showIntroModal || showExitConfirm;
       if (gameState !== 'PLAYING' || isPaused || isModalOpen) return;
 
       if (e.key === 'ArrowUp' || e.key === 'ArrowRight') {
@@ -1005,7 +1016,7 @@ export default function App() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [gameState, isPaused, showTutorialModal, showIntroModal, currentValue, expected, isSubmitting]);
+  }, [gameState, isPaused, showTutorialModal, showIntroModal, showExitConfirm, currentValue, expected, isSubmitting]);
 
   useEffect(() => {
     const s = useGameStore.getState();
@@ -1027,6 +1038,12 @@ export default function App() {
     });
   }, [level, coins, streak, helpCount, langsUsed.length, totalTimeSpent]);
 
+  const handleStartGame = (asDev = false) => {
+    setShowSolution(false);
+    setHasPaidForSolution(false);
+    startGame(asDev);
+  };
+  
   // AUTO-SHOW TRACKING MODAL FOR NEW PLAYERS
   useEffect(() => {
     const hasSeenTracking = localStorage.getItem('tracking_seen_v1'); // New key to force reset
@@ -1043,6 +1060,7 @@ export default function App() {
     setSequence(puzzle.sequence);
     setExpected(puzzle.expectedResult);
     setShowSolution(false);
+    setHasPaidForSolution(false);
     setIsPaused(false);
     startNewLevel();
   };
@@ -1050,11 +1068,13 @@ export default function App() {
   const handleGameOver = () => {
     playSound('fail');
     resetStreak();
+    setShowSolution(false); // Reset solution when entering GameOver
     useGameStore.setState({ gameState: 'GAMEOVER' });
   };
 
   const handleLevelComplete = () => {
     playSound('success');
+    setShowSolution(false); // Reset solution for the next level
     const timeSpent = Number((maxTime - timeLeft).toFixed(2));
     addLevelTime(timeSpent);
     useGameStore.setState({ lastLevelTime: timeSpent });
@@ -1078,7 +1098,9 @@ export default function App() {
     }
 
     // Release lock slightly after state transition
-    setTimeout(() => setIsSubmitting(false), 300);
+    setTimeout(() => {
+      setIsSubmitting(false);
+    }, 300);
   };
 
   const adjustValue = (dir: number) => {
@@ -1086,565 +1108,330 @@ export default function App() {
     setCurrentValue(currentValue + dir);
   };
 
+  const handleToggleSolution = () => {
+    if (showSolution) {
+      setShowSolution(false);
+    } else {
+      if (isDevMode || hasPaidForSolution) {
+        setShowSolution(true);
+      } else if (coins >= 50) {
+        useGameStore.getState().showSolution();
+        setHasPaidForSolution(true);
+        setShowSolution(true);
+      }
+    }
+  };
+
   const timePercent = isDevMode ? 100 : (timeLeft / maxTime) * 100;
 
   return (
-    <div className="h-[100dvh] w-full bg-[#F5F5F7] text-[#1D1D1F] flex flex-col font-sans selection:bg-neutral-200 overflow-hidden relative">
+    <div className="h-[100dvh] w-full bg-[#F5F5F7] text-[#1D1D1F] font-sans selection:bg-neutral-200 overflow-hidden relative" style={{ display: 'block' }}>
+      
+      {/* MAIN SCREEN CONTENT */}
+      <div className="absolute inset-0 flex flex-col overflow-hidden">
+        {gameState === 'MENU' ? (
+          <MenuScreen
+            coins={coins}
+            startGame={handleStartGame}
+            openDailyReward={() => setShowDailyRewardGlobal(true)}
+            showInfo={showInfo} setShowInfo={setShowInfo}
+            showLeaderboard={showLeaderboard} setShowLeaderboard={setShowLeaderboard}
+            showMedals={showMedals} setShowMedals={setShowMedals}
+            selectedMedal={selectedMedal} setSelectedMedal={setSelectedMedal}
+            showLangMenu={showLangMenu} setShowLangMenu={setShowLangMenu}
+          />
+        ) : gameState === 'GAMEOVER' ? (
+          <GameOverScreen
+            level={level}
+            totalTimeSpent={totalTimeSpent}
+            expected={expected}
+            isDevMode={isDevMode}
+            hasRevivedInCurrentGame={hasRevivedInCurrentGame}
+            goToMenu={goToMenu}
+          />
+        ) : (
+          <>
+            {/* GAME HEADER */}
+            <header className="flex justify-between items-center px-4 py-3 md:p-6 w-full max-w-2xl mx-auto z-10 shrink-0">
+              <div className="flex flex-col">
+                <span className="text-4xl font-black tracking-tighter flex items-center gap-3">
+                  {t.header_level} {level}
+                  {isDevMode && <span className="text-xs bg-amber-500 text-white px-2 py-1 rounded-full font-bold tracking-widest uppercase">{t.dev_test}</span>}
+                </span>
+                <span className="text-sm font-semibold tracking-widest text-neutral-500 mt-1 uppercase">
+                  {t.header_time} <span className="text-neutral-900">{isDevMode ? '∞' : `${totalTimeSpent.toFixed(2)}s`}</span>
+                </span>
+              </div>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setShowExitConfirm(true)}
+                  className="w-10 h-10 flex items-center justify-center bg-white border border-neutral-200 rounded-2xl shadow-sm text-neutral-400 hover:text-neutral-900 transition-colors"
+                >
+                  <Icons.Home className="w-5 h-5" />
+                </button>
+                <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-full border border-neutral-200/60 shadow-sm">
+                  <div className="w-2.5 h-2.5 rounded-full bg-amber-400 shrink-0"></div>
+                  <span className="font-black text-sm md:text-base tabular-nums leading-none" style={{ color: '#000000' }}>{coins}</span>
+                </div>
+              </div>
+            </header>
 
-      {gameState === 'MENU' ? (
-        <MenuScreen
-          coins={coins}
-          startGame={startGame}
-          openDailyReward={() => setShowDailyRewardGlobal(true)}
-          showInfo={showInfo} setShowInfo={setShowInfo}
-          showLeaderboard={showLeaderboard} setShowLeaderboard={setShowLeaderboard}
-          showMedals={showMedals} setShowMedals={setShowMedals}
-          selectedMedal={selectedMedal} setSelectedMedal={setSelectedMedal}
-          showLangMenu={showLangMenu} setShowLangMenu={setShowLangMenu}
-        />
-      ) : gameState === 'GAMEOVER' ? (
-        <GameOverScreen
-          level={level}
-          totalTimeSpent={totalTimeSpent}
-          expected={expected}
-          isDevMode={isDevMode}
-          hasRevivedInCurrentGame={hasRevivedInCurrentGame}
-          goToMenu={goToMenu}
-        />
-      ) : (
-        <>
-
-          {/* HEADER */}
-          <header className="flex justify-between items-center px-4 py-3 md:p-6 w-full max-w-2xl mx-auto z-10 shrink-0">
-            <div className="flex flex-col">
-              <span className="text-4xl font-black tracking-tighter flex items-center gap-3">
-                {t.header_level} {level}
-                {isDevMode && <span className="text-xs bg-amber-500 text-white px-2 py-1 rounded-full font-bold tracking-widest uppercase">{t.dev_test}</span>}
-              </span>
-              <span className="text-sm font-semibold tracking-widest text-neutral-500 mt-1 uppercase">
-                {t.header_time} <span className="text-neutral-900">{isDevMode ? '∞' : `${totalTimeSpent.toFixed(2)}s`}</span>
-              </span>
-            </div>
-            <div className="flex items-center gap-3">
-              {/* HOME BUTTON */}
-              <button
-                onClick={() => setShowExitConfirm(true)}
-                className="w-10 h-10 flex items-center justify-center bg-white border border-neutral-200 rounded-2xl shadow-sm text-neutral-400 hover:text-neutral-900 transition-colors"
-                aria-label="Home"
+            {/* MAIN GAME AREA */}
+            <main className="flex-1 flex flex-col items-center justify-center px-2 md:px-4 w-full max-w-2xl mx-auto relative z-10 pb-2 overflow-hidden">
+              {/* SEQUENCE DISPLAY */}
+              <motion.div
+                layout
+                className="flex-1 min-h-0 flex flex-wrap justify-center content-center items-center gap-[2px] md:gap-1.5 mb-2 md:mb-4 px-2 py-4 md:px-6 md:py-6 rounded-3xl bg-white shadow-[0_20px_40px_rgb(0,0,0,0.04)] border border-neutral-100 w-full relative overflow-y-auto"
               >
-                <Icons.Home className="w-5 h-5" />
-              </button>
+                <div className="absolute inset-0 bg-gradient-to-b from-transparent to-neutral-50/50 pointer-events-none"></div>
 
-              {/* COIN COUNTER - FORCED BLACK TEXT */}
-              <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-full border border-neutral-200/60 shadow-sm">
-                <div className="w-2.5 h-2.5 rounded-full bg-amber-400 shrink-0"></div>
-                <span className="font-black text-sm md:text-base tabular-nums leading-none" style={{ color: '#000000', opacity: 1 }}>{coins}</span>
-              </div>
-            </div>
-          </header>
+                <AnimatePresence mode="popLayout">
+                  {sequence.map((sym, i) => {
+                    if (sym === 'ReverseNext') {
+                      return (
+                        <div key={`${level}-${i}-revgroup`} className="flex flex-nowrap items-center shrink-0">
+                          <SymbolDisplay type="ReverseNext" />
+                          {i + 1 < sequence.length && sequence[i + 1] !== 'InvertAll' && <SymbolDisplay type={sequence[i + 1]} />}
+                        </div>
+                      );
+                    }
+                    if (i > 0 && sequence[i - 1] === 'ReverseNext' && sym !== 'InvertAll') return null;
 
-          {/* DEV MODE CONTROLS */}
-          {isDevMode && (
-            <div className="flex flex-col items-center gap-3 mb-2 mx-auto z-20 w-full px-4 border-b border-amber-200 pb-3 shrink-0">
-
-              {/* QUICK JUMP BAR */}
-              <div className="w-full overflow-x-auto hide-scrollbar pb-1">
-                <div className="flex items-center gap-2 min-w-max">
-                  <span className="text-[10px] font-black text-amber-500 uppercase tracking-widest shrink-0 bg-amber-50 px-2 py-1 rounded">{t.dev_jump}</span>
-                  <button onClick={() => devAdvanceLevel(1)} className="px-3 py-1.5 bg-neutral-200 rounded-lg text-[11px] font-bold transition hover:bg-neutral-300 shrink-0">{t.dev_jump_1}</button>
-                  <button onClick={() => devAdvanceLevel(120)} className="px-3 py-1.5 bg-neutral-200 rounded-lg text-[11px] font-bold transition hover:bg-neutral-300 shrink-0">{t.dev_jump_max}</button>
-                  <button onClick={() => devAdvanceLevel(500)} className="px-3 py-1.5 bg-amber-200 rounded-lg text-[11px] font-bold shadow-sm transition hover:bg-amber-300 shrink-0">{t.dev_jump_inf}</button>
-
-                  <div className="flex shrink-0 border border-neutral-300 rounded-lg overflow-hidden">
-                    <input
-                      id="devLevelInput"
-                      type="number"
-                      placeholder="Bölüm"
-                      className="w-16 px-2 py-1.5 text-[11px] font-bold text-center outline-none focus:bg-amber-50"
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          const val = parseInt((e.target as HTMLInputElement).value);
-                          if (!isNaN(val) && val > 0) devAdvanceLevel(val);
-                        }
-                      }}
-                    />
-                    <button
-                      onClick={() => {
-                        const val = parseInt((document.getElementById('devLevelInput') as HTMLInputElement).value);
-                        if (!isNaN(val) && val > 0) devAdvanceLevel(val);
-                      }}
-                      className="px-3 py-1.5 bg-[#1D1D1F] text-white text-[11px] font-bold transition hover:bg-black"
-                    >
-                      GİT
-                    </button>
-                  </div>
-                  <button onClick={() => goToMenu()} className="px-3 py-1.5 bg-red-100 text-red-600 rounded-lg text-[11px] font-bold transition hover:bg-red-200 shrink-0">EXIT DEV</button>
-                </div>
-              </div>
-
-              {/* TUTORIALS BAR */}
-              <div className="w-full overflow-x-auto hide-scrollbar pb-1">
-                <div className="flex items-center gap-2 min-w-max">
-                  <span className="text-[10px] font-black text-amber-500 uppercase tracking-widest shrink-0 bg-amber-50 px-2 py-1 rounded">MODALS</span>
-                  <button
-                    onClick={() => setShowTrackingModal(true)}
-                    className="px-2 py-1 bg-amber-100 border border-amber-300 text-amber-800 rounded text-[10px] font-black hover:bg-amber-200 transition shrink-0 whitespace-nowrap"
-                  >
-                    ATT (Tracking)
-                  </button>
-                  {[11, 36, 51, 61, 76, 91, 111, 131].map(lvl => (
-                    <button key={lvl} onClick={() => devAdvanceLevel(lvl)} className="px-2 py-1 bg-white border border-neutral-200 rounded text-[10px] font-bold hover:bg-neutral-50 transition shrink-0 whitespace-nowrap">
-                      {(t[('tut_' + lvl + '_title') as keyof typeof t])?.split(':')[0] || `Level ${lvl}`}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <span className="font-semibold text-neutral-500 text-[11px]">Reveal Answer: <strong className="text-amber-500 text-sm ml-1">{expected}</strong></span>
-            </div>
-          )}
-
-
-          {/* MAIN PLAY AREA */}
-          <main className="flex-1 min-h-0 flex flex-col items-center justify-center px-2 md:px-4 w-full max-w-2xl mx-auto relative z-10 pb-2">
-
-            {/* SEQUENCE DISPLAY */}
-            <motion.div
-              layout
-              className="flex-1 min-h-0 flex flex-wrap justify-center content-center items-center gap-[2px] md:gap-1.5 mb-2 md:mb-4 px-2 py-4 md:px-6 md:py-6 rounded-3xl bg-white shadow-[0_20px_40px_rgb(0,0,0,0.04)] border border-neutral-100 w-full relative overflow-y-auto"
-            >
-              <div className="absolute inset-0 bg-gradient-to-b from-transparent to-neutral-50/50 pointer-events-none"></div>
-
-              <AnimatePresence mode="popLayout">
-                {sequence.map((sym, i) => {
-                  if (sym === 'ReverseNext') {
                     return (
-                      <div key={`${level}-${i}-revgroup`} className="flex flex-nowrap items-center shrink-0">
-                        <SymbolDisplay type="ReverseNext" />
-                        {i + 1 < sequence.length && sequence[i + 1] !== 'InvertAll' && <SymbolDisplay type={sequence[i + 1]} />}
+                      <div key={`${level}-${i}-${sym}`} className="shrink-0 flex items-center">
+                        <SymbolDisplay type={sym} />
                       </div>
                     );
-                  }
-                  if (i > 0 && sequence[i - 1] === 'ReverseNext' && sym !== 'InvertAll') return null;
-
-                  return (
-                    <div key={`${level}-${i}-${sym}`} className="shrink-0 flex items-center">
-                      <SymbolDisplay type={sym} />
-                    </div>
-                  );
-                })}
-              </AnimatePresence>
-            </motion.div>
-
-            {/* INPUT AREA */}
-            <div className="flex items-center justify-center gap-4 md:gap-16 my-1 md:my-4 shrink-0 select-none">
-              <motion.button
-                whileHover={{ scale: 1.15, x: -5 }}
-                whileTap={{ scale: 0.9 }}
-                onClick={() => adjustValue(-1)}
-                disabled={isPaused || showTutorialModal || showIntroModal}
-                className="w-14 h-16 md:w-16 md:h-20 flex items-center justify-center text-neutral-400 hover:text-neutral-900 transition-colors disabled:opacity-20 disabled:hover:text-neutral-400 focus:outline-none"
-              >
-                <Icons.TriangleDown className="w-12 h-12 md:w-14 md:h-14 rotate-90" />
-              </motion.button>
-
-              <div className="relative w-24 h-24 md:w-32 md:h-32 flex items-center justify-center bg-white rounded-full shadow-[inset_0_-8px_16px_rgb(0,0,0,0.04),0_8px_30px_rgb(0,0,0,0.04)] border border-neutral-50 shrink-0">
-                <AnimatePresence mode="popLayout">
-                  <motion.div
-                    key={currentValue}
-                    initial={{ y: -20, opacity: 0, scale: 0.8 }}
-                    animate={{ y: 0, opacity: 1, scale: 1 }}
-                    exit={{ y: 20, opacity: 0, scale: 0.8 }}
-                    transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-                    className="absolute text-5xl md:text-7xl font-black tracking-tighter drop-shadow-sm"
-                  >
-                    {currentValue > 0 ? `+${currentValue}` : currentValue}
-                  </motion.div>
+                  })}
                 </AnimatePresence>
+              </motion.div>
+
+              <div className="flex items-center gap-4 md:gap-8 mb-6 md:mb-10">
+                <motion.button
+                  whileHover={{ scale: 1.15, x: -5 }}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => adjustValue(-1)}
+                  disabled={isPaused || showTutorialModal || showIntroModal}
+                  className="w-14 h-16 md:w-16 md:h-20 flex items-center justify-center text-neutral-400 hover:text-neutral-900 transition-colors disabled:opacity-20"
+                >
+                  <Icons.TriangleDown className="w-12 h-12 md:w-14 md:h-14 rotate-90" />
+                </motion.button>
+
+                <div className="relative w-24 h-24 md:w-32 md:h-32 flex items-center justify-center bg-white rounded-full shadow-xl border border-neutral-50 shrink-0">
+                  <AnimatePresence mode="popLayout">
+                    <motion.div
+                      key={currentValue}
+                      initial={{ y: -20, opacity: 0, scale: 0.8 }}
+                      animate={{ y: 0, opacity: 1, scale: 1 }}
+                      exit={{ y: 20, opacity: 0, scale: 0.8 }}
+                      className="absolute text-5xl md:text-7xl font-black tracking-tighter"
+                    >
+                      {currentValue > 0 ? `+${currentValue}` : currentValue}
+                    </motion.div>
+                  </AnimatePresence>
+                </div>
+
+                <motion.button
+                  whileHover={{ scale: 1.15, x: 5 }}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => adjustValue(+1)}
+                  disabled={isPaused || showTutorialModal || showIntroModal}
+                  className="w-14 h-16 md:w-16 md:h-20 flex items-center justify-center text-neutral-400 hover:text-neutral-900 transition-colors disabled:opacity-20"
+                >
+                  <Icons.TriangleUp className="w-12 h-12 md:w-14 md:h-14 rotate-90" />
+                </motion.button>
               </div>
 
-              <motion.button
-                whileHover={{ scale: 1.15, x: 5 }}
-                whileTap={{ scale: 0.9 }}
-                onClick={() => adjustValue(+1)}
-                disabled={isPaused || showTutorialModal || showIntroModal}
-                className="w-14 h-16 md:w-16 md:h-20 flex items-center justify-center text-neutral-400 hover:text-neutral-900 transition-colors disabled:opacity-20 disabled:hover:text-neutral-400 focus:outline-none"
-              >
-                <Icons.TriangleUp className="w-12 h-12 md:w-14 md:h-14 rotate-90" />
-              </motion.button>
-            </div>
-
-            {/* CONFIRM BUTTON */}
-            <div className="mt-3 md:mt-6 mb-2 flex items-center justify-center w-full shrink-0">
-              <motion.button
-                whileHover={{ scale: 1.05, backgroundColor: '#1D1D1F' }}
-                whileTap={{ scale: 0.95 }}
-                onClick={handleSubmission}
-                disabled={isPaused || showTutorialModal || showIntroModal}
-                className={`px-10 py-3 md:px-14 md:py-4 bg-[#1D1D1F] text-white rounded-full font-bold tracking-[0.2em] text-sm md:text-base shadow-[0_10px_30px_rgba(0,0,0,0.2)] hover:shadow-[0_20px_40px_rgba(0,0,0,0.3)] transition-all focus:outline-none focus:ring-4 focus:ring-neutral-200 ${isPaused || showTutorialModal || showIntroModal ? 'opacity-20 pointer-events-none scale-95' : 'opacity-100'}`}
-              >
-                {t.btn_submit}
-              </motion.button>
-            </div>
-          </main>
-
-          {/* FOOTER & TIMER */}
-          <footer className="w-full max-w-2xl mx-auto px-4 pb-4 md:px-6 md:pb-6 flex flex-col gap-4 md:gap-4 z-10 relative shrink-0">
-
-            {/* TIMER BAR */}
-            <div className="w-full h-3 bg-neutral-200/60 rounded-full overflow-hidden shadow-inner flex-shrink-0">
-              <motion.div
-                className={`h-full ${isDevMode ? 'bg-amber-400' : (timeLeft < 5 ? 'bg-red-500' : 'bg-[#1D1D1F]')}`}
-                animate={{ width: `${timePercent}%` }}
-                transition={{ ease: "linear", duration: 0.1 }}
-              />
-            </div>
-
-            {/* POWERUPS */}
-            <div className="grid grid-cols-3 gap-2 w-full">
-              <button
-                onClick={() => {
-                  if (isDevMode) return;
-                  if (isPaused) {
-                    setIsPaused(false);
-                  } else if (coins >= 50) {
-                    useGameStore.setState(s => ({ coins: Math.max(0, s.coins - 50) }));
-                    setIsPaused(true);
-                  }
-                }}
-                disabled={showTutorialModal || showIntroModal || isDevMode || (!isPaused && coins < 50)}
-                className={`flex flex-col md:flex-row items-center justify-center gap-1 p-2 md:p-3 rounded-xl md:rounded-2xl shadow-sm border font-bold text-[9px] md:text-xs tracking-widest transition active:scale-95 disabled:opacity-30 disabled:pointer-events-none ${isPaused ? 'bg-amber-100 text-amber-900 border-amber-200' : 'bg-white border-neutral-100 hover:bg-neutral-50'}`}
-              >
-                <span>{isPaused ? t.btn_resume : t.btn_pause}</span>
-                <span className="text-[8px] md:text-[10px] text-amber-600 bg-amber-50 px-1.5 py-0.5 md:py-1 rounded-full">{isDevMode || isPaused ? t.btn_free : '50C'}</span>
-              </button>
-
-              <button
-                onClick={() => useGameStore.getState().addTime(10)}
-                disabled={isPaused || showTutorialModal || showIntroModal || isDevMode || coins < 10}
-                className="flex flex-col md:flex-row items-center justify-center gap-1 p-2 md:p-3 rounded-xl md:rounded-2xl bg-white shadow-sm border border-neutral-100 font-bold text-[9px] md:text-xs tracking-widest hover:bg-neutral-50 transition active:scale-95 disabled:opacity-30 disabled:pointer-events-none"
-              >
-                <span>{t.btn_plus10}</span>
-                <span className="text-[8px] md:text-[10px] text-amber-600 bg-amber-50 px-1.5 py-0.5 md:py-1 rounded-full">10C</span>
-              </button>
-
-              <button
-                onClick={() => {
-                  if (coins >= 50 || isDevMode) {
-                    useGameStore.getState().showSolution();
-                    setShowSolution(!showSolution);
-                  }
-                }}
-                disabled={isPaused || showTutorialModal || showIntroModal || (!showSolution && !isDevMode && coins < 50)}
-                className="flex flex-col md:flex-row items-center justify-center gap-1 p-2 md:p-3 rounded-xl md:rounded-2xl bg-white shadow-sm border border-neutral-100 font-bold text-[9px] md:text-xs tracking-widest hover:bg-neutral-50 transition active:scale-95 disabled:opacity-30 disabled:pointer-events-none"
-              >
-                <span>{showSolution ? t.btn_hide : t.btn_reveal}</span>
-                <span className="text-[8px] md:text-[10px] text-amber-600 bg-amber-50 px-1.5 py-0.5 md:py-1 rounded-full">{isDevMode ? t.btn_free : '50C'}</span>
-              </button>
-            </div>
-          </footer>
-        </>
-      )}
-
-      {/* OVERLAYS */}
-      <AnimatePresence>
-
-        {showTrackingModal && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-black/70 z-50 flex flex-col items-center justify-center p-4 text-center"
-          >
-            <motion.div
-              initial={{ scale: 0.95, y: 10 }}
-              animate={{ scale: 1, y: 0 }}
-              className="bg-white p-6 md:p-8 rounded-[2rem] shadow-2xl max-w-[320px] w-full"
-            >
-              <h2 className="text-[17px] font-black tracking-tight mb-3 text-[#1D1D1F] uppercase">{t.att_title || "Oyunu Ücretsiz Tut"}</h2>
-              <p className="text-neutral-500 font-medium leading-relaxed mb-6 text-xs px-1">
-                {t.att_desc}
-              </p>
-
-              <button
-                onClick={() => setShowTrackingModal(false)}
-                className="w-full py-3 bg-blue-500 text-white rounded-full font-black tracking-widest uppercase shadow-lg shadow-blue-500/30 hover:bg-blue-600 transition-colors text-xs"
-              >
-                {t.att_continue || "Devam Et"}
-              </button>
-            </motion.div>
-          </motion.div>
-        )}
-
-        {showIntroModal && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-black/70 z-50 flex flex-col items-center justify-center p-4 text-center"
-          >
-            <motion.div
-              initial={{ scale: 0.95, y: 10 }}
-              animate={{ scale: 1, y: 0 }}
-              className="bg-white p-5 rounded-3xl shadow-2xl max-w-[320px] md:max-w-[380px] w-full"
-            >
-              <h2 className="text-lg font-black tracking-tight mb-2.5 text-[#1D1D1F]">{t.intro_title}</h2>
-
-              {/* Symbol legend — compact row */}
-              <div className="flex justify-center gap-4 md:gap-8 mb-2.5 bg-neutral-50 rounded-xl p-2 md:p-3 border border-neutral-100">
-                <div className="flex items-center gap-1.5">
-                  <div className="p-0.5 bg-white border border-neutral-200 shadow-sm rounded-full"><SymbolDisplay type="CircleFilled" size="small" /></div>
-                  <div className="text-left leading-none">
-                    <span className="font-black text-xs md:text-sm text-green-600 block leading-tight">+1</span>
-                    <span className="text-[7px] md:text-[8px] text-neutral-400 font-bold uppercase tracking-wider">{t.intro_full}</span>
-                  </div>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <div className="p-0.5 bg-white border border-neutral-200 shadow-sm rounded-full"><SymbolDisplay type="CircleEmpty" size="small" /></div>
-                  <div className="text-left leading-none">
-                    <span className="font-black text-xs md:text-sm text-red-500 block leading-tight">-1</span>
-                    <span className="text-[7px] md:text-[8px] text-neutral-400 font-bold uppercase tracking-wider">{t.intro_empty}</span>
-                  </div>
-                </div>
+              <div className="mt-3 md:mt-6 mb-2 flex items-center justify-center w-full shrink-0">
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={handleSubmission}
+                  disabled={isPaused || showTutorialModal || showIntroModal}
+                  className={`px-10 py-3 md:px-14 md:py-4 bg-[#1D1D1F] text-white rounded-full font-bold tracking-[0.2em] shadow-xl transition-all ${isPaused || showTutorialModal || showIntroModal ? 'opacity-20 pointer-events-none' : 'opacity-100'}`}
+                >
+                  {t.btn_submit}
+                </motion.button>
               </div>
+            </main>
 
-              <p className="text-neutral-500 font-medium leading-snug mb-2.5 text-[11px] px-1">
-                {t.intro_p1}
-              </p>
-
-              {/* Examples — side by side */}
-              <div className="flex gap-2 mb-3">
-                <div className="flex-1 bg-neutral-50 border border-neutral-100 rounded-xl p-2 md:p-3">
-                  <span className="block text-[8px] md:text-[9px] font-black text-amber-500 tracking-widest uppercase mb-1.5">{t.intro_ex1}</span>
-                  <div className="flex items-center justify-center gap-0.5">
-                    <div className="p-0.5 bg-white shadow-sm border border-neutral-100 rounded-lg"><SymbolDisplay type="CircleFilled" size="small" /></div>
-                    <SymbolDisplay type="Plus" size="small" />
-                    <div className="p-0.5 bg-white shadow-sm border border-neutral-100 rounded-lg"><SymbolDisplay type="CircleFilled" size="small" /></div>
-                    <span className="text-sm font-black text-neutral-300 mx-0.5">=</span>
-                    <span className="text-lg font-black text-green-500">2</span>
-                  </div>
-                </div>
-                <div className="flex-1 bg-neutral-50 border border-neutral-100 rounded-xl p-2 md:p-3">
-                  <span className="block text-[8px] md:text-[9px] font-black text-amber-500 tracking-widest uppercase mb-1.5">{t.intro_ex2}</span>
-                  <div className="flex items-center justify-center gap-0.5">
-                    <div className="p-0.5 bg-white shadow-sm border border-neutral-100 rounded-lg"><SymbolDisplay type="CircleFilled" size="small" /></div>
-                    <SymbolDisplay type="Plus" size="small" />
-                    <div className="p-0.5 bg-white shadow-sm border border-neutral-100 rounded-lg"><SymbolDisplay type="CircleEmpty" size="small" /></div>
-                    <span className="text-sm font-black text-neutral-300 mx-0.5">=</span>
-                    <span className="text-lg font-black text-red-500">0</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-center gap-2 mb-3 bg-neutral-100/50 p-2 rounded-lg cursor-pointer" onClick={() => setIntroCheckbox(!introCheckbox)}>
-                <input
-                  type="checkbox"
-                  checked={introCheckbox}
-                  onChange={(e) => setIntroCheckbox(e.target.checked)}
-                  onClick={(e) => e.stopPropagation()}
-                  className="w-3.5 h-3.5 accent-[#1D1D1F] cursor-pointer"
+            {/* FOOTER */}
+            <footer className="w-full max-w-2xl mx-auto px-4 pb-4 md:px-6 md:pb-6 flex flex-col gap-4 z-10 relative shrink-0">
+              <div className="w-full h-3 bg-neutral-200/60 rounded-full overflow-hidden shadow-inner">
+                <motion.div
+                  className={`h-full ${isDevMode ? 'bg-amber-400' : (timeLeft < 5 ? 'bg-red-500' : 'bg-[#1D1D1F]')}`}
+                  animate={{ width: `${timePercent}%` }}
+                  transition={{ ease: "linear", duration: 0.1 }}
                 />
-                <label className="font-bold tracking-wide text-[9px] text-neutral-600 cursor-pointer select-none uppercase">{t.intro_checkbox}</label>
               </div>
 
-              <button
-                onClick={() => {
-                  if (introCheckbox) setHideIntro(true);
-                  setShowIntroModal(false);
-                  initLevel();
-                }}
-                className="w-full py-3 bg-[#1D1D1F] text-white rounded-full font-bold tracking-[0.2em] shadow-xl hover:scale-105 active:scale-95 transition-all text-xs"
-              >
-                {t.intro_btn}
-              </button>
-            </motion.div>
-          </motion.div>
-        )}
-
-        {/* TUTORIAL MODAL WITH DESCRIPTIONS */}
-        {showTutorialModal && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-black/70 z-50 flex flex-col items-center justify-center p-4 text-center overflow-hidden"
-          >
-            <motion.div
-              initial={{ scale: 0.95, y: 10 }}
-              animate={{ scale: 1, y: 0 }}
-              className="bg-white p-5 md:p-6 rounded-3xl shadow-2xl max-w-[340px] w-full flex flex-col items-center max-h-[85dvh] overflow-y-auto overflow-x-hidden"
-            >
-              <div className="px-3 py-1.5 bg-amber-100 text-amber-600 rounded-full font-bold tracking-widest text-[10px] mb-6 uppercase flex items-center gap-2 shrink-0">
-                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
-                {t.tut_attention}
-              </div>
-
-              <div className="flex justify-center flex-wrap gap-2 mb-6 shrink-0">
-                {getTutorialSymbols(level).map(s => (
-                  <div key={s} className="p-3 bg-white border border-neutral-200 rounded-xl shadow-sm my-1">
-                    <SymbolDisplay type={s} />
-                  </div>
-                ))}
-              </div>
-
-              <h2 className="text-lg font-black text-[#1D1D1F] mb-2 tracking-tighter shrink-0">
-                {t[('tut_' + level + '_title') as LanguageCode] || "YENİ BİR KURAL"}
-              </h2>
-
-              <p className="text-neutral-500 font-medium leading-relaxed mb-4 text-[12px] max-w-[280px] shrink-0">
-                {t[('tut_' + level + '_desc') as LanguageCode] || "Bu yeni kural oyunun matematiğini değiştirecek!"}
-              </p>
-
-              {TUTORIAL_DATA[level]?.exampleSequence && (
-                <div className="shrink-0 w-full mb-4">
-                  <TutorialExample
-                    text={t[('tut_' + level + '_ex') as LanguageCode]}
-                    sequence={TUTORIAL_DATA[level].exampleSequence}
-                    result={TUTORIAL_DATA[level].exampleResult}
-                  />
-                </div>
-              )}
-
-              <button
-                onClick={() => {
-                  setShowTutorialModal(false);
-                  initLevel();
-                }}
-                className="w-full py-3.5 bg-[#1D1D1F] text-white rounded-full font-bold tracking-[0.2em] shadow-xl hover:scale-105 active:scale-95 transition-all text-xs mt-auto shrink-0"
-              >
-                {t.tut_btn}
-              </button>
-            </motion.div>
-          </motion.div>
-        )}
-
-        {/* SOLUTION POPUP */}
-        {showSolution && !isPaused && (
-          <motion.div
-            initial={{ y: -50, opacity: 0, x: '-50%' }} animate={{ y: 0, opacity: 1, x: '-50%' }} exit={{ y: -50, opacity: 0, x: '-50%' }}
-            className="absolute top-20 md:top-24 left-1/2 bg-[#1D1D1F] text-white px-8 py-3 md:py-4 rounded-full font-bold shadow-2xl z-40 whitespace-nowrap tracking-wide text-sm md:text-base pointer-events-none"
-          >
-            {t.solution_text} <span className="text-amber-400 ml-1">{expected}</span>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* GLOBAL DAILY REWARD MODAL */}
-      <AnimatePresence>
-        {showDailyRewardGlobal && (
-          <div className="absolute inset-0 z-[100] flex items-center justify-center p-4 bg-black/70 pointer-events-auto">
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }} 
-              animate={{ scale: 1, opacity: 1 }} 
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-white rounded-[2rem] p-6 w-full max-w-[320px] shadow-2xl text-center relative pointer-events-auto"
-            >
-              <button 
-                onClick={(e) => { e.stopPropagation(); setShowDailyRewardGlobal(false); }} 
-                className="absolute top-4 right-4 w-9 h-9 flex items-center justify-center bg-neutral-100 rounded-full hover:bg-neutral-200 transition-colors z-[110] pointer-events-auto"
-              >
-                <span className="font-bold text-neutral-400 text-xs">✕</span>
-              </button>
-              
-              <div className="w-16 h-16 bg-amber-100 text-amber-500 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-amber-200">
-                <Icons.Gift className="w-10 h-10" />
-              </div>
-              <h2 className="text-2xl font-black mb-2">{t.daily_gift_title}</h2>
-              <p className="text-sm text-neutral-500 mb-6 font-medium leading-relaxed">
-                {t.daily_gift_desc?.split('100')[0]}<strong className="text-amber-500">100 Coin</strong>{t.daily_gift_desc?.split('100')[1]}
-              </p>
-
-              <div className="space-y-3">
-                <div className="flex justify-between items-center text-[10px] font-black tracking-widest text-neutral-400 uppercase border-b border-neutral-50 pb-2 mb-2">
-                  <span>{t.daily_gift_status}</span>
-                  <span className="text-neutral-800">{dailyRewardsToday}/3</span>
-                </div>
-
-                {dailyRewardsToday < 3 && (dailyRewardsToday === 0 || (Date.now() - (lastRewardTime || 0) >= 3 * 60 * 60 * 1000)) ? (
-                  <button
-                    onClick={async (e) => {
-                      e.stopPropagation();
-                      const result = await Ads.showRewardedAd();
-                      if (result.success) {
-                        claimDailyReward();
-                        setShowDailyRewardGlobal(false);
-                        setShowSuccessGlobal(true);
-                        playSound('success');
-                      }
-                    }}
-                    className="w-full py-4 bg-[#1D1D1F] text-white rounded-2xl font-bold tracking-widest text-sm flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all shadow-lg pointer-events-auto"
-                  >
-                    <Icons.Play className="w-4 h-4" /> {t.daily_gift_watch}
-                  </button>
-                ) : (
-                  <div className="w-full py-4 bg-neutral-100 text-neutral-400 rounded-2xl font-bold tracking-widest text-sm italic">
-                    {dailyRewardsToday >= 3 ? t.daily_gift_limit : t.daily_gift_comeback}
-                  </div>
-                )}
-              </div>
-            </motion.div>
-          </div>
-        )}
-
-        {showSuccessGlobal && (
-          <div className="absolute inset-0 z-[110] flex items-center justify-center p-4 bg-black/70 pointer-events-auto">
-            <motion.div
-              initial={{ y: 20, opacity: 0 }} 
-              animate={{ y: 0, opacity: 1 }} 
-              exit={{ y: 20, opacity: 0 }}
-              className="bg-white rounded-[2rem] p-8 w-full max-w-[300px] shadow-2xl text-center border-b-8 border-amber-400 pointer-events-auto"
-            >
-              <div className="text-5xl mb-4">✨</div>
-              <h3 className="text-2xl font-black mb-1">{t.congrats_title}</h3>
-              <p className="text-neutral-500 font-bold mb-6 text-sm">{t.congrats_desc}</p>
-              <button
-                onClick={(e) => { e.stopPropagation(); setShowSuccessGlobal(false); }}
-                className="w-full py-4 bg-amber-400 text-white rounded-2xl font-black tracking-widest text-sm shadow-lg shadow-amber-200 pointer-events-auto"
-              >
-                {t.congrats_btn}
-              </button>
-            </motion.div>
-          </div>
-        )}
-
-        {/* EXIT CONFIRMATION MODAL - COMPACT & REFINED */}
-        {showExitConfirm && (
-          <div className="fixed inset-0 z-[120] flex items-center justify-center p-6 bg-black/40 backdrop-blur-md pointer-events-auto">
-            <motion.div
-              initial={{ scale: 0.9, y: 10, opacity: 0 }}
-              animate={{ scale: 1, y: 0, opacity: 1 }}
-              exit={{ scale: 0.9, y: 10, opacity: 0 }}
-              className="bg-white/95 backdrop-blur-xl rounded-[2rem] p-8 w-full max-w-[280px] text-center shadow-[0_24px_48px_-12px_rgba(0,0,0,0.25)] border border-white/20"
-            >
-              <div className="w-14 h-14 bg-neutral-900 text-white rounded-2xl flex items-center justify-center mx-auto mb-6">
-                <Icons.Home className="w-7 h-7" />
-              </div>
-              
-              <h2 className="text-xl font-black mb-2 text-neutral-900 tracking-tight leading-tight">
-                {t.exit_confirm_title}
-              </h2>
-              <p className="text-[9px] font-black text-neutral-400 uppercase tracking-widest mb-8 px-2">
-                {t.exit_confirm_desc}
-              </p>
-
-              <div className="flex flex-col gap-2.5">
+              <div className="grid grid-cols-3 gap-2 w-full">
                 <button
-                  onClick={() => setShowExitConfirm(false)}
-                  className="w-full py-4 bg-neutral-900 text-white rounded-xl font-black text-xs tracking-[0.2em] shadow-lg shadow-neutral-200 hover:scale-[1.02] active:scale-95 transition-all"
+                  onClick={() => { if (coins >= 50 && !isPaused) setIsPaused(true); else if (isPaused) setIsPaused(false); }}
+                  disabled={showTutorialModal || showIntroModal || isDevMode || (!isPaused && coins < 50)}
+                  className={`flex flex-col items-center justify-center p-2 rounded-xl border text-[9px] font-bold tracking-widest transition ${isPaused ? 'bg-amber-100 border-amber-200 text-amber-900 shadow-inner' : 'bg-white border-neutral-100 text-neutral-600 shadow-sm'}`}
                 >
-                  {t.exit_confirm_no}
+                  <span>{isPaused ? t.btn_resume : t.btn_pause}</span>
+                  <span className="text-[8px] bg-amber-50 text-amber-600 px-1.5 py-0.5 rounded-full mt-1">50C</span>
                 </button>
+
                 <button
-                  onClick={() => { setShowExitConfirm(false); goToMenu(); }}
-                  className="w-full py-4 bg-neutral-100 text-neutral-400 rounded-xl font-black text-xs tracking-[0.2em] hover:bg-neutral-200 transition-colors"
+                  onClick={() => useGameStore.getState().addTime(10)}
+                  disabled={isPaused || showTutorialModal || showIntroModal || coins < 10}
+                  className="flex flex-col items-center justify-center p-2 rounded-xl bg-white border border-neutral-100 text-[9px] font-bold tracking-widest shadow-sm disabled:opacity-30"
                 >
-                  {t.exit_confirm_yes}
+                  <span>{t.btn_plus10}</span>
+                  <span className="text-[8px] bg-amber-50 text-amber-600 px-1.5 py-0.5 rounded-full mt-1">10C</span>
+                </button>
+
+                <button
+                  onClick={handleToggleSolution}
+                  disabled={isPaused || showTutorialModal || showIntroModal || (!showSolution && !isDevMode && !hasPaidForSolution && coins < 50)}
+                  className="flex flex-col items-center justify-center p-2 rounded-xl bg-white border border-neutral-100 text-[9px] font-bold tracking-widest shadow-sm disabled:opacity-30"
+                >
+                  <span>{showSolution ? t.btn_hide : t.btn_reveal}</span>
+                  <span className="text-[8px] bg-amber-50 text-amber-600 px-1.5 py-0.5 rounded-full mt-1">50C</span>
                 </button>
               </div>
-            </motion.div>
-          </div>
+            </footer>
+          </>
         )}
-      </AnimatePresence>
+      </div>
+
+      {createPortal(
+        <div className="fixed inset-0 pointer-events-none z-[1000]">
+          <AnimatePresence>
+            {showTrackingModal && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 pointer-events-auto">
+                <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-white p-8 rounded-[2rem] max-w-[320px] shadow-2xl text-center">
+                  <h2 className="text-xl font-black mb-4 uppercase">{t.att_title}</h2>
+                  <p className="text-neutral-500 mb-6 text-xs">{t.att_desc}</p>
+                  <button onClick={() => setShowTrackingModal(false)} className="w-full py-3 bg-blue-500 text-white rounded-full font-black text-xs uppercase shadow-lg shadow-blue-500/30">{t.att_continue}</button>
+                </motion.div>
+              </motion.div>
+            )}
+
+            {showIntroModal && (
+              <motion.div key="intro-modal" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 pointer-events-auto">
+                <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-white p-5 rounded-3xl max-w-[320px] shadow-2xl text-center">
+                  <h2 className="text-lg font-black mb-3">{t.intro_title}</h2>
+                  <div className="flex justify-center gap-4 mb-3 p-3 bg-neutral-50 rounded-xl border border-neutral-100">
+                    <div className="flex items-center gap-1.5">
+                      <SymbolDisplay type="CircleFilled" size="small" />
+                      <span className="font-black text-xs text-green-600">+1</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <SymbolDisplay type="CircleEmpty" size="small" />
+                      <span className="font-black text-xs text-red-500">-1</span>
+                    </div>
+                  </div>
+                  <p className="text-neutral-500 text-[11px] mb-4">{t.intro_p1}</p>
+
+                  <div className="space-y-2 mb-4">
+                    <TutorialExample sequence={['CircleFilled', 'CircleFilled']} result={2} isSmall />
+                    <TutorialExample sequence={['CircleFilled', 'CircleEmpty']} result={0} isSmall />
+                  </div>
+                  <div className="flex items-center justify-center gap-2 mb-4 bg-neutral-100/50 p-2 rounded-lg cursor-pointer" onClick={() => setIntroCheckbox(!introCheckbox)}>
+                    <input type="checkbox" checked={introCheckbox} onChange={(e) => setIntroCheckbox(e.target.checked)} className="w-3.5 h-3.5 accent-[#1D1D1F] pointer-events-auto" />
+                    <label className="font-bold text-[9px] text-neutral-600 cursor-pointer uppercase select-none">{t.intro_checkbox}</label>
+                  </div>
+                  <button onClick={() => { if (introCheckbox) setHideIntro(true); setShowIntroModal(false); initLevel(); }} className="w-full py-3 bg-[#1D1D1F] text-white rounded-full font-bold text-xs uppercase tracking-widest shadow-xl">{t.intro_btn}</button>
+                </motion.div>
+              </motion.div>
+            )}
+
+            {showTutorialModal && (
+              <motion.div key="tutorial-modal" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 pointer-events-auto">
+                <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-white p-6 rounded-3xl max-w-[340px] w-full flex flex-col items-center max-h-[85vh] overflow-y-auto shadow-2xl">
+                  <div className="px-3 py-1.5 bg-amber-100 text-amber-600 rounded-full font-bold text-[10px] mb-6 uppercase flex items-center gap-2 shrink-0">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                    {t.tut_attention}
+                  </div>
+                  <div className="flex justify-center flex-wrap gap-2 mb-6 shrink-0">
+                    {getTutorialSymbols(level).map(s => <div key={s} className="p-3 bg-white border border-neutral-200 rounded-xl shadow-sm"><SymbolDisplay type={s} /></div>)}
+                  </div>
+                  <h2 className="text-lg font-black text-[#1D1D1F] mb-2 shrink-0">{t[('tut_' + level + '_title') as LanguageCode] || "YENİ BİR KURAL"}</h2>
+                  <p className="text-neutral-500 text-[12px] mb-6 text-center leading-relaxed shrink-0">{t[('tut_' + level + '_desc') as LanguageCode]}</p>
+                  {TUTORIAL_DATA[level]?.exampleSequence && (
+                    <div className="shrink-0 w-full mb-2">
+                      <TutorialExample text={t[('tut_' + level + '_ex') as LanguageCode]} sequence={TUTORIAL_DATA[level].exampleSequence} result={TUTORIAL_DATA[level].exampleResult} />
+                    </div>
+                  )}
+                  <button onClick={() => { setShowTutorialModal(false); initLevel(); }} className="w-full py-3.5 bg-[#1D1D1F] text-white rounded-full font-bold text-xs uppercase tracking-[0.2em] mt-auto shadow-xl">{t.tut_btn}</button>
+                </motion.div>
+              </motion.div>
+            )}
+
+            {showSolution && !isPaused && (
+              <motion.div key="solution-pill" initial={{ y: -50, opacity: 0, x: '-50%' }} animate={{ y: 0, opacity: 1, x: '-50%' }} exit={{ y: -50, opacity: 0, x: '-50%' }} className="fixed top-20 md:top-24 left-1/2 bg-[#1D1D1F] text-white px-8 py-3 rounded-full font-bold shadow-2xl pointer-events-none text-sm whitespace-nowrap z-[1100]">
+                {t.solution_text} <span className="text-amber-400 ml-1">{expected}</span>
+              </motion.div>
+            )}
+
+            {showDailyRewardGlobal && (
+              <div key="daily-reward-overlay" className="fixed inset-0 flex items-center justify-center p-4 bg-black/70 pointer-events-auto">
+                <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="bg-white rounded-[2rem] p-6 w-full max-w-[320px] shadow-2xl text-center relative pointer-events-auto">
+                  <button onClick={() => setShowDailyRewardGlobal(false)} className="absolute top-4 right-4 w-9 h-9 bg-neutral-100 rounded-full text-neutral-400 font-bold hover:bg-neutral-200 shadow-sm transition-colors text-xs flex items-center justify-center">✕</button>
+                  <div className="w-16 h-16 bg-amber-100 text-amber-500 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-amber-200"><Icons.Gift className="w-10 h-10" /></div>
+                  <h2 className="text-2xl font-black mb-2">{t.daily_gift_title}</h2>
+                  <p className="text-sm text-neutral-500 mb-6 font-medium leading-relaxed">{t.daily_gift_desc?.split('100')[0]}<strong className="text-amber-500">100 Coin</strong>{t.daily_gift_desc?.split('100')[1]}</p>
+                  {dailyRewardsToday < 3 && (dailyRewardsToday === 0 || (Date.now() - (lastRewardTime || 0) >= 3 * 60 * 60 * 1000)) ? (
+                    <button onClick={async (e) => { e.stopPropagation(); const res = await Ads.showRewardedAd(); if (res.success) { claimDailyReward(); setShowDailyRewardGlobal(false); setShowSuccessGlobal(true); playSound('success'); }}} className="w-full py-4 bg-[#1D1D1F] text-white rounded-2xl font-black tracking-widest shadow-xl hover:scale-105 active:scale-95 transition-all"> {t.daily_gift_watch}</button>
+                  ) : ( <div className="w-full py-4 bg-neutral-100 text-neutral-400 rounded-2xl italic font-bold text-xs tracking-widest">{dailyRewardsToday >= 3 ? t.daily_gift_limit : t.daily_gift_comeback}</div> )}
+                </motion.div>
+              </div>
+            )}
+
+            {showSuccessGlobal && (
+              <div key="success-overlay" className="fixed inset-0 flex items-center justify-center p-4 bg-black/70 pointer-events-auto">
+                <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 20, opacity: 0 }} className="bg-white rounded-[2rem] p-8 w-full max-w-[300px] shadow-2xl text-center border-b-8 border-amber-400 pointer-events-auto">
+                  <div className="text-5xl mb-4">✨</div>
+                  <h3 className="text-2xl font-black mb-1">{t.congrats_title}</h3>
+                  <p className="text-neutral-500 font-bold mb-6 text-sm">{t.congrats_desc}</p>
+                  <button onClick={() => setShowSuccessGlobal(false)} className="w-full py-4 bg-amber-400 text-white rounded-2xl font-black tracking-widest shadow-lg shadow-amber-200 active:scale-95 transition-all">{t.congrats_btn}</button>
+                </motion.div>
+              </div>
+            )}
+
+            {showExitConfirm && (
+              <div key="exit-confirm-overlay" className="fixed inset-0 flex items-center justify-center p-6 bg-black/40 backdrop-blur-md pointer-events-auto">
+                <motion.div initial={{ scale: 0.9, y: 10, opacity: 0 }} animate={{ scale: 1, y: 0, opacity: 1 }} exit={{ scale: 0.9, y: 10, opacity: 0 }} className="bg-white/95 backdrop-blur-xl rounded-[2rem] p-8 w-full max-w-[280px] text-center shadow-2xl relative overflow-hidden">
+                  
+                  {/* Live Timer Progress Bar to show it's ticking */}
+                  {gameState === 'PLAYING' && !isDevMode && (
+                    <div className="absolute top-0 left-0 right-0 h-1.5 bg-neutral-200">
+                      <motion.div 
+                        className={`h-full ${timeLeft < 5 ? 'bg-red-500' : 'bg-amber-400'}`} 
+                        animate={{ width: `${(timeLeft / maxTime) * 100}%` }}
+                        transition={{ ease: "linear", duration: 0.1 }}
+                      />
+                    </div>
+                  )}
+
+                  <div className="w-14 h-14 bg-neutral-900 text-white rounded-2xl flex items-center justify-center mx-auto mb-4 mt-2"><Icons.Home className="w-7 h-7" /></div>
+                  <h2 className="text-xl font-black mb-2 text-neutral-900 leading-tight">{t.exit_confirm_title}</h2>
+                  
+                  {/* Pulsing countdown to emphasize the penalty of pausing here */}
+                  {gameState === 'PLAYING' && !isDevMode ? (
+                    <div className="bg-red-50 text-red-600 rounded-xl px-3 py-2 mb-6 border border-red-100 flex flex-col items-center animate-pulse">
+                       <span className="text-[9px] font-black uppercase tracking-widest">{language === 'tr' ? 'OYUN DEVAM EDİYOR' : 'GAME IS RUNNING'}</span>
+                       <span className="text-2xl font-black tabular-nums">{timeLeft.toFixed(1)}s</span>
+                    </div>
+                  ) : (
+                    <p className="text-[9px] font-black text-neutral-400 uppercase tracking-widest mb-8">{t.exit_confirm_desc}</p>
+                  )}
+
+                  <div className="flex flex-col gap-2.5">
+                    <button onClick={() => setShowExitConfirm(false)} className="w-full py-4 bg-neutral-900 text-white rounded-xl font-black text-xs tracking-widest uppercase shadow-lg active:scale-95 transition-all">{t.exit_confirm_no}</button>
+                    <button onClick={() => { setShowExitConfirm(false); goToMenu(); }} className="w-full py-4 bg-neutral-100 text-neutral-400 rounded-xl font-black text-xs tracking-widest uppercase hover:bg-neutral-200 transition-colors">{t.exit_confirm_yes}</button>
+                  </div>
+                </motion.div>
+              </div>
+            )}
+          </AnimatePresence>
+        </div>,
+        document.getElementById('modal-root')!
+      )}
     </div>
   );
 }

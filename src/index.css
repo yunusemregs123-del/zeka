@@ -19,9 +19,8 @@
   }
 }
 
-/* Custom CSS for some specific minimalist animations/styles */
-.glass-panel {
-  background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(0, 0, 0, 0.1);
+/* Portal root styling */
+#modal-root {
+  position: relative;
+  z-index: 1000;
 }
