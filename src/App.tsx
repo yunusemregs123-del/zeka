@@ -702,10 +702,10 @@ function DailyRewardButton({ onClick }: { onClick: () => void }) {
 
   const getTimeRemaining = () => {
     if (!lastRewardTime) return "";
-    const remaining = COOLDOWN_MS - timePassed;
+    const remaining = Math.max(0, COOLDOWN_MS - timePassed);
     const hours = Math.floor(remaining / (60 * 60 * 1000));
     const mins = Math.floor((remaining % (60 * 60 * 1000)) / (60 * 1000));
-    return `${hours > 0 ? hours + 's ' : ''}${mins}dk`;
+    return `${hours > 0 ? hours + (t.unit_hour || 'h') + ' ' : ''}${mins}${t.unit_min || 'min'}`;
   };
 
   return (
