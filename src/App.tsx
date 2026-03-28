@@ -272,28 +272,30 @@ function MenuScreen({ startGame }: { startGame: (asDev?: boolean) => void }) {
   return (
     <div className="min-h-[100dvh] bg-[#F5F5F7] text-[#1D1D1F] flex flex-col items-center justify-center font-sans selection:bg-neutral-200 p-4 md:p-6 relative overflow-hidden">
 
-      {/* COINS ON MENU - TOP RIGHT */}
-      <div className="absolute right-4 z-10 pt-[env(safe-area-inset-top,0px)]" style={{ top: '1.5rem' }}>
-        <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-2xl shadow-sm border border-neutral-100">
+      {/* HOME HEADER - CONSTRAINED FOR WEB */}
+      <div className="absolute inset-x-0 top-[1.5rem] z-10 px-4 md:p-6 w-full max-w-2xl mx-auto flex justify-between items-start pointer-events-none">
+        
+        {/* LEFT: DAILY REWARD */}
+        <DailyRewardButton />
+
+        {/* RIGHT: COINS */}
+        <div className="pointer-events-auto flex items-center gap-2 bg-white px-4 py-2 rounded-2xl shadow-sm border border-neutral-100">
           <div className="w-2 h-2 rounded-full bg-amber-400"></div>
-          <span className="font-bold text-sm md:text-base">{coins}</span>
+          <span className="font-bold text-sm md:text-base text-[#1D1D1F]">{coins}</span>
         </div>
       </div>
 
-      {/* DAILY REWARD - TOP LEFT */}
-      <DailyRewardButton />
-
-      {/* DEV BUTTON - RELATIVE TO CONTENT ON WEB */}
-      <div className="absolute inset-x-0 top-[4.5rem] md:top-4 z-10 w-full max-w-2xl mx-auto px-4 flex justify-end pointer-events-none">
-        {import.meta.env.DEV && (
+      {/* DEV BUTTON - BELOW HEADER */}
+      {import.meta.env.DEV && (
+        <div className="absolute inset-x-0 top-[4.5rem] md:top-6 z-10 w-full max-w-2xl mx-auto px-4 flex justify-end pointer-events-none">
           <button
             onClick={() => startGame(true)}
             className="pointer-events-auto px-3 py-1.5 bg-neutral-200 text-neutral-500 rounded-lg font-bold text-[9px] tracking-widest hover:bg-neutral-300 transition-all opacity-40 hover:opacity-100"
           >
             DEV
           </button>
-        )}
-      </div>
+        </div>
+      )}
 
       <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="text-center w-full max-w-sm z-0">
 
@@ -703,24 +705,22 @@ function DailyRewardButton() {
 
   return (
     <>
-      <div className="absolute inset-x-0 top-[1.5rem] z-10 px-4 md:p-6 w-full max-w-2xl mx-auto flex justify-between items-start pointer-events-none">
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={() => setShowModal(true)}
-          className={`pointer-events-auto flex items-center gap-2 px-3 py-2 rounded-2xl shadow-sm border transition-all ${canClaim ? 'bg-amber-100 border-amber-200 text-amber-700' : 'bg-white border-neutral-100 text-neutral-400'}`}
-        >
-          <div className={`p-1 rounded-lg ${canClaim ? 'bg-amber-400 text-white animate-pulse' : 'bg-neutral-100 text-neutral-300'}`}>
-            <Icons.Gift className="w-4 h-4" />
-          </div>
-          <div className="flex flex-col items-start leading-none">
-            <span className="text-[10px] font-black tracking-tight uppercase">{t.daily_reward}</span>
-            <span className="text-[9px] font-bold opacity-70">
-              {canClaim ? t.daily_reward_claim : (dailyRewardsToday >= 3 ? t.daily_reward_done : `${getTimeRemaining()}${t.daily_reward_wait}`)}
-            </span>
-          </div>
-        </motion.button>
-      </div>
+      <motion.button
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+        onClick={() => setShowModal(true)}
+        className={`pointer-events-auto flex items-center gap-2 px-3 py-2 rounded-2xl shadow-sm border transition-all ${canClaim ? 'bg-amber-100 border-amber-200 text-amber-700' : 'bg-white border-neutral-100 text-neutral-400'}`}
+      >
+        <div className={`p-1 rounded-lg ${canClaim ? 'bg-amber-400 text-white animate-pulse' : 'bg-neutral-100 text-neutral-300'}`}>
+          <Icons.Gift className="w-4 h-4" />
+        </div>
+        <div className="flex flex-col items-start leading-none">
+          <span className="text-[10px] font-black tracking-tight uppercase">{t.daily_reward}</span>
+          <span className="text-[9px] font-bold opacity-70">
+            {canClaim ? t.daily_reward_claim : (dailyRewardsToday >= 3 ? t.daily_reward_done : `${getTimeRemaining()}${t.daily_reward_wait}`)}
+          </span>
+        </div>
+      </motion.button>
 
       <AnimatePresence>
         {showModal && (
@@ -1013,16 +1013,7 @@ export default function App() {
     }
   }, [level, gameState]);
 
-  // AUTO-SHOW TRACKING MODAL ON LOAD
-  useEffect(() => {
-    const hasSeenTracking = localStorage.getItem('zeka_tracking_seen');
-    if (!hasSeenTracking) {
-      setTimeout(() => {
-        setShowTrackingModal(true);
-        localStorage.setItem('zeka_tracking_seen', 'true');
-      }, 1000);
-    }
-  }, []);
+
 
   useEffect(() => {
     let interval: number;
@@ -1088,12 +1079,12 @@ export default function App() {
 
   // AUTO-SHOW TRACKING MODAL FOR NEW PLAYERS
   useEffect(() => {
-    const hasSeenTracking = localStorage.getItem('zeka_tracking_seen');
+    const hasSeenTracking = localStorage.getItem('tracking_seen_v1'); // New key to force reset
     if (!hasSeenTracking) {
       setTimeout(() => {
         setShowTrackingModal(true);
-        localStorage.setItem('zeka_tracking_seen', 'true');
-      }, 2000);
+        localStorage.setItem('tracking_seen_v1', 'true');
+      }, 500);
     }
   }, []);
 
@@ -1147,25 +1138,22 @@ export default function App() {
 
   const timePercent = isDevMode ? 100 : (timeLeft / maxTime) * 100;
 
-  if (gameState === 'MENU') {
-    return <MenuScreen startGame={startGame} />;
-  }
-
-  if (gameState === 'GAMEOVER') {
-    return (
-      <GameOverScreen
-        level={level}
-        totalTimeSpent={totalTimeSpent}
-        expected={expected}
-        isDevMode={isDevMode}
-        hasRevivedInCurrentGame={hasRevivedInCurrentGame}
-        goToMenu={goToMenu}
-      />
-    );
-  }
-
   return (
     <div className="h-[100dvh] w-full bg-[#F5F5F7] text-[#1D1D1F] flex flex-col font-sans selection:bg-neutral-200 overflow-hidden relative">
+
+      {gameState === 'MENU' ? (
+        <MenuScreen startGame={startGame} />
+      ) : gameState === 'GAMEOVER' ? (
+        <GameOverScreen
+          level={level}
+          totalTimeSpent={totalTimeSpent}
+          expected={expected}
+          isDevMode={isDevMode}
+          hasRevivedInCurrentGame={hasRevivedInCurrentGame}
+          goToMenu={goToMenu}
+        />
+      ) : (
+        <>
 
       {/* HEADER */}
       <header className="flex justify-between items-center px-4 py-3 md:p-6 w-full max-w-2xl mx-auto z-10 shrink-0">
@@ -1384,6 +1372,8 @@ export default function App() {
           </button>
         </div>
       </footer>
+        </>
+      )}
 
       {/* OVERLAYS */}
       <AnimatePresence>
