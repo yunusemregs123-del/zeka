@@ -86,54 +86,36 @@ export const GameSymbol = ({ type, size = 'normal', className = '' }: GameSymbol
     case 'Prev1':
       return (
         <div className={containerClass} style={containerStyle}>
-          <div style={{ width: shapeSize, height: shapeSize, position: 'relative' }}>
-            {/* The circular loop track for the arrow */}
+          <div style={{ width: shapeSize, height: shapeSize, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <div style={{
-              position: 'absolute', top: 1.5 * scaleRef, left: 1 * scaleRef, width: 14.5 * scaleRef, height: 14.5 * scaleRef,
-              border: `${strokeW}px solid ${c}`,
-              borderRightColor: 'transparent',
-              borderRadius: '50%',
-              transform: 'rotate(-45deg)',
-              boxSizing: 'border-box'
+              position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
+              border: `${strokeW}px solid ${c}`, borderRightColor: 'transparent',
+              borderRadius: '50%', transform: 'rotate(-45deg)', boxSizing: 'border-box'
             }} />
-            {/* The Arrowhead */}
             <div style={{
-              position: 'absolute', top: -0.5 * scaleRef, left: 5 * scaleRef,
-              borderLeft: `${3.5 * scaleRef}px solid transparent`,
-              borderRight: `${3.5 * scaleRef}px solid transparent`,
-              borderBottom: `${6 * scaleRef}px solid ${c}`,
-              transform: 'rotate(-45deg)'
+              position: 'absolute', top: -1.5 * scaleRef, left: 7 * scaleRef,
+              borderLeft: `${4 * scaleRef}px solid transparent`, borderRight: `${4 * scaleRef}px solid transparent`,
+              borderBottom: `${6 * scaleRef}px solid ${c}`, transform: 'rotate(-45deg)'
             }} />
-            <span style={{
-              position: 'absolute', bottom: 1.5 * scaleRef, right: 1 * scaleRef,
-              fontSize: `${12 * scaleRef}px`, fontWeight: 900, color: c, fontFamily: 'system-ui, -apple-system, sans-serif', lineHeight: 1, letterSpacing: '-0.05em'
-            }}>1</span>
+            <span style={{ fontSize: `${13 * scaleRef}px`, fontWeight: 900, color: c, fontFamily: 'system-ui, -apple-system, sans-serif', lineHeight: 1, marginTop: '1px' }}>1</span>
           </div>
         </div>
       );
     case 'Prev2':
       return (
         <div className={containerClass} style={containerStyle}>
-          <div style={{ width: shapeSize, height: shapeSize, position: 'relative' }}>
+          <div style={{ width: shapeSize, height: shapeSize, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <div style={{
-              position: 'absolute', top: 1.5 * scaleRef, left: 1 * scaleRef, width: 14.5 * scaleRef, height: 14.5 * scaleRef,
-              border: `${strokeW}px solid ${c}`,
-              borderRightColor: 'transparent',
-              borderRadius: '50%',
-              transform: 'rotate(-45deg)',
-              boxSizing: 'border-box'
+              position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
+              border: `${strokeW}px solid ${c}`, borderRightColor: 'transparent',
+              borderRadius: '50%', transform: 'rotate(-45deg)', boxSizing: 'border-box'
             }} />
             <div style={{
-              position: 'absolute', top: -0.5 * scaleRef, left: 5 * scaleRef,
-              borderLeft: `${3.5 * scaleRef}px solid transparent`,
-              borderRight: `${3.5 * scaleRef}px solid transparent`,
-              borderBottom: `${6 * scaleRef}px solid ${c}`,
-              transform: 'rotate(-45deg)'
+              position: 'absolute', top: -1.5 * scaleRef, left: 7 * scaleRef,
+              borderLeft: `${4 * scaleRef}px solid transparent`, borderRight: `${4 * scaleRef}px solid transparent`,
+              borderBottom: `${6 * scaleRef}px solid ${c}`, transform: 'rotate(-45deg)'
             }} />
-            <span style={{
-              position: 'absolute', bottom: 1.5 * scaleRef, right: 1 * scaleRef,
-              fontSize: `${12 * scaleRef}px`, fontWeight: 900, color: c, fontFamily: 'system-ui, -apple-system, sans-serif', lineHeight: 1, letterSpacing: '-0.05em'
-            }}>2</span>
+            <span style={{ fontSize: `${13 * scaleRef}px`, fontWeight: 900, color: c, fontFamily: 'system-ui, -apple-system, sans-serif', lineHeight: 1, marginTop: '1px' }}>2</span>
           </div>
         </div>
       );
@@ -143,11 +125,11 @@ export const GameSymbol = ({ type, size = 'normal', className = '' }: GameSymbol
           <div style={{ display: 'flex', flexDirection: 'column', gap: `${4 * scaleRef}px`, alignItems: 'center', width: shapeSize, height: shapeSize, justifyContent: 'center' }}>
             {/* Top Arrow (Left pointing) */}
             <div style={{ position: 'relative', width: `${15 * scaleRef}px`, height: `${strokeW}px`, backgroundColor: c, borderRadius: 1 }}>
-              <div style={{ position: 'absolute', left: 0, top: '50%', width: `${6 * scaleRef}px`, height: `${6 * scaleRef}px`, borderTop: `${strokeW}px solid ${c}`, borderLeft: `${strokeW}px solid ${c}`, transform: 'translate(1px, -50%) rotate(-45deg)', borderRadius: '1px' }} />
+              <div style={{ position: 'absolute', left: 0, top: '50%', width: `${5 * scaleRef}px`, height: `${5 * scaleRef}px`, borderTop: `${strokeW}px solid ${c}`, borderLeft: `${strokeW}px solid ${c}`, transform: 'translate(1px, -50%) rotate(-45deg)', borderRadius: '1px' }} />
             </div>
             {/* Bottom Arrow (Right pointing) */}
             <div style={{ position: 'relative', width: `${15 * scaleRef}px`, height: `${strokeW}px`, backgroundColor: c, borderRadius: 1 }}>
-              <div style={{ position: 'absolute', right: 0, top: '50%', width: `${6 * scaleRef}px`, height: `${6 * scaleRef}px`, borderTop: `${strokeW}px solid ${c}`, borderRight: `${strokeW}px solid ${c}`, transform: 'translate(-1px, -50%) rotate(45deg)', borderRadius: '1px' }} />
+              <div style={{ position: 'absolute', right: 0, top: '50%', width: `${5 * scaleRef}px`, height: `${5 * scaleRef}px`, borderTop: `${strokeW}px solid ${c}`, borderRight: `${strokeW}px solid ${c}`, transform: 'translate(-1px, -50%) rotate(45deg)', borderRadius: '1px' }} />
             </div>
           </div>
         </div>
@@ -162,11 +144,11 @@ export const GameSymbol = ({ type, size = 'normal', className = '' }: GameSymbol
             {/* Diagonal line */}
             <div style={{ position: 'absolute', width: '150%', height: `${strokeW}px`, backgroundColor: c, top: '50%', left: '-25%', transform: 'rotate(-45deg)', transformOrigin: 'center' }} />
             {/* Minus token on top left */}
-            <div style={{ position: 'absolute', top: 2 * scaleRef, left: 1.5 * scaleRef, width: 4.5 * scaleRef, height: 2 * scaleRef, backgroundColor: c, borderRadius: 1 }} />
+            <div style={{ position: 'absolute', top: 2 * scaleRef, left: 1 * scaleRef, width: 5.5 * scaleRef, height: 2.5 * scaleRef, backgroundColor: c, borderRadius: 1 }} />
             {/* Plus token on bottom right */}
-            <div style={{ position: 'absolute', bottom: 1 * scaleRef, right: 1.5 * scaleRef, width: 4.5 * scaleRef, height: 4.5 * scaleRef }}>
-               <div style={{ position: 'absolute', top: '50%', left: 0, width: '100%', height: 2 * scaleRef, marginTop: -1 * scaleRef, backgroundColor: c, borderRadius: 1 }} />
-               <div style={{ position: 'absolute', left: '50%', top: 0, height: '100%', width: 2 * scaleRef, marginLeft: -1 * scaleRef, backgroundColor: c, borderRadius: 1 }} />
+            <div style={{ position: 'absolute', bottom: 1 * scaleRef, right: 1.5 * scaleRef, width: 6 * scaleRef, height: 6 * scaleRef }}>
+               <div style={{ position: 'absolute', top: '50%', left: 0, width: '100%', height: 2.5 * scaleRef, marginTop: -1.25 * scaleRef, backgroundColor: c, borderRadius: 1 }} />
+               <div style={{ position: 'absolute', left: '50%', top: 0, height: '100%', width: 2.5 * scaleRef, marginLeft: -1.25 * scaleRef, backgroundColor: c, borderRadius: 1 }} />
             </div>
           </div>
         </div>
@@ -174,7 +156,7 @@ export const GameSymbol = ({ type, size = 'normal', className = '' }: GameSymbol
     case 'Star':
       return (
         <div className={containerClass} style={containerStyle}>
-          <span style={{ fontSize: `${25 * scaleRef}px`, color: c, lineHeight: 1, textShadow: `0 0 ${0.4 * scaleRef}px ${c}`, marginTop: -1 }}>★</span>
+          <span style={{ fontSize: `${26 * scaleRef}px`, color: c, lineHeight: 1, marginTop: -1 }}>★</span>
         </div>
       );
     case 'Heart':
