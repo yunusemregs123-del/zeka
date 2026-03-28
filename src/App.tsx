@@ -317,31 +317,14 @@ function MenuScreen({
         </div>
       </div>
 
-      {/* DEV PANEL - ALWAYS VISIBLE FOR TESTING */}
-      <div className="absolute inset-x-0 top-[4.5rem] md:top-6 z-10 w-full max-w-2xl mx-auto px-4 flex justify-end gap-1 pointer-events-none flex-wrap items-center">
+      {/* DEV START */}
+      <div className="absolute inset-x-0 top-[4.5rem] z-10 w-full max-w-2xl mx-auto px-4 flex justify-end">
         <button
           onClick={() => startGame(true)}
-          className="pointer-events-auto px-3 py-1.5 bg-neutral-200 text-neutral-500 rounded-lg font-bold text-[9px] tracking-widest hover:bg-neutral-300 transition-all opacity-60 hover:opacity-100"
+          className="px-3 py-1.5 bg-neutral-200 text-neutral-500 rounded-lg font-bold text-[9px] tracking-widest opacity-40 active:opacity-100 transition-all"
         >
           DEV
         </button>
-        {[11, 31, 51, 71, 91, 101, 111, 131].map(lv => (
-          <button
-            key={lv}
-            onClick={() => { startGame(true, lv); }}
-            className="pointer-events-auto px-2 py-1.5 bg-amber-100 text-amber-600 rounded-lg font-bold text-[8px] tracking-wider hover:bg-amber-200 transition-all opacity-60 hover:opacity-100"
-          >
-            T{lv}
-          </button>
-        ))}
-        <input
-          type="number"
-          min="1"
-          max="999"
-          placeholder="LV"
-          onKeyDown={(e) => { if (e.key === 'Enter') { const v = parseInt((e.target as HTMLInputElement).value); if (v > 0) startGame(true, v); }}}
-          className="pointer-events-auto w-12 px-1.5 py-1.5 bg-white border border-neutral-300 rounded-lg font-bold text-[9px] text-center opacity-60 focus:opacity-100 outline-none"
-        />
       </div>
 
       <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="text-center w-full max-w-sm z-0">
@@ -906,7 +889,7 @@ export default function App() {
   const {
     gameState, level, totalTimeSpent, currentValue, timeLeft, maxTime, coins, previousAnswers, hideIntro, isDevMode, hasRevivedInCurrentGame, language,
     streak, helpCount, langsUsed, dailyRewardsToday, lastRewardTime,
-    startNewLevel, setCurrentValue, tickTimer, addLevelTime, setHideIntro, startGame, goToMenu, resetStreak, unlockMedal, claimDailyReward
+    startNewLevel, setCurrentValue, tickTimer, addLevelTime, setHideIntro, startGame, goToMenu, resetStreak, unlockMedal, claimDailyReward, devAdvanceLevel
   } = useGameStore();
   const t = Translations[language];
 
@@ -1198,6 +1181,25 @@ export default function App() {
                 </div>
               </div>
             </header>
+
+            {/* DEV LEVEL JUMP — visible only in dev mode */}
+            {isDevMode && (
+              <div className="w-full max-w-2xl mx-auto px-4 pb-2 flex flex-wrap gap-1 justify-center">
+                {[1, 10, 30, 31, 44, 50, 51, 70, 71, 90, 91, 100, 101, 110, 111, 130, 131, 150].map(lv => (
+                  <button
+                    key={lv}
+                    onClick={() => devAdvanceLevel(lv)}
+                    className={`px-2 py-1 rounded font-bold text-[8px] tracking-wider transition-all ${
+                      lv === level ? 'bg-amber-500 text-white' :
+                      [11, 31, 51, 71, 91, 101, 111, 131].includes(lv) ? 'bg-amber-100 text-amber-600' :
+                      'bg-neutral-100 text-neutral-500'
+                    }`}
+                  >
+                    {lv}
+                  </button>
+                ))}
+              </div>
+            )}
 
             {/* MAIN GAME AREA */}
             <main className="flex-1 flex flex-col items-center justify-center px-2 md:px-4 w-full max-w-2xl mx-auto relative z-10 pb-2 overflow-hidden">
