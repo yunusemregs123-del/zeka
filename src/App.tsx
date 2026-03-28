@@ -385,8 +385,8 @@ function MenuScreen({ startGame }: { startGame: (asDev?: boolean) => void }) {
                   <Icons.Medal className="w-6 h-6 text-[#1D1D1F]" />
                   {t.medals_title}
                 </h2>
-                <button onClick={() => setShowMedals(false)} className="w-10 h-10 flex items-center justify-center bg-neutral-100 rounded-full hover:bg-neutral-200 transition-colors">
-                  <span className="font-bold text-neutral-500 text-sm">✕</span>
+                <button onClick={() => setShowMedals(false)} className="w-9 h-9 flex items-center justify-center bg-neutral-100 rounded-full hover:bg-neutral-200 transition-colors">
+                  <span className="font-bold text-neutral-400 text-xs">✕</span>
                 </button>
               </div>
 
@@ -477,11 +477,7 @@ function MenuScreen({ startGame }: { startGame: (asDev?: boolean) => void }) {
                 )}
               </AnimatePresence>
 
-              <div className="mt-4 pt-4 border-t border-neutral-100">
-                <button onClick={() => setShowMedals(false)} className="w-full py-4 bg-neutral-100 text-neutral-400 rounded-2xl font-black tracking-widest text-[10px] hover:bg-neutral-200 transition-all">
-                  {t.info_close || "KAPAT"}
-                </button>
-              </div>
+
             </motion.div>
           </div>
         )}
@@ -499,7 +495,12 @@ function MenuScreen({ startGame }: { startGame: (asDev?: boolean) => void }) {
               transition={{ duration: 0.2 }}
               className="bg-white rounded-3xl p-5 w-full max-w-[340px] shadow-2xl relative"
             >
-              <h2 className="text-xl font-black mb-3">{t.info_title}</h2>
+              <div className="flex justify-between items-center mb-3">
+                <h2 className="text-xl font-black">{t.info_title}</h2>
+                <button onClick={() => setShowInfo(false)} className="w-9 h-9 flex items-center justify-center bg-neutral-100 rounded-full hover:bg-neutral-200 transition-colors">
+                  <span className="font-bold text-neutral-400 text-xs">✕</span>
+                </button>
+              </div>
               <p className="text-xs font-medium text-neutral-600 mb-4 leading-relaxed">
                 {t.info_desc}
               </p>
@@ -555,9 +556,6 @@ function MenuScreen({ startGame }: { startGame: (asDev?: boolean) => void }) {
                 <button onClick={() => window.open('https://your-privacy-policy-link-here.com', '_blank')} className="w-full py-2 bg-neutral-50 text-blue-500 rounded-xl font-bold tracking-wider text-xs md:text-sm hover:bg-neutral-100 border border-neutral-200">
                   {t.privacy_policy || "Gizlilik Politikası (Privacy Policy)"} ↗
                 </button>
-                <button onClick={() => setShowInfo(false)} className="w-full py-3 bg-neutral-100 text-neutral-800 rounded-xl font-bold tracking-wider text-sm hover:bg-neutral-200">
-                  {t.info_close}
-                </button>
               </div>
             </motion.div>
           </div>
@@ -578,8 +576,8 @@ function MenuScreen({ startGame }: { startGame: (asDev?: boolean) => void }) {
             >
               <div className="flex justify-between items-center p-4 border-b border-neutral-100 shrink-0">
                 <h2 className="text-xl font-black text-[#1D1D1F] flex items-center gap-2"><Icons.Trophy className="w-6 h-6 text-amber-500" /> {t.lb_title}</h2>
-                <button onClick={() => setShowLeaderboard(false)} className="w-8 h-8 flex items-center justify-center bg-neutral-100 rounded-full hover:bg-neutral-200">
-                  <span className="font-bold text-neutral-500 text-xs">✕</span>
+                <button onClick={() => setShowLeaderboard(false)} className="w-9 h-9 flex items-center justify-center bg-neutral-100 rounded-full hover:bg-neutral-200 transition-colors">
+                  <span className="font-bold text-neutral-400 text-xs">✕</span>
                 </button>
               </div>
 
@@ -725,8 +723,11 @@ function DailyRewardButton() {
               animate={{ scale: 1, opacity: 1 }} 
               exit={{ scale: 0.95, opacity: 0 }}
               transition={{ duration: 0.2 }}
-              className="bg-white rounded-[2rem] p-6 w-full max-w-[320px] shadow-2xl text-center"
+              className="bg-white rounded-[2rem] p-6 w-full max-w-[320px] shadow-2xl text-center relative"
             >
+              <button onClick={() => setShowModal(false)} className="absolute top-4 right-4 w-9 h-9 flex items-center justify-center bg-neutral-100 rounded-full hover:bg-neutral-200 transition-colors">
+                <span className="font-bold text-neutral-400 text-xs">✕</span>
+              </button>
               <div className="w-16 h-16 bg-amber-100 text-amber-500 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-amber-200">
                 <Icons.Gift className="w-10 h-10" />
               </div>
@@ -754,8 +755,6 @@ function DailyRewardButton() {
                     {dailyRewardsToday >= 3 ? t.daily_gift_limit : `${getTimeRemaining()}${t.daily_gift_comeback}`}
                   </div>
                 )}
-
-                <button onClick={() => setShowModal(false)} className="w-full py-3 text-neutral-400 font-bold text-xs uppercase hover:text-neutral-600 transition">{t.daily_gift_close}</button>
               </div>
             </motion.div>
           </div>
@@ -1340,13 +1339,13 @@ export default function App() {
 
         {showTrackingModal && (
           <motion.div
-            initial={{ opacity: 0, backdropFilter: 'blur(0px)' }}
-            animate={{ opacity: 1, backdropFilter: 'blur(8px)' }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-black/60 z-50 flex flex-col items-center justify-center p-4 text-center"
+            className="absolute inset-0 bg-black/70 z-50 flex flex-col items-center justify-center p-4 text-center"
           >
             <motion.div
-              initial={{ scale: 0.9, y: 20 }}
+              initial={{ scale: 0.95, y: 10 }}
               animate={{ scale: 1, y: 0 }}
               className="bg-white p-6 md:p-8 rounded-[2rem] shadow-2xl max-w-[320px] w-full"
             >
@@ -1370,18 +1369,20 @@ export default function App() {
 
         {showIntroModal && (
           <motion.div
-            initial={{ opacity: 0, backdropFilter: 'blur(0px)' }}
-            animate={{ opacity: 1, backdropFilter: 'blur(8px)' }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-black/60 z-50 flex flex-col items-center justify-center p-4 text-center"
+            className="absolute inset-0 bg-black/70 z-50 flex flex-col items-center justify-center p-4 text-center"
           >
             <motion.div
-              initial={{ scale: 0.9, y: 20 }}
+              initial={{ scale: 0.95, y: 10 }}
               animate={{ scale: 1, y: 0 }}
               className="bg-white p-5 md:p-8 rounded-3xl shadow-2xl max-w-[320px] w-full max-h-[85dvh] overflow-y-auto"
             >
               <h2 className="text-xl font-black tracking-tight mb-4 text-[#1D1D1F]">{t.intro_title}</h2>
-              <div className="flex justify-center gap-4 mb-5 bg-neutral-50 rounded-xl p-4 border border-neutral-100">
+              
+              {/* Symbol explanation */}
+              <div className="flex justify-center gap-6 mb-4 bg-neutral-50 rounded-xl p-4 border border-neutral-100">
                 <div className="flex flex-col items-center gap-2">
                   <div className="p-2 bg-white border border-neutral-200 shadow-sm rounded-full"><SymbolDisplay type="CircleFilled" /></div>
                   <span className="font-bold text-lg text-green-600">+1</span>
@@ -1393,11 +1394,36 @@ export default function App() {
                   <span className="text-[10px] text-neutral-400 font-bold uppercase tracking-widest">{t.intro_empty}</span>
                 </div>
               </div>
-              <p className="text-neutral-500 font-medium leading-relaxed mb-6 text-xs md:text-sm px-1">
+
+              <p className="text-neutral-500 font-medium leading-relaxed mb-4 text-xs md:text-sm px-1">
                 {t.intro_p1}
               </p>
 
-              <div className="flex items-center justify-center gap-2 mb-6 bg-neutral-100/50 p-3 rounded-lg cursor-pointer" onClick={() => setIntroCheckbox(!introCheckbox)}>
+              {/* EXAMPLE 1: ● + ● = +2 */}
+              <div className="w-full bg-neutral-50/80 border border-neutral-100 rounded-2xl p-3 mb-2 text-left shadow-[inset_0_2px_10px_rgb(0,0,0,0.02)]">
+                <span className="block text-[10px] font-black text-amber-500 tracking-widest uppercase mb-2">{t.intro_ex1}: ● + ● = ?</span>
+                <div className="flex items-center justify-center gap-1 pb-1">
+                  <div className="bg-white shadow-sm border border-neutral-100 rounded-xl"><SymbolDisplay type="CircleFilled" /></div>
+                  <Icons.Plus className="w-4 h-4 text-neutral-300" />
+                  <div className="bg-white shadow-sm border border-neutral-100 rounded-xl"><SymbolDisplay type="CircleFilled" /></div>
+                  <span className="text-xl font-black text-neutral-300 mx-1">=</span>
+                  <span className="text-2xl font-black text-green-500">+2</span>
+                </div>
+              </div>
+
+              {/* EXAMPLE 2: ● + ○ = 0 */}
+              <div className="w-full bg-neutral-50/80 border border-neutral-100 rounded-2xl p-3 mb-5 text-left shadow-[inset_0_2px_10px_rgb(0,0,0,0.02)]">
+                <span className="block text-[10px] font-black text-amber-500 tracking-widest uppercase mb-2">{t.intro_ex2}: ● + ○ = ?</span>
+                <div className="flex items-center justify-center gap-1 pb-1">
+                  <div className="bg-white shadow-sm border border-neutral-100 rounded-xl"><SymbolDisplay type="CircleFilled" /></div>
+                  <Icons.Plus className="w-4 h-4 text-neutral-300" />
+                  <div className="bg-white shadow-sm border border-neutral-100 rounded-xl"><SymbolDisplay type="CircleEmpty" /></div>
+                  <span className="text-xl font-black text-neutral-300 mx-1">=</span>
+                  <span className="text-2xl font-black text-amber-500">0</span>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-center gap-2 mb-5 bg-neutral-100/50 p-3 rounded-lg cursor-pointer" onClick={() => setIntroCheckbox(!introCheckbox)}>
                 <input
                   type="checkbox"
                   checked={introCheckbox}
@@ -1425,13 +1451,13 @@ export default function App() {
         {/* TUTORIAL MODAL WITH DESCRIPTIONS */}
         {showTutorialModal && (
           <motion.div
-            initial={{ opacity: 0, backdropFilter: 'blur(0px)' }}
-            animate={{ opacity: 1, backdropFilter: 'blur(8px)' }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-black/60 z-50 flex flex-col items-center justify-center p-4 text-center overflow-hidden"
+            className="absolute inset-0 bg-black/70 z-50 flex flex-col items-center justify-center p-4 text-center overflow-hidden"
           >
             <motion.div
-              initial={{ scale: 0.9, y: 20 }}
+              initial={{ scale: 0.95, y: 10 }}
               animate={{ scale: 1, y: 0 }}
               className="bg-white p-5 md:p-6 rounded-3xl shadow-2xl max-w-[340px] w-full flex flex-col items-center max-h-[85dvh] overflow-y-auto overflow-x-hidden"
             >
