@@ -112,6 +112,7 @@ const SymbolDisplay = ({ type, size = 'normal' }: { type: SymbolType, size?: 'sm
   if (type === 'Plus') return <Icon className={`mx-[2px] md:mx-1 text-neutral-300 shrink-0 ${size === 'small' ? 'w-3 h-3 md:w-4 md:h-4' : 'w-4 h-4 md:w-5 md:h-5'}`} />;
   return (
     <motion.div
+      key={type}
       initial={{ scale: 0, y: 10, opacity: 0 }}
       animate={{ scale: 1, y: 0, opacity: 1 }}
       className="flex items-center justify-center p-[2px]"
@@ -1122,6 +1123,19 @@ export default function App() {
     }
   };
 
+  const handleTogglePause = () => {
+    if (isPaused) {
+      setIsPaused(false);
+    } else {
+      if (isDevMode) {
+        setIsPaused(true);
+      } else if (coins >= 50) {
+        useGameStore.getState().addCoins(-50);
+        setIsPaused(true);
+      }
+    }
+  };
+
   const timePercent = isDevMode ? 100 : (timeLeft / maxTime) * 100;
 
   return (
@@ -1267,9 +1281,9 @@ export default function App() {
 
               <div className="grid grid-cols-3 gap-2 w-full">
                 <button
-                  onClick={() => { if (coins >= 50 && !isPaused) setIsPaused(true); else if (isPaused) setIsPaused(false); }}
-                  disabled={showTutorialModal || showIntroModal || isDevMode || (!isPaused && coins < 50)}
-                  className={`flex flex-col items-center justify-center p-2 rounded-xl border text-[9px] font-bold tracking-widest transition ${isPaused ? 'bg-amber-100 border-amber-200 text-amber-900 shadow-inner' : 'bg-white border-neutral-100 text-neutral-600 shadow-sm'}`}
+                  onClick={handleTogglePause}
+                  disabled={showTutorialModal || showIntroModal || (!isPaused && !isDevMode && coins < 50)}
+                  className={`flex flex-col items-center justify-center p-2 rounded-xl border text-[9px] font-bold tracking-widest transition disabled:opacity-30 ${isPaused ? 'bg-amber-100 border-amber-200 text-amber-900 shadow-inner' : 'bg-white border-neutral-100 text-neutral-600 shadow-sm'}`}
                 >
                   <span>{isPaused ? t.btn_resume : t.btn_pause}</span>
                   <span className="text-[8px] bg-amber-50 text-amber-600 px-1.5 py-0.5 rounded-full mt-1">50C</span>
@@ -1394,8 +1408,8 @@ export default function App() {
             )}
 
             {showExitConfirm && (
-              <div key="exit-confirm-overlay" className="fixed inset-0 flex items-center justify-center p-6 bg-black/40 backdrop-blur-md pointer-events-auto">
-                <motion.div initial={{ scale: 0.9, y: 10, opacity: 0 }} animate={{ scale: 1, y: 0, opacity: 1 }} exit={{ scale: 0.9, y: 10, opacity: 0 }} className="bg-white/95 backdrop-blur-xl rounded-[2rem] p-8 w-full max-w-[280px] text-center shadow-2xl relative overflow-hidden">
+              <div key="exit-confirm-overlay" className="fixed inset-0 flex items-center justify-center p-6 bg-black/40 pointer-events-auto">
+                <motion.div initial={{ scale: 0.9, y: 10, opacity: 0 }} animate={{ scale: 1, y: 0, opacity: 1 }} exit={{ scale: 0.9, y: 10, opacity: 0 }} className="bg-white/95 rounded-[2rem] p-8 w-full max-w-[280px] text-center shadow-2xl relative overflow-hidden">
                   
                   {/* Live Timer Progress Bar to show it's ticking */}
                   {gameState === 'PLAYING' && !isDevMode && (
