@@ -139,8 +139,8 @@ const TutorialExample = ({ text, sequence, result }: { text?: string, sequence?:
 };
 
 // ─── MENU SCREEN ──────────────────────────────────────
-function MenuScreen({ startGame, openDailyReward }: { startGame: (asDev?: boolean) => void, openDailyReward: () => void }) {
-  const { language, setLanguage, medals, claimedMedals, claimMedalReward, coins } = useGameStore();
+function MenuScreen({ startGame, openDailyReward, coins }: { startGame: (asDev?: boolean) => void, openDailyReward: () => void, coins: number }) {
+  const { language, setLanguage, medals, claimedMedals, claimMedalReward } = useGameStore();
   const t = Translations[language];
   const [tab, setTab] = useState<'daily' | 'weekly' | 'alltime'>('daily');
   const [showLangMenu, setShowLangMenu] = useState(false);
@@ -278,10 +278,10 @@ function MenuScreen({ startGame, openDailyReward }: { startGame: (asDev?: boolea
         {/* LEFT: DAILY REWARD */}
         <DailyRewardButton onClick={openDailyReward} />
 
-        {/* RIGHT: COINS */}
-        <div className="pointer-events-auto flex items-center gap-2.5 bg-[#1D1D1F] px-5 py-2.5 rounded-2xl shadow-xl transform active:scale-95 transition-all">
-          <div className="w-3 h-3 rounded-full bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.5)]"></div>
-          <span className="font-black text-lg md:text-2xl text-white tabular-nums leading-none">{coins}</span>
+        {/* RIGHT: COINS - HIGH CONTRAST */}
+        <div className="pointer-events-auto flex items-center gap-2.5 bg-[#1D1D1F] px-5 py-2.5 rounded-2xl shadow-xl border border-neutral-700/50 transform active:scale-95 transition-all text-white">
+          <div className="w-3 h-3 rounded-full bg-amber-400 shadow-[0_0_12px_rgba(251,191,36,0.8)] shrink-0"></div>
+          <span className="font-black text-base md:text-xl tabular-nums leading-none tracking-tight">{coins}</span>
         </div>
       </div>
 
@@ -1058,7 +1058,7 @@ export default function App() {
     <div className="h-[100dvh] w-full bg-[#F5F5F7] text-[#1D1D1F] flex flex-col font-sans selection:bg-neutral-200 overflow-hidden relative">
 
       {gameState === 'MENU' ? (
-        <MenuScreen startGame={startGame} openDailyReward={() => setShowDailyRewardGlobal(true)} />
+        <MenuScreen coins={coins} startGame={startGame} openDailyReward={() => setShowDailyRewardGlobal(true)} />
       ) : gameState === 'GAMEOVER' ? (
         <GameOverScreen
           level={level}
@@ -1082,9 +1082,10 @@ export default function App() {
                 {t.header_time} <span className="text-neutral-900">{isDevMode ? '∞' : `${totalTimeSpent.toFixed(2)}s`}</span>
               </span>
             </div>
-            <div className="flex items-center gap-2.5 bg-[#1D1D1F] px-4 py-2 rounded-2xl shadow-lg border border-white/10 transform active:scale-95 transition-all">
-              <div className="w-2.5 h-2.5 rounded-full bg-amber-400 shadow-[0_0_6px_rgba(251,191,36,0.4)]"></div>
-              <span className="font-black text-base text-white tabular-nums leading-none">{coins}</span>
+            {/* COIN COUNTER - HIGH CONTRAST */}
+            <div className="flex items-center gap-2.5 bg-[#1D1D1F] px-5 py-2.5 rounded-2xl shadow-xl border border-neutral-700/50 text-white">
+              <div className="w-3 h-3 rounded-full bg-amber-400 shadow-[0_0_12px_rgba(251,191,36,0.8)] shrink-0"></div>
+              <span className="font-black text-lg md:text-xl tabular-nums leading-none tracking-tight">{coins}</span>
             </div>
           </header>
 
