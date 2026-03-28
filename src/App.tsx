@@ -111,7 +111,7 @@ const SymbolDisplay = ({ type, size = 'normal', disableAnimation = false }: { ty
   if (!Icon) return null;
   if (type === 'Plus') return <Icon className={`mx-[2px] md:mx-1 text-neutral-300 shrink-0 ${size === 'small' ? 'w-3 h-3 md:w-4 md:h-4' : 'w-4 h-4 md:w-5 md:h-5'}`} />;
   
-  const iconContent = <Icon className={`text-neutral-900 drop-shadow-sm ${size === 'small' ? 'w-5 h-5 md:w-6 md:h-6' : size === 'large' ? 'w-10 h-10 md:w-12 md:h-12' : 'w-7 h-7 md:w-8 md:h-8'}`} />;
+  const iconContent = <Icon key={type} data-name={type} className={`text-neutral-900 drop-shadow-sm ${size === 'small' ? 'w-5 h-5 md:w-6 md:h-6' : size === 'large' ? 'w-10 h-10 md:w-12 md:h-12' : 'w-7 h-7 md:w-8 md:h-8'}`} />;
 
   if (disableAnimation) {
     return (
