@@ -1,12 +1,12 @@
 import { createPortal } from 'react-dom';
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState } from 'react';
 import { StatusBar } from '@capacitor/status-bar';
 import { App as CapApp } from '@capacitor/app';
 import { useGameStore } from './store/useGameStore';
 import { generatePuzzle, isTutorialLevel, getTutorialSymbols, type SymbolType } from './lib/LevelEngine';
 import * as Leaderboard from './lib/Leaderboard';
 import * as Icons from './components/Icons';
-import { getSymbolSrc } from './lib/SymbolAssets';
+import { GameSymbol } from './components/GameSymbol';
 import { motion, AnimatePresence, useAnimation } from 'framer-motion';
 import { AmbientMusic } from './lib/AmbientMusic';
 import { Ads } from './lib/Ads';
@@ -108,28 +108,23 @@ const TUTORIAL_DATA: Record<number, { exampleSequence?: SymbolType[], exampleRes
 };
 
 const SymbolDisplay = ({ type, size = 'normal', disableAnimation = false }: { type: SymbolType, size?: 'small' | 'normal' | 'large', disableAnimation?: boolean }) => {
-  const src = useMemo(() => getSymbolSrc(type), [type]);
-  if (!src) return null;
-
-  const sizeClass = type === 'Plus'
-    ? (size === 'small' ? 'w-3 h-3 md:w-4 md:h-4' : 'w-4 h-4 md:w-5 md:h-5')
-    : (size === 'small' ? 'w-5 h-5 md:w-6 md:h-6' : size === 'large' ? 'w-10 h-10 md:w-12 md:h-12' : 'w-7 h-7 md:w-8 md:h-8');
-
-  const imgElement = <img src={src} alt={type} draggable={false} className={`${sizeClass} shrink-0 ${type === 'Plus' ? 'mx-[2px] md:mx-1' : 'drop-shadow-sm'}`} />;
-
-  if (type === 'Plus') return imgElement;
+  if (type === 'Plus') return <GameSymbol type={type} size={size} className="mx-[2px] md:mx-1" />;
 
   if (disableAnimation) {
-    return <div className="flex items-center justify-center p-[2px]">{imgElement}</div>;
+    return (
+      <div className="flex items-center justify-center p-[2px] drop-shadow-sm">
+        <GameSymbol type={type} size={size} />
+      </div>
+    );
   }
 
   return (
     <motion.div
       initial={{ scale: 0, y: 10, opacity: 0 }}
       animate={{ scale: 1, y: 0, opacity: 1 }}
-      className="flex items-center justify-center p-[2px]"
+      className="flex items-center justify-center p-[2px] drop-shadow-sm"
     >
-      {imgElement}
+      <GameSymbol type={type} size={size} />
     </motion.div>
   );
 };
@@ -141,15 +136,10 @@ const TutorialExample = ({ text, sequence, result, isSmall }: { text?: string, s
       {text && <span className={`block ${isSmall ? 'text-[8px] mb-1' : 'text-[10px] mb-3'} font-black text-amber-500 tracking-widest uppercase whitespace-normal`}>{text}</span>}
       <div className={`flex items-center justify-center gap-1 md:gap-2 pb-1 whitespace-nowrap flex-nowrap w-full ${isSmall ? 'scale-[0.70]' : 'scale-[0.80] sm:scale-100'} origin-center`}>
         {sequence.map((sym, i) => {
-          const src = getSymbolSrc(sym);
-          if (!src) return null;
-          const sizeClass = sym === 'Plus'
-            ? (isSmall ? 'w-3 h-3 md:w-4 md:h-4' : 'w-4 h-4 md:w-5 md:h-5')
-            : (isSmall ? 'w-5 h-5 md:w-6 md:h-6' : 'w-7 h-7 md:w-8 md:h-8');
-          if (sym === 'Plus') return <img key={`ex-p-${i}`} src={src} alt="+" draggable={false} className={`mx-[2px] md:mx-1 shrink-0 ${sizeClass}`} />;
+          if (sym === 'Plus') return <GameSymbol key={`ex-p-${i}`} type="Plus" size={isSmall ? 'small' : 'normal'} className="mx-[2px] md:mx-1" />;
           return (
             <div key={`ex-${sym}-${i}`} className="shrink-0 bg-white shadow-sm border border-neutral-100 rounded-xl flex items-center justify-center p-[2px]">
-              <img src={src} alt={sym} draggable={false} className={`${sizeClass} drop-shadow-sm`} />
+              <GameSymbol type={sym} size={isSmall ? 'small' : 'normal'} className="drop-shadow-sm" />
             </div>
           );
         })}
@@ -562,7 +552,7 @@ function MenuScreen({
                 ].map((item, i) => (
                   <div key={`info-${item.symKey}-${i}`} className="flex items-start gap-3 bg-neutral-50/80 p-3 rounded-2xl border border-neutral-100 shadow-sm">
                     <div className="w-10 h-10 bg-white shrink-0 shadow-sm rounded-xl border border-neutral-200 flex items-center justify-center">
-                      <img src={getSymbolSrc(item.symKey)} alt={item.symKey} draggable={false} className="w-5 h-5" />
+                      <GameSymbol type={item.symKey as SymbolType} size="small" />
                     </div>
                     <div className="flex flex-col flex-1 pt-0.5">
                       <span className="text-[10px] sm:text-xs font-black text-neutral-800 uppercase tracking-widest">{item.label}</span>
@@ -1375,7 +1365,7 @@ export default function App() {
                   <div className="flex justify-center flex-wrap gap-2 mb-6 shrink-0">
                     {getTutorialSymbols(level).map((s, idx) => (
                       <div key={`tut-show-${s}-${idx}`} className="p-3 bg-white border border-neutral-200 rounded-xl shadow-sm flex items-center justify-center">
-                        <img src={getSymbolSrc(s)} alt={s} draggable={false} className="w-7 h-7 md:w-8 md:h-8" />
+                        <GameSymbol type={s} size="large" />
                       </div>
                     ))}
                   </div>
