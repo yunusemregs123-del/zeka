@@ -139,11 +139,16 @@ const TutorialExample = ({ text, sequence, result, isSmall }: { text?: string, s
     <div className={`w-full bg-neutral-50/80 border border-neutral-100 rounded-2xl ${isSmall ? 'p-2 mb-1' : 'p-4 mb-2'} text-left shadow-[inset_0_2px_10px_rgb(0,0,0,0.02)] overflow-hidden`}>
       {text && <span className={`block ${isSmall ? 'text-[8px] mb-1' : 'text-[10px] mb-3'} font-black text-amber-500 tracking-widest uppercase whitespace-normal`}>{text}</span>}
       <div className={`flex items-center justify-center gap-1 md:gap-2 pb-1 whitespace-nowrap flex-nowrap w-full ${isSmall ? 'scale-[0.70]' : 'scale-[0.80] sm:scale-100'} origin-center`}>
-        {sequence.map((sym, i) => (
-          <div key={i} className={`shrink-0 ${sym !== 'Plus' ? 'bg-white shadow-sm border border-neutral-100 rounded-xl' : ''}`}>
-            <SymbolDisplay type={sym} size={isSmall ? "small" : "normal"} />
-          </div>
-        ))}
+        {sequence.map((sym, i) => {
+          const IconComp = Icons[sym as keyof typeof Icons];
+          if (!IconComp) return null;
+          if (sym === 'Plus') return <IconComp key={`tut-ex-plus-${i}`} data-symbol-id={`tut-plus-${i}`} className={`mx-[2px] md:mx-1 text-neutral-300 shrink-0 ${isSmall ? 'w-3 h-3 md:w-4 md:h-4' : 'w-4 h-4 md:w-5 md:h-5'}`} />;
+          return (
+            <div key={`tut-ex-${sym}-${i}`} className={`shrink-0 bg-white shadow-sm border border-neutral-100 rounded-xl flex items-center justify-center p-[2px]`}>
+              <IconComp data-symbol-id={`tut-${sym}-${i}`} className={`text-neutral-900 drop-shadow-sm ${isSmall ? 'w-5 h-5 md:w-6 md:h-6' : 'w-7 h-7 md:w-8 md:h-8'}`} />
+            </div>
+          );
+        })}
         <span className={`${isSmall ? 'text-sm' : 'text-xl'} font-black text-neutral-300 mx-1 shrink-0`}>=</span>
         <span className={`${isSmall ? 'text-lg' : 'text-2xl md:text-3xl'} font-black text-amber-500 shrink-0`}>{result}</span>
       </div>
@@ -160,7 +165,7 @@ function MenuScreen({
   selectedMedal, setSelectedMedal,
   showLangMenu, setShowLangMenu
 }: {
-  startGame: (asDev?: boolean) => void,
+  startGame: (asDev?: boolean, startLevel?: number) => void,
   openDailyReward: () => void,
   coins: number,
   showInfo: boolean, setShowInfo: (v: boolean) => void,
@@ -310,13 +315,22 @@ function MenuScreen({
 
       {/* DEV BUTTON - BELOW HEADER */}
       {import.meta.env.DEV && (
-        <div className="absolute inset-x-0 top-[4.5rem] md:top-6 z-10 w-full max-w-2xl mx-auto px-4 flex justify-end pointer-events-none">
+        <div className="absolute inset-x-0 top-[4.5rem] md:top-6 z-10 w-full max-w-2xl mx-auto px-4 flex justify-end gap-1 pointer-events-none flex-wrap">
           <button
             onClick={() => startGame(true)}
             className="pointer-events-auto px-3 py-1.5 bg-neutral-200 text-neutral-500 rounded-lg font-bold text-[9px] tracking-widest hover:bg-neutral-300 transition-all opacity-40 hover:opacity-100"
           >
             DEV
           </button>
+          {[11, 31, 51, 71, 91, 101, 111, 131].map(lv => (
+            <button
+              key={lv}
+              onClick={() => { startGame(true, lv); }}
+              className="pointer-events-auto px-2 py-1.5 bg-amber-100 text-amber-600 rounded-lg font-bold text-[8px] tracking-wider hover:bg-amber-200 transition-all opacity-50 hover:opacity-100"
+            >
+              T{lv}
+            </button>
+          ))}
         </div>
       )}
 
@@ -1350,7 +1364,14 @@ export default function App() {
                     {t.tut_attention}
                   </div>
                   <div className="flex justify-center flex-wrap gap-2 mb-6 shrink-0">
-                    {getTutorialSymbols(level).map(s => <div key={s} className="p-3 bg-white border border-neutral-200 rounded-xl shadow-sm"><SymbolDisplay type={s} /></div>)}
+                    {getTutorialSymbols(level).map((s, idx) => {
+                      const TutIcon = Icons[s as keyof typeof Icons];
+                      return TutIcon ? (
+                        <div key={`tut-showcase-${s}-${idx}`} className="p-3 bg-white border border-neutral-200 rounded-xl shadow-sm flex items-center justify-center">
+                          <TutIcon data-symbol-id={`showcase-${s}-${idx}`} className="w-7 h-7 md:w-8 md:h-8 text-neutral-900" />
+                        </div>
+                      ) : null;
+                    })}
                   </div>
                   <h2 className="text-lg font-black text-[#1D1D1F] mb-2 shrink-0 text-center">{t[('tut_' + level + '_title') as LanguageCode] || "YENİ BİR KURAL"}</h2>
                   <p className="text-neutral-500 text-[12px] mb-6 text-center leading-relaxed shrink-0">{t[('tut_' + level + '_desc') as LanguageCode]}</p>

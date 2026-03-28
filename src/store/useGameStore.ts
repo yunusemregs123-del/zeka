@@ -29,7 +29,7 @@ interface GameState {
   goToMenu: () => void;
   unlockMedal: (id: string) => void;
   claimMedalReward: (id: string, reward: number) => void;
-  startGame: (asDev?: boolean) => void;
+  startGame: (asDev?: boolean, startLevel?: number) => void;
   incrementStreak: () => void;
   resetStreak: () => void;
   useHelp: () => void;
@@ -109,9 +109,9 @@ export const useGameStore = create<GameState>((set, get) => ({
 
   goToMenu: () => set({ gameState: 'MENU' }),
   
-  startGame: (asDev = false) => {
+  startGame: (asDev = false, startLevel?: number) => {
     set({ 
-      level: 1, 
+      level: startLevel || 1, 
       totalTimeSpent: 0, 
       previousAnswers: [0,0], 
       gameState: 'PLAYING',
