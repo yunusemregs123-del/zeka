@@ -538,28 +538,31 @@ function MenuScreen({
                 {t.info_desc}
               </p>
 
-              <div className="grid grid-cols-2 gap-2 mb-6 max-h-[300px] overflow-y-auto pr-1">
+              <div className="flex flex-col gap-2 mb-6 max-h-[300px] overflow-y-auto pr-1">
                 {[
-                  { icon: Icons.CircleFilled, label: t.info_sym1 },
-                  { icon: Icons.CircleEmpty, label: t.info_sym1_neg },
-                  { icon: Icons.TriangleUp, label: t.info_sym2 },
-                  { icon: Icons.TriangleDown, label: t.info_sym2_neg },
-                  { icon: Icons.Prev1, label: t.info_sym3 },
-                  { icon: Icons.Prev2, label: t.info_sym4 },
-                  { icon: Icons.Mul2, label: t.info_sym5 },
-                  { icon: Icons.Div2, label: t.info_sym6 },
-                  { icon: Icons.ReverseNext, label: t.info_sym7 },
-                  { icon: Icons.Star, label: t.info_sym8 },
-                  { icon: Icons.InvertAll, label: t.info_sym9 },
-                  { icon: Icons.Heart, label: t.info_sym10 },
+                  { icon: Icons.CircleFilled, label: t.info_sym1, desc: t.info_sym1_desc || Translations['en'].info_sym1_desc },
+                  { icon: Icons.CircleEmpty, label: t.info_sym1_neg, desc: t.info_sym1_neg_desc || Translations['en'].info_sym1_neg_desc },
+                  { icon: Icons.TriangleUp, label: t.info_sym2, desc: t.info_sym2_desc || Translations['en'].info_sym2_desc },
+                  { icon: Icons.TriangleDown, label: t.info_sym2_neg, desc: t.info_sym2_neg_desc || Translations['en'].info_sym2_neg_desc },
+                  { icon: Icons.Prev1, label: t.info_sym3, desc: t.info_sym3_desc || Translations['en'].info_sym3_desc },
+                  { icon: Icons.Prev2, label: t.info_sym4, desc: t.info_sym4_desc || Translations['en'].info_sym4_desc },
+                  { icon: Icons.Mul2, label: t.info_sym5, desc: t.info_sym5_desc || Translations['en'].info_sym5_desc },
+                  { icon: Icons.Div2, label: t.info_sym6, desc: t.info_sym6_desc || Translations['en'].info_sym6_desc },
+                  { icon: Icons.ReverseNext, label: t.info_sym7, desc: t.info_sym7_desc || Translations['en'].info_sym7_desc },
+                  { icon: Icons.Star, label: t.info_sym8, desc: t.info_sym8_desc || Translations['en'].info_sym8_desc },
+                  { icon: Icons.InvertAll, label: t.info_sym9, desc: t.info_sym9_desc || Translations['en'].info_sym9_desc },
+                  { icon: Icons.Heart, label: t.info_sym10, desc: t.info_sym10_desc || Translations['en'].info_sym10_desc },
                 ].map((item, i) => {
                   const IconComp = item.icon;
                   return (
-                    <div key={`info-icon-${i}`} className="flex items-center gap-2 bg-neutral-50 p-2 rounded-xl border border-neutral-100">
-                      <div className="w-8 h-8 bg-white shrink-0 shadow-sm rounded-lg border border-neutral-200 flex items-center justify-center">
-                        <IconComp className="w-4 h-4 text-neutral-900" />
+                    <div key={`info-icon-${i}`} className="flex items-start gap-3 bg-neutral-50/80 p-3 rounded-2xl border border-neutral-100 shadow-sm">
+                      <div className="w-10 h-10 bg-white shrink-0 shadow-sm rounded-xl border border-neutral-200 flex items-center justify-center">
+                        <IconComp className="w-5 h-5 text-neutral-900" />
                       </div>
-                      <span className="text-[8px] md:text-[9px] font-bold text-neutral-600 leading-tight text-left">{item.label}</span>
+                      <div className="flex flex-col flex-1 pt-0.5">
+                        <span className="text-[10px] sm:text-xs font-black text-neutral-800 uppercase tracking-widest">{item.label}</span>
+                        <span className="text-[9px] sm:text-[10px] font-medium text-neutral-500 leading-tight mt-0.5">{item.desc}</span>
+                      </div>
                     </div>
                   );
                 })}
