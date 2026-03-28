@@ -278,10 +278,10 @@ function MenuScreen({ startGame, openDailyReward, coins }: { startGame: (asDev?:
         {/* LEFT: DAILY REWARD */}
         <DailyRewardButton onClick={openDailyReward} />
 
-        {/* RIGHT: COINS - MINIMAL CLEAN */}
+        {/* RIGHT: COINS - MINIMAL BLACK TEXT */}
         <div className="pointer-events-auto flex items-center gap-2 bg-white px-4 py-2 rounded-full border border-neutral-200/60 shadow-sm transform active:scale-95 transition-all">
           <div className="w-2.5 h-2.5 rounded-full bg-amber-400 shrink-0"></div>
-          <span className="font-bold text-sm md:text-base text-[#1D1D1F] tabular-nums leading-none">{coins}</span>
+          <span className="font-black text-sm md:text-base text-black tabular-nums leading-none">{coins}</span>
         </div>
       </div>
 
@@ -1082,10 +1082,10 @@ export default function App() {
                 {t.header_time} <span className="text-neutral-900">{isDevMode ? '∞' : `${totalTimeSpent.toFixed(2)}s`}</span>
               </span>
             </div>
-            {/* COIN COUNTER - MINIMAL CLEAN */}
+            {/* COIN COUNTER - MINIMAL BLACK TEXT */}
             <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-full border border-neutral-200/60 shadow-sm">
               <div className="w-2.5 h-2.5 rounded-full bg-amber-400 shrink-0"></div>
-              <span className="font-bold text-sm md:text-base text-[#1D1D1F] tabular-nums leading-none">{coins}</span>
+              <span className="font-black text-sm md:text-base text-black tabular-nums leading-none">{coins}</span>
             </div>
           </header>
 
