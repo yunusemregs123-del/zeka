@@ -6,6 +6,7 @@ import { useGameStore } from './store/useGameStore';
 import { generatePuzzle, isTutorialLevel, getTutorialSymbols, type SymbolType } from './lib/LevelEngine';
 import * as Leaderboard from './lib/Leaderboard';
 import * as Icons from './components/Icons';
+import { getSymbolSrc } from './lib/SymbolAssets';
 import { motion, AnimatePresence, useAnimation } from 'framer-motion';
 import { AmbientMusic } from './lib/AmbientMusic';
 import { Ads } from './lib/Ads';
@@ -107,28 +108,28 @@ const TUTORIAL_DATA: Record<number, { exampleSequence?: SymbolType[], exampleRes
 };
 
 const SymbolDisplay = ({ type, size = 'normal', disableAnimation = false }: { type: SymbolType, size?: 'small' | 'normal' | 'large', disableAnimation?: boolean }) => {
-  const Icon = Icons[type as keyof typeof Icons];
-  if (!Icon) return null;
-  if (type === 'Plus') return <Icon className={`mx-[2px] md:mx-1 text-neutral-300 shrink-0 ${size === 'small' ? 'w-3 h-3 md:w-4 md:h-4' : 'w-4 h-4 md:w-5 md:h-5'}`} />;
-  
-  const iconContent = <Icon key={type} data-name={type} className={`text-neutral-900 drop-shadow-sm ${size === 'small' ? 'w-5 h-5 md:w-6 md:h-6' : size === 'large' ? 'w-10 h-10 md:w-12 md:h-12' : 'w-7 h-7 md:w-8 md:h-8'}`} />;
+  const src = getSymbolSrc(type);
+  if (!src) return null;
+
+  const sizeClass = type === 'Plus'
+    ? (size === 'small' ? 'w-3 h-3 md:w-4 md:h-4' : 'w-4 h-4 md:w-5 md:h-5')
+    : (size === 'small' ? 'w-5 h-5 md:w-6 md:h-6' : size === 'large' ? 'w-10 h-10 md:w-12 md:h-12' : 'w-7 h-7 md:w-8 md:h-8');
+
+  const imgElement = <img src={src} alt={type} draggable={false} className={`${sizeClass} shrink-0 ${type === 'Plus' ? 'mx-[2px] md:mx-1' : 'drop-shadow-sm'}`} />;
+
+  if (type === 'Plus') return imgElement;
 
   if (disableAnimation) {
-    return (
-      <div className="flex items-center justify-center p-[2px]">
-        {iconContent}
-      </div>
-    );
+    return <div className="flex items-center justify-center p-[2px]">{imgElement}</div>;
   }
 
   return (
     <motion.div
-      key={type}
       initial={{ scale: 0, y: 10, opacity: 0 }}
       animate={{ scale: 1, y: 0, opacity: 1 }}
       className="flex items-center justify-center p-[2px]"
     >
-      {iconContent}
+      {imgElement}
     </motion.div>
   );
 };
@@ -140,12 +141,15 @@ const TutorialExample = ({ text, sequence, result, isSmall }: { text?: string, s
       {text && <span className={`block ${isSmall ? 'text-[8px] mb-1' : 'text-[10px] mb-3'} font-black text-amber-500 tracking-widest uppercase whitespace-normal`}>{text}</span>}
       <div className={`flex items-center justify-center gap-1 md:gap-2 pb-1 whitespace-nowrap flex-nowrap w-full ${isSmall ? 'scale-[0.70]' : 'scale-[0.80] sm:scale-100'} origin-center`}>
         {sequence.map((sym, i) => {
-          const IconComp = Icons[sym as keyof typeof Icons];
-          if (!IconComp) return null;
-          if (sym === 'Plus') return <IconComp key={`tut-ex-plus-${i}`} data-symbol-id={`tut-plus-${i}`} className={`mx-[2px] md:mx-1 text-neutral-300 shrink-0 ${isSmall ? 'w-3 h-3 md:w-4 md:h-4' : 'w-4 h-4 md:w-5 md:h-5'}`} />;
+          const src = getSymbolSrc(sym);
+          if (!src) return null;
+          const sizeClass = sym === 'Plus'
+            ? (isSmall ? 'w-3 h-3 md:w-4 md:h-4' : 'w-4 h-4 md:w-5 md:h-5')
+            : (isSmall ? 'w-5 h-5 md:w-6 md:h-6' : 'w-7 h-7 md:w-8 md:h-8');
+          if (sym === 'Plus') return <img key={`ex-p-${i}`} src={src} alt="+" draggable={false} className={`mx-[2px] md:mx-1 shrink-0 ${sizeClass}`} />;
           return (
-            <div key={`tut-ex-${sym}-${i}`} className={`shrink-0 bg-white shadow-sm border border-neutral-100 rounded-xl flex items-center justify-center p-[2px]`}>
-              <IconComp data-symbol-id={`tut-${sym}-${i}`} className={`text-neutral-900 drop-shadow-sm ${isSmall ? 'w-5 h-5 md:w-6 md:h-6' : 'w-7 h-7 md:w-8 md:h-8'}`} />
+            <div key={`ex-${sym}-${i}`} className="shrink-0 bg-white shadow-sm border border-neutral-100 rounded-xl flex items-center justify-center p-[2px]">
+              <img src={src} alt={sym} draggable={false} className={`${sizeClass} drop-shadow-sm`} />
             </div>
           );
         })}
@@ -554,32 +558,29 @@ function MenuScreen({
 
               <div className="flex flex-col gap-2 mb-6 max-h-[300px] overflow-y-auto pr-1">
                 {[
-                  { icon: Icons.CircleFilled, label: t.info_sym1, desc: t.info_sym1_desc || Translations['en'].info_sym1_desc },
-                  { icon: Icons.CircleEmpty, label: t.info_sym1_neg, desc: t.info_sym1_neg_desc || Translations['en'].info_sym1_neg_desc },
-                  { icon: Icons.TriangleUp, label: t.info_sym2, desc: t.info_sym2_desc || Translations['en'].info_sym2_desc },
-                  { icon: Icons.TriangleDown, label: t.info_sym2_neg, desc: t.info_sym2_neg_desc || Translations['en'].info_sym2_neg_desc },
-                  { icon: Icons.Mul2, label: t.info_sym5, desc: t.info_sym5_desc || Translations['en'].info_sym5_desc },
-                  { icon: Icons.Div2, label: t.info_sym6, desc: t.info_sym6_desc || Translations['en'].info_sym6_desc },
-                  { icon: Icons.Prev1, label: t.info_sym3, desc: t.info_sym3_desc || Translations['en'].info_sym3_desc },
-                  { icon: Icons.ReverseNext, label: t.info_sym7, desc: t.info_sym7_desc || Translations['en'].info_sym7_desc },
-                  { icon: Icons.InvertAll, label: t.info_sym9, desc: t.info_sym9_desc || Translations['en'].info_sym9_desc },
-                  { icon: Icons.Star, label: t.info_sym8, desc: t.info_sym8_desc || Translations['en'].info_sym8_desc },
-                  { icon: Icons.Heart, label: t.info_sym10, desc: t.info_sym10_desc || Translations['en'].info_sym10_desc },
-                  { icon: Icons.Prev2, label: t.info_sym4, desc: t.info_sym4_desc || Translations['en'].info_sym4_desc },
-                ].map((item, i) => {
-                  const IconComp = item.icon;
-                  return (
-                    <div key={`info-icon-${i}`} className="flex items-start gap-3 bg-neutral-50/80 p-3 rounded-2xl border border-neutral-100 shadow-sm">
-                      <div className="w-10 h-10 bg-white shrink-0 shadow-sm rounded-xl border border-neutral-200 flex items-center justify-center">
-                        <IconComp className="w-5 h-5 text-neutral-900" />
-                      </div>
-                      <div className="flex flex-col flex-1 pt-0.5">
-                        <span className="text-[10px] sm:text-xs font-black text-neutral-800 uppercase tracking-widest">{item.label}</span>
-                        <span className="text-[9px] sm:text-[10px] font-medium text-neutral-500 leading-tight mt-0.5">{item.desc}</span>
-                      </div>
+                  { symKey: 'CircleFilled', label: t.info_sym1, desc: t.info_sym1_desc || Translations['en'].info_sym1_desc },
+                  { symKey: 'CircleEmpty', label: t.info_sym1_neg, desc: t.info_sym1_neg_desc || Translations['en'].info_sym1_neg_desc },
+                  { symKey: 'TriangleUp', label: t.info_sym2, desc: t.info_sym2_desc || Translations['en'].info_sym2_desc },
+                  { symKey: 'TriangleDown', label: t.info_sym2_neg, desc: t.info_sym2_neg_desc || Translations['en'].info_sym2_neg_desc },
+                  { symKey: 'Mul2', label: t.info_sym5, desc: t.info_sym5_desc || Translations['en'].info_sym5_desc },
+                  { symKey: 'Div2', label: t.info_sym6, desc: t.info_sym6_desc || Translations['en'].info_sym6_desc },
+                  { symKey: 'Prev1', label: t.info_sym3, desc: t.info_sym3_desc || Translations['en'].info_sym3_desc },
+                  { symKey: 'ReverseNext', label: t.info_sym7, desc: t.info_sym7_desc || Translations['en'].info_sym7_desc },
+                  { symKey: 'InvertAll', label: t.info_sym9, desc: t.info_sym9_desc || Translations['en'].info_sym9_desc },
+                  { symKey: 'Star', label: t.info_sym8, desc: t.info_sym8_desc || Translations['en'].info_sym8_desc },
+                  { symKey: 'Heart', label: t.info_sym10, desc: t.info_sym10_desc || Translations['en'].info_sym10_desc },
+                  { symKey: 'Prev2', label: t.info_sym4, desc: t.info_sym4_desc || Translations['en'].info_sym4_desc },
+                ].map((item, i) => (
+                  <div key={`info-${item.symKey}-${i}`} className="flex items-start gap-3 bg-neutral-50/80 p-3 rounded-2xl border border-neutral-100 shadow-sm">
+                    <div className="w-10 h-10 bg-white shrink-0 shadow-sm rounded-xl border border-neutral-200 flex items-center justify-center">
+                      <img src={getSymbolSrc(item.symKey)} alt={item.symKey} draggable={false} className="w-5 h-5" />
                     </div>
-                  );
-                })}
+                    <div className="flex flex-col flex-1 pt-0.5">
+                      <span className="text-[10px] sm:text-xs font-black text-neutral-800 uppercase tracking-widest">{item.label}</span>
+                      <span className="text-[9px] sm:text-[10px] font-medium text-neutral-500 leading-tight mt-0.5">{item.desc}</span>
+                    </div>
+                  </div>
+                ))}
               </div>
 
               <div className="text-center mb-6">
@@ -1364,14 +1365,11 @@ export default function App() {
                     {t.tut_attention}
                   </div>
                   <div className="flex justify-center flex-wrap gap-2 mb-6 shrink-0">
-                    {getTutorialSymbols(level).map((s, idx) => {
-                      const TutIcon = Icons[s as keyof typeof Icons];
-                      return TutIcon ? (
-                        <div key={`tut-showcase-${s}-${idx}`} className="p-3 bg-white border border-neutral-200 rounded-xl shadow-sm flex items-center justify-center">
-                          <TutIcon data-symbol-id={`showcase-${s}-${idx}`} className="w-7 h-7 md:w-8 md:h-8 text-neutral-900" />
-                        </div>
-                      ) : null;
-                    })}
+                    {getTutorialSymbols(level).map((s, idx) => (
+                      <div key={`tut-show-${s}-${idx}`} className="p-3 bg-white border border-neutral-200 rounded-xl shadow-sm flex items-center justify-center">
+                        <img src={getSymbolSrc(s)} alt={s} draggable={false} className="w-7 h-7 md:w-8 md:h-8" />
+                      </div>
+                    ))}
                   </div>
                   <h2 className="text-lg font-black text-[#1D1D1F] mb-2 shrink-0 text-center">{t[('tut_' + level + '_title') as LanguageCode] || "YENİ BİR KURAL"}</h2>
                   <p className="text-neutral-500 text-[12px] mb-6 text-center leading-relaxed shrink-0">{t[('tut_' + level + '_desc') as LanguageCode]}</p>
