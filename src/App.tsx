@@ -95,9 +95,9 @@ const playSound = (type: 'click' | 'success' | 'fail' | 'tick' | 'intro') => {
   }
 };
 
-const TUTORIAL_DATA: Record<number, { exampleSequence?: SymbolType[], exampleResult?: number | string }> = {
+const TUTORIAL_DATA: Record<number, { exampleSequence?: SymbolType[], exampleResult?: number | string, exampleSequence2?: SymbolType[], exampleResult2?: number | string }> = {
   11: { exampleSequence: ['CircleFilled', 'Plus', 'TriangleUp'], exampleResult: 2 },
-  31: { exampleSequence: ['CircleFilled', 'CircleFilled', 'Plus', 'Mul2'], exampleResult: 4 },
+  31: { exampleSequence: ['CircleFilled', 'CircleFilled', 'Plus', 'Mul2'], exampleResult: 4, exampleSequence2: ['CircleFilled', 'CircleFilled', 'CircleFilled', 'CircleFilled', 'Plus', 'Div2'], exampleResult2: 2 },
   51: { exampleSequence: ['CircleFilled', 'Plus', 'Prev1'], exampleResult: 6 },
   71: { exampleSequence: ['CircleFilled', 'Plus', 'ReverseNext', 'TriangleUp'], exampleResult: 0 },
   91: { exampleSequence: ['CircleFilled', 'CircleFilled', 'Plus', 'InvertAll'], exampleResult: -2 },
@@ -1352,11 +1352,16 @@ export default function App() {
                   <div className="flex justify-center flex-wrap gap-2 mb-6 shrink-0">
                     {getTutorialSymbols(level).map(s => <div key={s} className="p-3 bg-white border border-neutral-200 rounded-xl shadow-sm"><SymbolDisplay type={s} /></div>)}
                   </div>
-                  <h2 className="text-lg font-black text-[#1D1D1F] mb-2 shrink-0">{t[('tut_' + level + '_title') as LanguageCode] || "YENİ BİR KURAL"}</h2>
+                  <h2 className="text-lg font-black text-[#1D1D1F] mb-2 shrink-0 text-center">{t[('tut_' + level + '_title') as LanguageCode] || "YENİ BİR KURAL"}</h2>
                   <p className="text-neutral-500 text-[12px] mb-6 text-center leading-relaxed shrink-0">{t[('tut_' + level + '_desc') as LanguageCode]}</p>
                   {TUTORIAL_DATA[level]?.exampleSequence && (
                     <div className="shrink-0 w-full mb-2">
-                      <TutorialExample text={t[('tut_' + level + '_ex') as LanguageCode]} sequence={TUTORIAL_DATA[level].exampleSequence} result={TUTORIAL_DATA[level].exampleResult} />
+                      <TutorialExample text={t[('tut_' + level + '_ex') as LanguageCode]} sequence={TUTORIAL_DATA[level].exampleSequence} result={TUTORIAL_DATA[level].exampleResult} isSmall={!!TUTORIAL_DATA[level]?.exampleSequence2} />
+                    </div>
+                  )}
+                  {TUTORIAL_DATA[level]?.exampleSequence2 && (
+                    <div className="shrink-0 w-full mb-2">
+                      <TutorialExample text={t[('tut_' + level + '_ex2') as LanguageCode]} sequence={TUTORIAL_DATA[level].exampleSequence2} result={TUTORIAL_DATA[level].exampleResult2} isSmall />
                     </div>
                   )}
                   <button onClick={() => { setShowTutorialModal(false); initLevel(); }} className="w-full py-3.5 bg-[#1D1D1F] text-white rounded-full font-bold text-xs uppercase tracking-[0.2em] mt-auto shadow-xl">{t.tut_btn}</button>
