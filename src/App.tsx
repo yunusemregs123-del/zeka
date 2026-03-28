@@ -317,26 +317,32 @@ function MenuScreen({
         </div>
       </div>
 
-      {/* DEV BUTTON - BELOW HEADER */}
-      {import.meta.env.DEV && (
-        <div className="absolute inset-x-0 top-[4.5rem] md:top-6 z-10 w-full max-w-2xl mx-auto px-4 flex justify-end gap-1 pointer-events-none flex-wrap">
+      {/* DEV PANEL - ALWAYS VISIBLE FOR TESTING */}
+      <div className="absolute inset-x-0 top-[4.5rem] md:top-6 z-10 w-full max-w-2xl mx-auto px-4 flex justify-end gap-1 pointer-events-none flex-wrap items-center">
+        <button
+          onClick={() => startGame(true)}
+          className="pointer-events-auto px-3 py-1.5 bg-neutral-200 text-neutral-500 rounded-lg font-bold text-[9px] tracking-widest hover:bg-neutral-300 transition-all opacity-60 hover:opacity-100"
+        >
+          DEV
+        </button>
+        {[11, 31, 51, 71, 91, 101, 111, 131].map(lv => (
           <button
-            onClick={() => startGame(true)}
-            className="pointer-events-auto px-3 py-1.5 bg-neutral-200 text-neutral-500 rounded-lg font-bold text-[9px] tracking-widest hover:bg-neutral-300 transition-all opacity-40 hover:opacity-100"
+            key={lv}
+            onClick={() => { startGame(true, lv); }}
+            className="pointer-events-auto px-2 py-1.5 bg-amber-100 text-amber-600 rounded-lg font-bold text-[8px] tracking-wider hover:bg-amber-200 transition-all opacity-60 hover:opacity-100"
           >
-            DEV
+            T{lv}
           </button>
-          {[11, 31, 51, 71, 91, 101, 111, 131].map(lv => (
-            <button
-              key={lv}
-              onClick={() => { startGame(true, lv); }}
-              className="pointer-events-auto px-2 py-1.5 bg-amber-100 text-amber-600 rounded-lg font-bold text-[8px] tracking-wider hover:bg-amber-200 transition-all opacity-50 hover:opacity-100"
-            >
-              T{lv}
-            </button>
-          ))}
-        </div>
-      )}
+        ))}
+        <input
+          type="number"
+          min="1"
+          max="999"
+          placeholder="LV"
+          onKeyDown={(e) => { if (e.key === 'Enter') { const v = parseInt((e.target as HTMLInputElement).value); if (v > 0) startGame(true, v); }}}
+          className="pointer-events-auto w-12 px-1.5 py-1.5 bg-white border border-neutral-300 rounded-lg font-bold text-[9px] text-center opacity-60 focus:opacity-100 outline-none"
+        />
+      </div>
 
       <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="text-center w-full max-w-sm z-0">
 
