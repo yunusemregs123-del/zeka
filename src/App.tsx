@@ -140,7 +140,7 @@ const TutorialExample = ({ text, sequence, result }: { text?: string, sequence?:
 
 // ─── MENU SCREEN ──────────────────────────────────────
 function MenuScreen({ startGame }: { startGame: (asDev?: boolean) => void }) {
-  const { language, setLanguage, medals, claimedMedals, claimMedalReward } = useGameStore();
+  const { language, setLanguage, medals, claimedMedals, claimMedalReward, coins } = useGameStore();
   const t = Translations[language];
   const [tab, setTab] = useState<'daily' | 'weekly' | 'alltime'>('daily');
   const [showLangMenu, setShowLangMenu] = useState(false);
@@ -272,11 +272,19 @@ function MenuScreen({ startGame }: { startGame: (asDev?: boolean) => void }) {
   return (
     <div className="min-h-[100dvh] bg-[#F5F5F7] text-[#1D1D1F] flex flex-col items-center justify-center font-sans selection:bg-neutral-200 p-4 md:p-6 relative overflow-hidden">
 
+      {/* COINS ON MENU - TOP RIGHT */}
+      <div className="absolute right-4 z-10 pt-[env(safe-area-inset-top,0px)]" style={{ top: '1.5rem' }}>
+        <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-2xl shadow-sm border border-neutral-100">
+          <div className="w-2 h-2 rounded-full bg-amber-400"></div>
+          <span className="font-bold text-sm md:text-base">{coins}</span>
+        </div>
+      </div>
+
       {/* DAILY REWARD - TOP LEFT */}
       <DailyRewardButton />
 
       {/* DEV BUTTON - RELATIVE TO CONTENT ON WEB */}
-      <div className="absolute inset-x-0 top-4 z-10 w-full max-w-2xl mx-auto px-4 flex justify-end pointer-events-none">
+      <div className="absolute inset-x-0 top-[4.5rem] md:top-4 z-10 w-full max-w-2xl mx-auto px-4 flex justify-end pointer-events-none">
         {import.meta.env.DEV && (
           <button
             onClick={() => startGame(true)}
@@ -970,6 +978,27 @@ export default function App() {
   const [showIntroModal, setShowIntroModal] = useState(false);
   const [introCheckbox, setIntroCheckbox] = useState(hideIntro);
 
+  // BACK BUTTON HANDLING (CAPACITOR)
+  useEffect(() => {
+    let backListener: any;
+    const setup = async () => {
+      backListener = await CapApp.addListener('backButton', () => {
+        // Priorities: Close modals -> Pause menu -> Go to main menu -> Exit app
+        if (showTutorialModal) setShowTutorialModal(false);
+        else if (showIntroModal) setShowIntroModal(false);
+        else if (showTrackingModal) setShowTrackingModal(false);
+        else if (gameState === 'PLAYING') {
+          if (isPaused) goToMenu();
+          else setIsPaused(true);
+        } else {
+          try { CapApp.exitApp(); } catch(e) {}
+        }
+      });
+    };
+    setup();
+    return () => { if (backListener) backListener.remove(); };
+  }, [showTutorialModal, showIntroModal, showTrackingModal, gameState, isPaused]);
+
   useEffect(() => {
     if (gameState === 'PLAYING') {
       if (level === 1 && !hideIntro) {
@@ -983,6 +1012,17 @@ export default function App() {
       }
     }
   }, [level, gameState]);
+
+  // AUTO-SHOW TRACKING MODAL ON LOAD
+  useEffect(() => {
+    const hasSeenTracking = localStorage.getItem('zeka_tracking_seen');
+    if (!hasSeenTracking) {
+      setTimeout(() => {
+        setShowTrackingModal(true);
+        localStorage.setItem('zeka_tracking_seen', 'true');
+      }, 1000);
+    }
+  }, []);
 
   useEffect(() => {
     let interval: number;
@@ -1360,12 +1400,9 @@ export default function App() {
               animate={{ scale: 1, y: 0 }}
               className="bg-white p-6 md:p-8 rounded-[2rem] shadow-2xl max-w-[320px] w-full"
             >
-              <div className="w-16 h-16 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center mx-auto mb-4 border-4 border-blue-100">
-                <span className="text-3xl font-black block leading-none select-none -mt-1">Z</span>
-              </div>
               <h2 className="text-[17px] font-black tracking-tight mb-3 text-[#1D1D1F] uppercase">{t.att_title || "Oyunu Ücretsiz Tut"}</h2>
               <p className="text-neutral-500 font-medium leading-relaxed mb-6 text-xs px-1">
-                {t.att_desc || "Oyunu tamamen ücretsiz tutabilmek ve yeni bölümler ekleyebilmek için reklamları kullanıyoruz. Sana daha uygun reklamlar sunabilmemiz için lütfen sonraki ekranda takibe izin ver."}
+                {t.att_desc}
               </p>
 
               <button
@@ -1388,24 +1425,24 @@ export default function App() {
             <motion.div
               initial={{ scale: 0.95, y: 10 }}
               animate={{ scale: 1, y: 0 }}
-              className="bg-white p-5 rounded-3xl shadow-2xl max-w-[300px] w-full"
+              className="bg-white p-5 rounded-3xl shadow-2xl max-w-[320px] md:max-w-[380px] w-full"
             >
               <h2 className="text-lg font-black tracking-tight mb-2.5 text-[#1D1D1F]">{t.intro_title}</h2>
               
               {/* Symbol legend — compact row */}
-              <div className="flex justify-center gap-5 mb-2.5 bg-neutral-50 rounded-xl p-2.5 border border-neutral-100">
-                <div className="flex items-center gap-2">
-                  <div className="p-1 bg-white border border-neutral-200 shadow-sm rounded-full"><SymbolDisplay type="CircleFilled" /></div>
-                  <div className="text-left">
-                    <span className="font-black text-sm text-green-600 block leading-none">+1</span>
-                    <span className="text-[8px] text-neutral-400 font-bold uppercase tracking-wider">{t.intro_full}</span>
+              <div className="flex justify-center gap-4 md:gap-8 mb-2.5 bg-neutral-50 rounded-xl p-2 md:p-3 border border-neutral-100">
+                <div className="flex items-center gap-1.5">
+                  <div className="p-0.5 bg-white border border-neutral-200 shadow-sm rounded-full"><SymbolDisplay type="CircleFilled" size="small" /></div>
+                  <div className="text-left leading-none">
+                    <span className="font-black text-xs md:text-sm text-green-600 block leading-tight">+1</span>
+                    <span className="text-[7px] md:text-[8px] text-neutral-400 font-bold uppercase tracking-wider">{t.intro_full}</span>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="p-1 bg-white border border-neutral-200 shadow-sm rounded-full"><SymbolDisplay type="CircleEmpty" /></div>
-                  <div className="text-left">
-                    <span className="font-black text-sm text-red-500 block leading-none">-1</span>
-                    <span className="text-[8px] text-neutral-400 font-bold uppercase tracking-wider">{t.intro_empty}</span>
+                <div className="flex items-center gap-1.5">
+                  <div className="p-0.5 bg-white border border-neutral-200 shadow-sm rounded-full"><SymbolDisplay type="CircleEmpty" size="small" /></div>
+                  <div className="text-left leading-none">
+                    <span className="font-black text-xs md:text-sm text-red-500 block leading-tight">-1</span>
+                    <span className="text-[7px] md:text-[8px] text-neutral-400 font-bold uppercase tracking-wider">{t.intro_empty}</span>
                   </div>
                 </div>
               </div>
@@ -1416,24 +1453,24 @@ export default function App() {
 
               {/* Examples — side by side */}
               <div className="flex gap-2 mb-3">
-                <div className="flex-1 bg-neutral-50 border border-neutral-100 rounded-xl p-2">
-                  <span className="block text-[8px] font-black text-amber-500 tracking-widest uppercase mb-1">{t.intro_ex1}</span>
+                <div className="flex-1 bg-neutral-50 border border-neutral-100 rounded-xl p-2 md:p-3">
+                  <span className="block text-[8px] md:text-[9px] font-black text-amber-500 tracking-widest uppercase mb-1.5">{t.intro_ex1}</span>
                   <div className="flex items-center justify-center gap-0.5">
-                    <div className="bg-white shadow-sm border border-neutral-100 rounded-lg scale-75"><SymbolDisplay type="CircleFilled" /></div>
-                    <span className="text-[10px] text-neutral-300 font-bold">+</span>
-                    <div className="bg-white shadow-sm border border-neutral-100 rounded-lg scale-75"><SymbolDisplay type="CircleFilled" /></div>
+                    <div className="p-0.5 bg-white shadow-sm border border-neutral-100 rounded-lg"><SymbolDisplay type="CircleFilled" size="small" /></div>
+                    <SymbolDisplay type="Plus" size="small" />
+                    <div className="p-0.5 bg-white shadow-sm border border-neutral-100 rounded-lg"><SymbolDisplay type="CircleFilled" size="small" /></div>
                     <span className="text-sm font-black text-neutral-300 mx-0.5">=</span>
                     <span className="text-lg font-black text-green-500">2</span>
                   </div>
                 </div>
-                <div className="flex-1 bg-neutral-50 border border-neutral-100 rounded-xl p-2">
-                  <span className="block text-[8px] font-black text-amber-500 tracking-widest uppercase mb-1">{t.intro_ex2}</span>
+                <div className="flex-1 bg-neutral-50 border border-neutral-100 rounded-xl p-2 md:p-3">
+                  <span className="block text-[8px] md:text-[9px] font-black text-amber-500 tracking-widest uppercase mb-1.5">{t.intro_ex2}</span>
                   <div className="flex items-center justify-center gap-0.5">
-                    <div className="bg-white shadow-sm border border-neutral-100 rounded-lg scale-75"><SymbolDisplay type="CircleFilled" /></div>
-                    <span className="text-[10px] text-neutral-300 font-bold">+</span>
-                    <div className="bg-white shadow-sm border border-neutral-100 rounded-lg scale-75"><SymbolDisplay type="CircleEmpty" /></div>
+                    <div className="p-0.5 bg-white shadow-sm border border-neutral-100 rounded-lg"><SymbolDisplay type="CircleFilled" size="small" /></div>
+                    <SymbolDisplay type="Plus" size="small" />
+                    <div className="p-0.5 bg-white shadow-sm border border-neutral-100 rounded-lg"><SymbolDisplay type="CircleEmpty" size="small" /></div>
                     <span className="text-sm font-black text-neutral-300 mx-0.5">=</span>
-                    <span className="text-lg font-black text-amber-500">0</span>
+                    <span className="text-lg font-black text-red-500">0</span>
                   </div>
                 </div>
               </div>
