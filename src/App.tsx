@@ -279,9 +279,9 @@ function MenuScreen({ startGame, openDailyReward }: { startGame: (asDev?: boolea
         <DailyRewardButton onClick={openDailyReward} />
 
         {/* RIGHT: COINS */}
-        <div className="pointer-events-auto flex items-center gap-2.5 bg-white px-5 py-2.5 rounded-2xl shadow-md border border-neutral-100 transform active:scale-95 transition-all">
+        <div className="pointer-events-auto flex items-center gap-2.5 bg-[#1D1D1F] px-5 py-2.5 rounded-2xl shadow-xl transform active:scale-95 transition-all">
           <div className="w-3 h-3 rounded-full bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.5)]"></div>
-          <span className="font-black text-base md:text-xl text-[#1D1D1F] tabular-nums leading-none">{coins}</span>
+          <span className="font-black text-lg md:text-2xl text-white tabular-nums leading-none">{coins}</span>
         </div>
       </div>
 
@@ -1082,9 +1082,9 @@ export default function App() {
                 {t.header_time} <span className="text-neutral-900">{isDevMode ? '∞' : `${totalTimeSpent.toFixed(2)}s`}</span>
               </span>
             </div>
-            <div className="flex items-center gap-2 bg-white px-5 py-2 rounded-full shadow-sm border border-neutral-100">
-              <div className="w-2 h-2 rounded-full bg-amber-400"></div>
-              <span className="font-bold text-lg">{coins}</span>
+            <div className="flex items-center gap-2.5 bg-[#1D1D1F] px-4 py-2 rounded-2xl shadow-lg border border-white/10 transform active:scale-95 transition-all">
+              <div className="w-2.5 h-2.5 rounded-full bg-amber-400 shadow-[0_0_6px_rgba(251,191,36,0.4)]"></div>
+              <span className="font-black text-base text-white tabular-nums leading-none">{coins}</span>
             </div>
           </header>
 
