@@ -82,10 +82,15 @@ export const GameSymbol = ({ type, size = 'normal', className = '' }: GameSymbol
       return (
         <div className={containerClass} style={containerStyle}>
           <div style={{ position: 'relative', width: baseSize, height: baseSize }}>
-            {/* The circular loop track for the arrow (18x18 bounds, r=9, left: 3) */}
+            {/* The circular loop track for the arrow (18x18 bounds, r=9, center=12,12) */}
             <div style={{ position: 'absolute', top: 3 * scaleRef, left: 3 * scaleRef, width: 18 * scaleRef, height: 18 * scaleRef, border: `${strokeW}px solid ${c}`, borderTopColor: 'transparent', borderRadius: '50%', transform: 'rotate(-45deg)', boxSizing: 'border-box' }} />
-            {/* The line-art arrowhead perfectly bridging the gap at Y=12 */}
-            <div style={{ position: 'absolute', top: 11.5 * scaleRef, left: 1 * scaleRef, width: 5 * scaleRef, height: 5 * scaleRef, borderLeft: `${strokeW}px solid ${c}`, borderTop: `${strokeW}px solid ${c}`, borderRadius: 1, transform: 'rotate(25deg)', boxSizing: 'border-box' }} />
+            
+            {/* The Gap Filler (Yuvarlağın devamı) bridging Y=8 and Y=12 */}
+            <div style={{ position: 'absolute', top: 8 * scaleRef, left: 3 * scaleRef, width: strokeW, height: 4.5 * scaleRef, backgroundColor: c }} />
+            
+            {/* The line-art arrowhead (M3 3v5h5) */}
+            <div style={{ position: 'absolute', top: 3 * scaleRef, left: 3 * scaleRef, width: 5 * scaleRef, height: 5 * scaleRef, borderLeft: `${strokeW}px solid ${c}`, borderBottom: `${strokeW}px solid ${c}`, borderRadius: 1, boxSizing: 'border-box' }} />
+            
             {/* Number 1 centered */}
             <span style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', fontSize: `${13 * scaleRef}px`, fontWeight: 900, color: c, fontFamily: 'system-ui, -apple-system, sans-serif' }}>1</span>
           </div>
@@ -97,8 +102,13 @@ export const GameSymbol = ({ type, size = 'normal', className = '' }: GameSymbol
           <div style={{ position: 'relative', width: baseSize, height: baseSize }}>
             {/* The circular loop track */}
             <div style={{ position: 'absolute', top: 3 * scaleRef, left: 3 * scaleRef, width: 18 * scaleRef, height: 18 * scaleRef, border: `${strokeW}px solid ${c}`, borderTopColor: 'transparent', borderRadius: '50%', transform: 'rotate(-45deg)', boxSizing: 'border-box' }} />
-            {/* The line-art arrowhead perfectly bridging the gap at Y=12 */}
-            <div style={{ position: 'absolute', top: 11.5 * scaleRef, left: 1 * scaleRef, width: 5 * scaleRef, height: 5 * scaleRef, borderLeft: `${strokeW}px solid ${c}`, borderTop: `${strokeW}px solid ${c}`, borderRadius: 1, transform: 'rotate(25deg)', boxSizing: 'border-box' }} />
+            
+            {/* Gap Filler linking Circle to Arrowhead */}
+            <div style={{ position: 'absolute', top: 8 * scaleRef, left: 3 * scaleRef, width: strokeW, height: 4.5 * scaleRef, backgroundColor: c }} />
+            
+            {/* The line-art arrowhead */}
+            <div style={{ position: 'absolute', top: 3 * scaleRef, left: 3 * scaleRef, width: 5 * scaleRef, height: 5 * scaleRef, borderLeft: `${strokeW}px solid ${c}`, borderBottom: `${strokeW}px solid ${c}`, borderRadius: 1, boxSizing: 'border-box' }} />
+            
             {/* Number 2 centered */}
             <span style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', fontSize: `${13 * scaleRef}px`, fontWeight: 900, color: c, fontFamily: 'system-ui, -apple-system, sans-serif' }}>2</span>
           </div>
