@@ -1416,7 +1416,7 @@ export default function App() {
                   {/* Pulsing countdown to emphasize the penalty of pausing here */}
                   {gameState === 'PLAYING' && !isDevMode ? (
                     <div className="bg-red-50 text-red-600 rounded-xl px-3 py-2 mb-6 border border-red-100 flex flex-col items-center animate-pulse">
-                       <span className="text-[9px] font-black uppercase tracking-widest">{language === 'tr' ? 'OYUN DEVAM EDİYOR' : 'GAME IS RUNNING'}</span>
+                       <span className="text-[9px] font-black uppercase tracking-widest">{t.game_is_running || 'GAME IS RUNNING'}</span>
                        <span className="text-2xl font-black tabular-nums">{timeLeft.toFixed(1)}s</span>
                     </div>
                   ) : (
