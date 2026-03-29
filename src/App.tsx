@@ -1467,43 +1467,52 @@ export default function App() {
         document.getElementById('modal-root')!
       )}
 
-      {/* ARCN COMPANY SPLASH SCREEN (2 SECONDS) */}
+      {/* UNIFIED ZEKA LOADING & ARCN SPLASH (SEAMLESS TRANSITION) */}
       <AnimatePresence>
         {showCompanySplash && (
           <motion.div
             initial={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.5, ease: "easeInOut" }}
+            transition={{ duration: 0.8, ease: "easeInOut" }}
             className="fixed inset-0 z-[2000] bg-[#1D1D1F] flex flex-col items-center justify-center p-8 pointer-events-auto"
           >
             <div className="flex-1" />
             
+            {/* CENTRAL BRANDING (PRESERVES ICON TRANSITION) */}
+            <motion.div 
+               initial={{ scale: 0.9, opacity: 0 }}
+               animate={{ scale: 1, opacity: 1 }}
+               className="w-20 h-20 bg-white/5 rounded-3xl border border-white/10 flex items-center justify-center mb-8"
+            >
+               <span className="text-4xl font-black text-white">Z</span>
+            </motion.div>
+
             {/* Minimal pulsing loading indicator */}
             <motion.div 
-              animate={{ opacity: [0.3, 1, 0.3], scale: [0.98, 1, 0.98] }}
+              animate={{ opacity: [0.3, 1, 0.3] }}
               transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}
               className="mb-12 flex flex-col items-center"
             >
-               <div className="w-12 h-1 bg-white/5 rounded-full overflow-hidden mb-2">
+               <div className="w-16 h-1 bg-white/5 rounded-full overflow-hidden mb-2">
                   <motion.div 
                     initial={{ x: "-100%" }}
                     animate={{ x: "100%" }}
-                    transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
-                    className="w-full h-full bg-white/40"
+                    transition={{ repeat: Infinity, duration: 1.2, ease: "linear" }}
+                    className="w-full h-full bg-white/60"
                   />
                </div>
-               <span className="text-[10px] font-black tracking-[0.3em] text-white/40 uppercase">ZEKA LOADING</span>
+               <span className="text-[10px] font-black tracking-[0.4em] text-white/60 uppercase">ZEKA LOADING</span>
             </motion.div>
 
-            {/* ARCN LOGO AT BOTTOM */}
+            {/* ENLARGED ARCN LOGO AT BOTTOM */}
             <motion.div
-              initial={{ opacity: 0, y: 10 }}
+              initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2, duration: 0.8 }}
-              className="flex flex-col items-center gap-2 mb-12"
+              transition={{ delay: 0.3, duration: 0.8 }}
+              className="flex flex-col items-center gap-3 mb-16"
             >
-              <img src="/arcnwhite.png" alt="ARCN" className="h-4 md:h-5 opacity-60 object-contain" />
-              <div className="w-8 h-px bg-white/20" />
+              <img src="/arcnwhite.png" alt="ARCN" className="h-10 md:h-12 opacity-80 object-contain" />
+              <div className="w-12 h-px bg-white/20" />
             </motion.div>
           </motion.div>
         )}
