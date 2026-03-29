@@ -887,6 +887,7 @@ export default function App() {
   const [isPaused, setIsPaused] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showTrackingModal, setShowTrackingModal] = useState(false);
+  const [showCompanySplash, setShowCompanySplash] = useState(true);
 
   // Modals
   const [showTutorialModal, setShowTutorialModal] = useState(false);
@@ -900,6 +901,14 @@ export default function App() {
   const [selectedMedal, setSelectedMedal] = useState<any>(null);
   const [showLangMenu, setShowLangMenu] = useState(false);
   const [introCheckbox, setIntroCheckbox] = useState(hideIntro);
+
+  // Handle Company Splash Timing (2 seconds as requested)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowCompanySplash(false);
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, []);
 
   // BACK BUTTON HANDLING (CAPACITOR)
   useEffect(() => {
@@ -947,11 +956,15 @@ export default function App() {
         initLevel();
       }
     } else {
+      // Start ambient music only if splash is over and in menu
+      if (!showCompanySplash && gameState === 'MENU') {
+        initAudio();
+      }
       // Reset game-local UI states when not in playing mode
       setShowTutorialModal(false);
       setShowIntroModal(false);
     }
-  }, [level, gameState, hideIntro]);
+  }, [level, gameState, hideIntro, showCompanySplash]);
 
 
 
@@ -1453,6 +1466,48 @@ export default function App() {
         </div>,
         document.getElementById('modal-root')!
       )}
+
+      {/* ARCN COMPANY SPLASH SCREEN (2 SECONDS) */}
+      <AnimatePresence>
+        {showCompanySplash && (
+          <motion.div
+            initial={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.5, ease: "easeInOut" }}
+            className="fixed inset-0 z-[2000] bg-[#1D1D1F] flex flex-col items-center justify-center p-8 pointer-events-auto"
+          >
+            <div className="flex-1" />
+            
+            {/* Minimal pulsing loading indicator */}
+            <motion.div 
+              animate={{ opacity: [0.3, 1, 0.3], scale: [0.98, 1, 0.98] }}
+              transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}
+              className="mb-12 flex flex-col items-center"
+            >
+               <div className="w-12 h-1 bg-white/5 rounded-full overflow-hidden mb-2">
+                  <motion.div 
+                    initial={{ x: "-100%" }}
+                    animate={{ x: "100%" }}
+                    transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+                    className="w-full h-full bg-white/40"
+                  />
+               </div>
+               <span className="text-[10px] font-black tracking-[0.3em] text-white/40 uppercase">ZEKA LOADING</span>
+            </motion.div>
+
+            {/* ARCN LOGO AT BOTTOM */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2, duration: 0.8 }}
+              className="flex flex-col items-center gap-2 mb-12"
+            >
+              <img src="/arcnwhite.png" alt="ARCN" className="h-4 md:h-5 opacity-60 object-contain" />
+              <div className="w-8 h-px bg-white/20" />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
