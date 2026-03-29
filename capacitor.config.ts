@@ -1,8 +1,8 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.zeka.app2',
-  appName: 'Zeka',
+  appId: 'com.zekagame.app',
+  appName: 'ZekaGame',
   webDir: 'dist',
   plugins: {
     SplashScreen: {
