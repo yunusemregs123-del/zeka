@@ -317,8 +317,12 @@ function MenuScreen({
           animate={logoControls}
           className="mx-auto w-fit mb-8"
         >
-          <div className="w-24 h-24 bg-[#1D1D1F] text-white rounded-[2.5rem] flex items-center justify-center shadow-[0_20px_40px_rgba(0,0,0,0.2)] transition-transform">
-            <h1 className="text-5xl font-black">Z</h1>
+          <div className="w-24 h-24 bg-[#1D1D1F] text-white rounded-[2.5rem] flex items-center justify-center shadow-[0_20px_40px_rgba(0,0,0,0.2)] transition-transform relative overflow-hidden">
+            {/* Minimal Decorative Shapes Behind Z */}
+            <div className="absolute top-4 left-4 w-4 h-4 rounded-full border border-white/10" />
+            <div className="absolute bottom-4 right-4 w-0 h-0 border-l-[8px] border-l-transparent border-r-[8px] border-r-transparent border-b-[14px] border-b-white/10" />
+            
+            <h1 className="text-5xl font-black relative z-10">Z</h1>
           </div>
         </motion.div>
 
