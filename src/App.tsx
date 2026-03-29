@@ -307,15 +307,8 @@ function MenuScreen({
         </div>
       </div>
 
-      {/* DEV START */}
-      <div className="absolute inset-x-0 top-[4.5rem] z-10 w-full max-w-2xl mx-auto px-4 flex justify-end">
-        <button
-          onClick={() => startGame(true)}
-          className="px-3 py-1.5 bg-neutral-200 text-neutral-500 rounded-lg font-bold text-[9px] tracking-widest opacity-40 active:opacity-100 transition-all"
-        >
-          DEV
-        </button>
-      </div>
+      {/* DEV START REMOVED */}
+
 
       <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="text-center w-full max-w-sm z-0">
 
