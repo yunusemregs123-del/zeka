@@ -1,4 +1,4 @@
-package com.zeka.app;
+package com.zekagame.app;
 
 import com.getcapacitor.BridgeActivity;
 
