@@ -1,9 +1,10 @@
+import { AdMob, RewardAdPluginEvents } from '@capacitor-community/admob';
+import type { RewardAdOptions } from '@capacitor-community/admob';
+import { Capacitor } from '@capacitor/core';
+
 /**
- * ZEKA - Google Ads (AdMob/AdSense) Integration Layer
- * 
- * Bu dosya reklam entegrasyonu için merkezi bir noktadır. 
- * Google'dan aldığınız Reward ID'lerini ve Script'leri buraya ekleyerek 
- * tüm oyunda reklamları aktif edebilirsiniz.
+ * ZEKA - Google Ads (AdMob) Integration Layer
+ * Fixed for Verbatim Module Syntax and Capacitor Handle API.
  */
 
 export interface AdResult {
@@ -13,14 +14,11 @@ export interface AdResult {
 
 class AdsService {
   private static instance: AdsService;
-  private isLoaded: boolean = false;
+  private isInitialized: boolean = false;
 
-  // REKLAM AYARLARI (AdMob'dan aldığınız Unit ID'leri buraya yapıştırın)
-  // Dev modunda veya test aşamasında false yapın ki gerçek reklam gösterip banlanmayın.
   private config = {
-    // ÖRNEK TEST ID'leri: (Canlıya alırken kendi AdMob "Ödüllü" reklam ID'nizi buraya yazın)
-    rewardedAdIdAndroid: 'ca-app-pub-3940256099942544/5224354917', // <-- YAPIŞTIRILACAK YER (ANDROID)
-    rewardedAdIdIOS: 'ca-app-pub-3940256099942544/1712485313',     // <-- YAPIŞTIRILACAK YER (IOS)
+    rewardedAdIdAndroid: 'ca-app-pub-3940256099942544/5224354917',
+    rewardedAdIdIOS: 'ca-app-pub-3940256099942544/1712485313',
     isEnabled: true 
   };
 
@@ -35,59 +33,75 @@ class AdsService {
     return AdsService.instance;
   }
 
-  private init() {
-    // Google Ads SDK'sını yüklemek için gerekli başlangıç kodları buraya gelebilir
-    console.log('AdsService initialized');
-    
-    // Simülasyon: Reklamın hazır olduğunu varsayıyoruz
-    this.isLoaded = true;
-  }
-
-  /**
-   * Ödüllü Reklam Göster (Rewarded Ad)
-   * 
-   * Bu fonksiyon çağrıldığında Google Reklamı açılır.
-   * Kullanıcı reklamı sonuna kadar izlerse 'success: true' döner.
-   */
-  public async showRewardedAd(): Promise<AdResult> {
-    if (!this.config.isEnabled) {
-      return { success: true, message: 'Ads disabled (Dev Mode)' };
-    }
+  private async init() {
+    if (this.isInitialized || !Capacitor.isNativePlatform()) return;
 
     try {
-      console.log('Showing Rewarded Ad...');
-
-      /**
-       * GOOGLE ADS ENTEGRASYON NOTU:
-       * Buraya Google'ın size verdiği `showRewardedAd` kodlarını yapıştırın.
-       * 
-       * Örnek (AdMob):
-       * if (rewardedAd) {
-       *   await rewardedAd.show();
-       *   return { success: true };
-       * }
-       */
-
-      // --- SİMÜLASYON BAŞLANGIÇ (Gerçek kodlarla değiştirilince silinebilir) ---
-      return new Promise((resolve) => {
-        // Reklam izleme süresini simüle ediyoruz (1.5 saniye)
-        setTimeout(() => {
-          resolve({ success: true });
-        }, 1500);
+      await AdMob.initialize({
+        initializeForTesting: true,
       });
-      // --- SİMÜLASYON BİTİŞ ---
-
-    } catch (error) {
-      console.error('Ad Error:', error);
-      return { success: false, message: 'Reklam yüklenirken bir sorun oluştu.' };
+      this.isInitialized = true;
+    } catch (e) {
+      console.error('AdMob Initialization Error:', e);
     }
   }
 
-  /**
-   * Reklamın yüklü olup olmadığını kontrol et
-   */
+  public async showRewardedAd(): Promise<AdResult> {
+    if (!Capacitor.isNativePlatform() || !this.config.isEnabled) {
+      return new Promise((resolve) => {
+        setTimeout(() => resolve({ success: true }), 2000);
+      });
+    }
+
+    if (!this.isInitialized) {
+      await this.init();
+    }
+
+    const platform = Capacitor.getPlatform();
+    const adId = platform === 'ios' ? this.config.rewardedAdIdIOS : this.config.rewardedAdIdAndroid;
+
+    try {
+      const options: RewardAdOptions = { adId: adId };
+      await AdMob.prepareRewardVideoAd(options);
+
+      return new Promise(async (resolve) => {
+        let isRewarded = false;
+
+        // @ts-ignore
+        const rewardListener = await AdMob.addListener(RewardAdPluginEvents.Rewarded, () => {
+          isRewarded = true;
+        });
+
+        // @ts-ignore
+        const closeListener = await AdMob.addListener(RewardAdPluginEvents.Dismissed, () => {
+          rewardListener.remove();
+          closeListener.remove();
+          resolve({ success: isRewarded });
+        });
+
+        // @ts-ignore
+        const errorListener = await AdMob.addListener(RewardAdPluginEvents.FailedToLoad, () => {
+          rewardListener.remove();
+          closeListener.remove();
+          errorListener.remove();
+          resolve({ success: false, message: 'Ad Load Error' });
+        });
+
+        await AdMob.showRewardVideoAd().catch(() => {
+          rewardListener.remove();
+          closeListener.remove();
+          resolve({ success: false, message: 'Ad Show Error' });
+        });
+      });
+
+    } catch (error) {
+      console.error('AdMob Global Error:', error);
+      return { success: false, message: 'Ad Error' };
+    }
+  }
+
   public isReady(): boolean {
-    return this.isLoaded;
+    return this.isInitialized;
   }
 }
 
