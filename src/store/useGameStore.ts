@@ -212,7 +212,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     localStorage.setItem('dailyRewardState', JSON.stringify(newState));
     localStorage.setItem('zeka_daily_total', String(total));
     set(newState);
-    get().addCoins(100);
+    get().addCoins(200);
   },
 
   unlockMedal: (id) => {
