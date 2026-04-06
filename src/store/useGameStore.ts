@@ -23,6 +23,10 @@ interface GameState {
   langsUsed: string[]; // Languages tried
   dailyRewardsTotal: number; // Lifetime daily rewards claimed
   lastLevelTime: number; // Time taken for the last level completed
+  checkpointLevel: number; // Saved progress
+  checkpointTime: number; // Time when checkpoint was reached
+  comboCount: number; // Consecutive fast solves (<5s)
+  maxLevelCompleted: number; // Maximum unique level reached for rewards
 
   // Actions
   setLanguage: (lang: 'en' | 'tr' | 'de' | 'ja' | 'pt') => void;
@@ -32,6 +36,8 @@ interface GameState {
   startGame: (asDev?: boolean, startLevel?: number) => void;
   incrementStreak: () => void;
   resetStreak: () => void;
+  incrementCombo: () => void;
+  resetCombo: () => void;
   useHelp: () => void;
   startNewLevel: (isRetry?: boolean) => void;
   submitAnswer: (answer: number) => void;
@@ -77,7 +83,6 @@ export const useGameStore = create<GameState>((set, get) => ({
   gameState: 'MENU',
   level: 1,
   totalTimeSpent: 0,
-  coins: Number(localStorage.getItem('zeka_coins')) || 0,
   currentValue: 0,
   timeLeft: 20,
   maxTime: 20,
@@ -93,7 +98,14 @@ export const useGameStore = create<GameState>((set, get) => ({
   langsUsed: JSON.parse(localStorage.getItem('zeka_langs_used') || '[]'),
   dailyRewardsTotal: Number(localStorage.getItem('zeka_daily_total')) || 0,
   lastLevelTime: 0,
+  checkpointLevel: Number(localStorage.getItem('zeka_checkpoint')) || 1,
+  checkpointTime: Number(localStorage.getItem('zeka_checkpoint_time')) || 0,
+  comboCount: 0,
+  maxLevelCompleted: Number(localStorage.getItem('zeka_max_level')) || 0,
   ...getDailyRewardState(),
+  
+  // Starting coins: default 200 if new player
+  coins: localStorage.getItem('zeka_coins') !== null ? Number(localStorage.getItem('zeka_coins')) : 200,
 
   setLanguage: (lang) => {
     localStorage.setItem('zeka_lang', lang);
@@ -110,14 +122,18 @@ export const useGameStore = create<GameState>((set, get) => ({
   goToMenu: () => set({ gameState: 'MENU' }),
   
   startGame: (asDev = false, startLevel?: number) => {
+    const checkpoint = get().checkpointLevel;
+    const initialTime = get().checkpointTime;
+    const initialLevel = startLevel || (asDev ? 1 : checkpoint);
     set({ 
-      level: startLevel || 1, 
-      totalTimeSpent: 0, 
+      level: initialLevel, 
+      totalTimeSpent: startLevel ? 0 : (asDev ? 0 : initialTime), 
       previousAnswers: [0,0], 
       gameState: 'PLAYING',
       isDevMode: asDev,
       hasRevivedInCurrentGame: false,
-      streak: 0, // Reset session streak
+      streak: 0,
+      comboCount: 0,
     });
     get().startNewLevel(true);
   },
@@ -236,5 +252,7 @@ export const useGameStore = create<GameState>((set, get) => ({
 
   incrementStreak: () => set(s => ({ streak: s.streak + 1 })),
   resetStreak: () => set({ streak: 0 }),
+  incrementCombo: () => set(s => ({ comboCount: s.comboCount + 1 })),
+  resetCombo: () => set({ comboCount: 0 }),
   useHelp: () => set(s => ({ helpCount: s.helpCount + 1 }))
 }));

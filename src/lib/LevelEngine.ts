@@ -13,6 +13,24 @@ export type SymbolType =
   | 'Heart'
   | 'Plus'; 
 
+export const getCheckpointForLevel = (level: number): number => {
+  if (level < 25) return 1;
+  if (level <= 250) {
+    return Math.floor(level / 25) * 25;
+  } else {
+    return 250 + Math.floor((level - 250) / 50) * 50;
+  }
+};
+
+export const getNextCheckpoint = (level: number): number => {
+  const currentCP = getCheckpointForLevel(level);
+  if (currentCP < 250) {
+    return currentCP === 1 ? 25 : currentCP + 25;
+  } else {
+    return currentCP + 50;
+  }
+};
+
 export const getUnlockedSymbols = (level: number): SymbolType[] => {
   const symbols: SymbolType[] = ['CircleFilled', 'CircleEmpty'];
   if (level >= 11) symbols.push('TriangleUp', 'TriangleDown');
@@ -113,12 +131,19 @@ export const generatePuzzle = (level: number, previousResults: number[]): { sequ
     // Dedicated Memory Symbol Logic (Prev1 = ~33%, Prev2 = ~6.6%)
     let memorySymbolToAdd: 'Prev1' | 'Prev2' | null = null;
     
-    // Prev2 intro modal is at 131. Give 2 levels grace period (131, 132) so it first appears at 133.
-    if (level >= 133 && Math.random() < 0.08) {
+    const lastCheckpoint = getCheckpointForLevel(level);
+    const isJustAfterCheckpoint = level === lastCheckpoint + 1;
+    const isSecondAfterCheckpoint = level === lastCheckpoint + 2;
+    // Check if we are at the beginning of a checkpoint (C, C+1, C+2)
+    const canUsePrev1 = level >= 52 && level !== lastCheckpoint && !isJustAfterCheckpoint;
+    const canUsePrev2 = level >= 133 && level !== lastCheckpoint && !isJustAfterCheckpoint && !isSecondAfterCheckpoint;
+
+    // Prev2 intro modal is at 131. Give grace period (133) + Checkpoint grace (3 turns)
+    if (canUsePrev2 && Math.random() < 0.08) {
       memorySymbolToAdd = 'Prev2';
     } 
-    // Prev1 intro modal is at 51. Give 1 level grace period (51) so it first appears at 52.
-    else if (level >= 52 && Math.random() < 0.35) {
+    // Prev1 intro modal is at 51. Give grace period (52) + Checkpoint grace (2 turns)
+    else if (canUsePrev1 && Math.random() < 0.35) {
       memorySymbolToAdd = 'Prev1';
     }
     

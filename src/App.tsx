@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { StatusBar } from '@capacitor/status-bar';
 import { App as CapApp } from '@capacitor/app';
 import { useGameStore } from './store/useGameStore';
-import { generatePuzzle, isTutorialLevel, getTutorialSymbols, type SymbolType } from './lib/LevelEngine';
+import { generatePuzzle, isTutorialLevel, getTutorialSymbols, getCheckpointForLevel, getNextCheckpoint, type SymbolType } from './lib/LevelEngine';
 import * as Leaderboard from './lib/Leaderboard';
 import * as Icons from './components/Icons';
 import { GameSymbol } from './components/GameSymbol';
@@ -710,8 +710,9 @@ function DailyRewardButton({ onClick }: { onClick: () => void }) {
 }
 
 // ─── GAME OVER SCREEN ──────────────────────────────────────
-function GameOverScreen({ level, totalTimeSpent, expected, isDevMode, hasRevivedInCurrentGame, goToMenu }: {
+function GameOverScreen({ level, totalTimeSpent, expected, isDevMode, hasRevivedInCurrentGame, goToMenu, onAdError }: {
   level: number; totalTimeSpent: number; expected: number; isDevMode: boolean; hasRevivedInCurrentGame: boolean; goToMenu: () => void;
+  onAdError?: () => void;
 }) {
   const { language } = useGameStore();
   const t = Translations[language];
@@ -764,6 +765,8 @@ function GameOverScreen({ level, totalTimeSpent, expected, isDevMode, hasRevived
     setIsWatchingRevive(false);
     if (result.success) {
       reviveGame();
+    } else {
+      onAdError?.();
     }
   };
 
@@ -901,6 +904,24 @@ export default function App() {
   const [selectedMedal, setSelectedMedal] = useState<any>(null);
   const [showLangMenu, setShowLangMenu] = useState(false);
   const [introCheckbox, setIntroCheckbox] = useState(hideIntro);
+  const [isWatchingDaily, setIsWatchingDaily] = useState(false);
+  const [adError, setAdError] = useState<string | null>(null);
+  const [showComboAnim, setShowComboAnim] = useState(false);
+  const [lastCombo, setLastCombo] = useState(0);
+
+  useEffect(() => {
+    if (showComboAnim) {
+      const timer = setTimeout(() => setShowComboAnim(false), 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [showComboAnim]);
+
+  useEffect(() => {
+    if (adError) {
+      const timer = setTimeout(() => setAdError(null), 3500);
+      return () => clearTimeout(timer);
+    }
+  }, [adError]);
 
   // Handle Company Splash Timing (2 seconds as requested)
   useEffect(() => {
@@ -1065,6 +1086,8 @@ export default function App() {
     useGameStore.setState({ gameState: 'GAMEOVER' });
   };
 
+  const timePercent = isDevMode ? 100 : (timeLeft / maxTime) * 100;
+
   const handleLevelComplete = () => {
     playSound('success');
     setShowSolution(false); // Reset solution for the next level
@@ -1072,12 +1095,65 @@ export default function App() {
     addLevelTime(timeSpent);
     useGameStore.setState({ lastLevelTime: timeSpent });
     useGameStore.getState().incrementStreak();
+    
+    // COMBO LOGIC
+    const isCombo = timeSpent <= 5.0;
+    if (isCombo) {
+      useGameStore.getState().incrementCombo();
+    } else {
+      useGameStore.getState().resetCombo();
+    }
+
+    const currentCombo = useGameStore.getState().comboCount;
+    let coinBonus = 0;
+
+    if (isCombo) {
+      // Tiered Bonus Logic (Linear Cap)
+      if (currentCombo <= 3) coinBonus = 2;
+      else if (currentCombo < 10) coinBonus = 5;
+      else coinBonus = 10; // Max Cap for economy stability
+
+      setLastCombo(currentCombo);
+      setShowComboAnim(false);
+      setTimeout(() => setShowComboAnim(true), 10);
+    } else {
+      setShowComboAnim(false);
+    }
+
+    const nextLevel = level + 1;
+    const currentCP = getCheckpointForLevel(level);
+    const nextLevelCP = getCheckpointForLevel(nextLevel);
+
+    // If we just reached a NEW checkpoint, save it (Only in non-dev mode)
+    if ((nextLevelCP > currentCP || nextLevel === 25) && !useGameStore.getState().isDevMode) {
+      const finalCP = nextLevelCP;
+      const finalTime = totalTimeSpent + timeSpent;
+      useGameStore.setState({ 
+        checkpointLevel: finalCP,
+        checkpointTime: finalTime
+      });
+      localStorage.setItem('zeka_checkpoint', String(finalCP));
+      localStorage.setItem('zeka_checkpoint_time', String(finalTime));
+    }
+
+    // ANTI-FARMING: Only award coins if this is a NEW level completion
+    const maxPassed = useGameStore.getState().maxLevelCompleted;
+    let earnedThisLevel = 0;
+
+    if (level > maxPassed) {
+      earnedThisLevel = 5 + coinBonus;
+      useGameStore.setState({ maxLevelCompleted: level });
+      localStorage.setItem('zeka_max_level', String(level));
+    }
+
     useGameStore.setState(s => ({
-      level: s.level + 1,
-      coins: s.coins + 5,
+      level: nextLevel,
+      coins: s.coins + earnedThisLevel,
       previousAnswers: [expected, s.previousAnswers[0]]
     }));
   };
+
+
 
 
   const handleSubmission = () => {
@@ -1128,8 +1204,6 @@ export default function App() {
     }
   };
 
-  const timePercent = isDevMode ? 100 : (timeLeft / maxTime) * 100;
-
   return (
     <div className="h-[100dvh] w-full bg-[#F5F5F7] text-[#1D1D1F] font-sans selection:bg-neutral-200 overflow-hidden relative" style={{ display: 'block' }}>
       
@@ -1154,15 +1228,35 @@ export default function App() {
             isDevMode={isDevMode}
             hasRevivedInCurrentGame={hasRevivedInCurrentGame}
             goToMenu={goToMenu}
+            onAdError={() => setAdError(t.ad_error)}
           />
         ) : (
           <>
             {/* GAME HEADER */}
             <header className="flex justify-between items-center px-4 py-3 md:p-6 w-full max-w-2xl mx-auto z-10 shrink-0">
               <div className="flex flex-col">
-                <span className="text-4xl font-black tracking-tighter flex items-center gap-3">
+                <span className="text-4xl font-black tracking-tighter flex items-center gap-3 relative">
                   {t.header_level} {level}
                   {isDevMode && <span className="text-xs bg-amber-500 text-white px-2 py-1 rounded-full font-bold tracking-widest uppercase">{t.dev_test}</span>}
+                  
+                  {/* COMBO INDICATOR - ANCHORED TO LEVEL */}
+                  <AnimatePresence mode="wait">
+                    {showComboAnim && (
+                      <motion.div 
+                        key={`combo-anchor-${level}`}
+                        initial={{ scale: 0, x: -10, opacity: 0 }}
+                        animate={{ scale: 1, x: 0, opacity: 1 }}
+                        exit={{ scale: 0, x: 10, opacity: 0 }}
+                        className="absolute left-[calc(100%+12px)] top-1/2 -translate-y-1/2 z-20"
+                      >
+                        <ComboDisplay 
+                          levelKey={level} 
+                          count={lastCombo} 
+                          bonus={lastCombo * 2} 
+                        />
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </span>
                 <span className="text-sm font-semibold tracking-widest text-neutral-500 mt-1 uppercase">
                   {t.header_time} <span className="text-neutral-900">{isDevMode ? '∞' : `${totalTimeSpent.toFixed(2)}s`}</span>
@@ -1181,6 +1275,9 @@ export default function App() {
                 </div>
               </div>
             </header>
+
+            <CheckpointBar level={level} t={t} />
+
 
             {/* DEV LEVEL JUMP — visible only in dev mode */}
             {isDevMode && (
@@ -1410,7 +1507,30 @@ export default function App() {
                   <h2 className="text-2xl font-black mb-2">{t.daily_gift_title}</h2>
                   <p className="text-sm text-neutral-500 mb-6 font-medium leading-relaxed">{t.daily_gift_desc?.split('200')[0]}<strong className="text-amber-500">200 Coin</strong>{t.daily_gift_desc?.split('200')[1]}</p>
                   {dailyRewardsToday < 3 && (dailyRewardsToday === 0 || (Date.now() - (lastRewardTime || 0) >= 3 * 60 * 60 * 1000)) ? (
-                    <button onClick={async (e) => { e.stopPropagation(); const res = await Ads.showRewardedAd(); if (res.success) { claimDailyReward(); setShowDailyRewardGlobal(false); setShowSuccessGlobal(true); playSound('success'); }}} className="w-full py-4 bg-[#1D1D1F] text-white rounded-2xl font-black tracking-widest shadow-xl hover:scale-105 active:scale-95 transition-all"> {t.daily_gift_watch}</button>
+                    <button 
+                      disabled={isWatchingDaily}
+                      onClick={async (e) => { 
+                        e.stopPropagation(); 
+                        setIsWatchingDaily(true); 
+                        const res = await Ads.showRewardedAd(); 
+                        setIsWatchingDaily(false); 
+                        if (res.success) { 
+                          claimDailyReward(); 
+                          setShowDailyRewardGlobal(false); 
+                          setShowSuccessGlobal(true); 
+                          playSound('success'); 
+                        } else {
+                          setAdError(t.ad_error);
+                        }
+                      }} 
+                      className={`w-full py-4 bg-[#1D1D1F] text-white rounded-2xl font-black tracking-widest shadow-xl hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2 ${isWatchingDaily ? 'opacity-70 pointer-events-none' : ''}`}
+                    >
+                      {isWatchingDaily ? (
+                        <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                      ) : (
+                        <>{t.daily_gift_watch}</>
+                      )}
+                    </button>
                   ) : ( <div className="w-full py-4 bg-neutral-100 text-neutral-400 rounded-2xl italic font-bold text-xs tracking-widest">{dailyRewardsToday >= 3 ? t.daily_gift_limit : t.daily_gift_comeback}</div> )}
                 </motion.div>
               </div>
@@ -1517,6 +1637,56 @@ export default function App() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <AnimatePresence>
+        {adError && (
+          <motion.div 
+            style={{ left: '50%', transform: 'translateX(-50%)' }}
+            initial={{ y: 50, opacity: 0 }} 
+            animate={{ y: 0, opacity: 1 }} 
+            exit={{ y: 50, opacity: 0 }} 
+            className="fixed bottom-10 bg-red-500 text-white px-6 py-3 rounded-2xl font-bold shadow-[0_10px_30px_rgba(239,68,68,0.4)] z-[2000] text-xs whitespace-nowrap"
+          >
+            {adError}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+// ─── HELPERS & SUB-COMPONENTS ────────────────────────────────
+
+function CheckpointBar({ level, t }: { level: number; t: any }) {
+  const lastCP = getCheckpointForLevel(level);
+  const nextCP = getNextCheckpoint(level);
+  const progress = Math.max(0, Math.min(100, ((level - lastCP) / (nextCP - lastCP)) * 100));
+  
+  return (
+    <div className="w-full max-w-2xl mx-auto px-4 md:px-6 mb-6 mt-2">
+      <div className="flex justify-between items-center mb-1.5 px-0.5">
+        <span className="text-[10px] font-black text-neutral-400 tabular-nums tracking-tight uppercase">{t.level} {lastCP}</span>
+        <span className="text-[10px] font-black text-neutral-300 tabular-nums tracking-tight uppercase opacity-60">{t.level} {nextCP}</span>
+      </div>
+      <div className="h-[2px] w-full bg-neutral-200/50 rounded-full overflow-hidden relative">
+        <motion.div 
+          initial={false}
+          animate={{ width: `${progress}%` }}
+          transition={{ type: 'spring', stiffness: 45, damping: 20 }}
+          className="h-full bg-[#1D1D1F] rounded-full"
+        />
+      </div>
+    </div>
+  );
+}
+
+function ComboDisplay({ count, bonus, levelKey }: { count: number; bonus: number; levelKey: number }) {
+  return (
+    <div key={levelKey} className="flex items-center gap-2 shrink-0">
+      <div className="w-8 h-8 rounded-full bg-[#1D1D1F] flex items-center justify-center shadow-lg border border-white/10 outline outline-1 outline-amber-400/20">
+        <span className="text-xs font-black italic text-amber-400">x{count}</span>
+      </div>
+      <span className="text-[10px] font-black text-[#1D1D1F] opacity-30 tabular-nums">+{bonus}</span>
     </div>
   );
 }

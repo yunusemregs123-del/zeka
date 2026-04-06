@@ -1,5 +1,4 @@
 import { AdMob, RewardAdPluginEvents } from '@capacitor-community/admob';
-import type { RewardAdOptions } from '@capacitor-community/admob';
 import { Capacitor } from '@capacitor/core';
 
 /**
@@ -15,6 +14,8 @@ export interface AdResult {
 class AdsService {
   private static instance: AdsService;
   private isInitialized: boolean = false;
+  private isAdPrepared: boolean = false;
+  private isPreparing: boolean = false;
 
   private config = {
     rewardedAdIdAndroid: 'ca-app-pub-3940256099942544/5224354917',
@@ -41,8 +42,28 @@ class AdsService {
         initializeForTesting: true,
       });
       this.isInitialized = true;
+      this.preloadRewardedAd(); // Start preloading first ad
     } catch (e) {
       console.error('AdMob Initialization Error:', e);
+    }
+  }
+
+  public async preloadRewardedAd() {
+    if (!Capacitor.isNativePlatform() || !this.config.isEnabled || this.isPreparing) return;
+    
+    this.isPreparing = true;
+    const platform = Capacitor.getPlatform();
+    const adId = platform === 'ios' ? this.config.rewardedAdIdIOS : this.config.rewardedAdIdAndroid;
+    
+    try {
+      await AdMob.prepareRewardVideoAd({ adId });
+      this.isAdPrepared = true;
+      console.log('Reward Ad Prepared');
+    } catch (e) {
+      console.error('Failed to preload Reward Ad', e);
+      this.isAdPrepared = false;
+    } finally {
+      this.isPreparing = false;
     }
   }
 
@@ -57,37 +78,38 @@ class AdsService {
       await this.init();
     }
 
-    const platform = Capacitor.getPlatform();
-    const adId = platform === 'ios' ? this.config.rewardedAdIdIOS : this.config.rewardedAdIdAndroid;
+    // Fallback preparation if not ready yet
+    if (!this.isAdPrepared && !this.isPreparing) {
+      await this.preloadRewardedAd();
+    }
 
     try {
-      const options: RewardAdOptions = { adId: adId };
-      await AdMob.prepareRewardVideoAd(options);
-
       return new Promise(async (resolve) => {
         let isRewarded = false;
 
-        // @ts-ignore
         const rewardListener = await AdMob.addListener(RewardAdPluginEvents.Rewarded, () => {
           isRewarded = true;
         });
 
-        // @ts-ignore
         const closeListener = await AdMob.addListener(RewardAdPluginEvents.Dismissed, () => {
           rewardListener.remove();
           closeListener.remove();
+          this.isAdPrepared = false;
+          this.preloadRewardedAd(); // Preload for NEXT time
           resolve({ success: isRewarded });
         });
 
-        // @ts-ignore
         const errorListener = await AdMob.addListener(RewardAdPluginEvents.FailedToLoad, () => {
           rewardListener.remove();
           closeListener.remove();
           errorListener.remove();
+          this.isAdPrepared = false;
+          this.preloadRewardedAd();
           resolve({ success: false, message: 'Ad Load Error' });
         });
 
-        await AdMob.showRewardVideoAd().catch(() => {
+        await AdMob.showRewardVideoAd().catch((e) => {
+          console.error('Show error', e);
           rewardListener.remove();
           closeListener.remove();
           resolve({ success: false, message: 'Ad Show Error' });
@@ -96,6 +118,8 @@ class AdsService {
 
     } catch (error) {
       console.error('AdMob Global Error:', error);
+      this.isAdPrepared = false;
+      this.preloadRewardedAd();
       return { success: false, message: 'Ad Error' };
     }
   }
