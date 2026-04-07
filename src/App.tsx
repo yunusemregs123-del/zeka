@@ -1656,7 +1656,7 @@ export default function App() {
                     className="w-full h-full bg-white/60"
                   />
                </div>
-               <span className="text-[10px] font-black tracking-[0.4em] text-white/60 uppercase">ZEKA LOADING</span>
+               <span className="text-[10px] font-black tracking-[0.4em] text-white/60 uppercase">{t.loading || 'ZEKA LOADING'}</span>
             </motion.div>
 
             {/* ENLARGED ARCN LOGO AT BOTTOM */}
@@ -1666,7 +1666,7 @@ export default function App() {
               transition={{ delay: 0.3, duration: 0.8 }}
               className="flex flex-col items-center gap-3 mb-16"
             >
-              <img src="/arcnwhite.png" alt="ARCN" className="h-10 md:h-12 opacity-80 object-contain" />
+              <img src="/arcnwhite.png" alt="ARCN" className="h-16 md:h-20 opacity-90 object-contain" />
               <div className="w-12 h-px bg-white/20" />
             </motion.div>
           </motion.div>
