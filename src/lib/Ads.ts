@@ -95,6 +95,7 @@ class AdsService {
           rewardListener.remove();
           closeListener.remove();
           this.isAdPrepared = false;
+          window.dispatchEvent(new Event('onZekaAdClose'));
           this.preloadRewardedAd(); // Preload for NEXT time
           resolve({ success: isRewarded });
         });
@@ -104,14 +105,17 @@ class AdsService {
           closeListener.remove();
           errorListener.remove();
           this.isAdPrepared = false;
+          window.dispatchEvent(new Event('onZekaAdClose'));
           this.preloadRewardedAd();
           resolve({ success: false, message: 'Ad Load Error' });
         });
 
+        window.dispatchEvent(new Event('onZekaAdShow'));
         await AdMob.showRewardVideoAd().catch((e) => {
           console.error('Show error', e);
           rewardListener.remove();
           closeListener.remove();
+          window.dispatchEvent(new Event('onZekaAdClose'));
           resolve({ success: false, message: 'Ad Show Error' });
         });
       });

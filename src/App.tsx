@@ -624,10 +624,11 @@ function MenuScreen({
                 ) : (
                   <div className="space-y-2">
                     {scores.map((entry, idx) => (
-                      <div key={entry.id} className={`flex items-center gap-2 p-2 sm:p-3 rounded-xl transition ${idx === 0 ? 'bg-amber-50 border border-amber-100' : idx === 1 ? 'bg-neutral-50 border border-neutral-100' : idx === 2 ? 'bg-orange-50/60 border border-orange-100/60' : 'bg-white border border-transparent'}`}>
-                        <span className={`w-6 h-6 rounded-full flex items-center justify-center font-black text-[10px] shrink-0 ${idx === 0 ? 'bg-amber-400 text-white' : idx === 1 ? 'bg-neutral-300 text-white' : idx === 2 ? 'bg-orange-300 text-white' : 'bg-neutral-100 text-neutral-500'}`}>
+                      <div key={entry.id} className={`flex items-center gap-3 p-2 sm:p-3 rounded-xl transition ${idx === 0 ? 'bg-yellow-50 border border-yellow-400 shadow-sm' : idx === 1 ? 'bg-slate-50 border border-slate-300 shadow-sm' : idx === 2 ? 'bg-orange-50 border border-orange-400 shadow-sm' : 'bg-white border border-transparent'}`}>
+                        <div className={`relative flex items-center justify-center font-black shrink-0 ${idx === 0 ? 'bg-yellow-400 text-yellow-950 border-2 border-yellow-200 shadow-md w-8 h-8 rounded-full text-sm' : idx === 1 ? 'bg-slate-200 text-slate-800 border-2 border-slate-100 shadow-sm w-7 h-7 rounded-full text-xs' : idx === 2 ? 'bg-orange-400 text-orange-950 border-2 border-orange-200 shadow-sm w-7 h-7 rounded-full text-xs' : 'bg-neutral-100 text-neutral-500 w-6 h-6 rounded-full text-[10px]'}`}>
+                          {idx === 0 && <span className="absolute -top-3 -right-1 text-sm drop-shadow-sm">👑</span>}
                           {idx + 1}
-                        </span>
+                        </div>
                         <div className="flex-1 min-w-0 pr-1">
                           <span className="font-bold text-xs sm:text-sm block truncate flex items-center gap-1">
                             {entry.country_code && <span className="text-[10px]">{entry.country_code.toUpperCase().replace(/./g, char => String.fromCodePoint(char.charCodeAt(0) + 127397))}</span>}
@@ -908,6 +909,18 @@ export default function App() {
   const [adError, setAdError] = useState<string | null>(null);
   const [showComboAnim, setShowComboAnim] = useState(false);
   const [lastCombo, setLastCombo] = useState(0);
+  const [lastComboBonus, setLastComboBonus] = useState(0);
+
+  useEffect(() => {
+    const handleAdStart = () => ambientMusic?.stop();
+    const handleAdEnd = () => { if (!isMuted() && audioCtx?.state === 'running') ambientMusic?.play(); };
+    window.addEventListener('onZekaAdShow', handleAdStart);
+    window.addEventListener('onZekaAdClose', handleAdEnd);
+    return () => {
+      window.removeEventListener('onZekaAdShow', handleAdStart);
+      window.removeEventListener('onZekaAdClose', handleAdEnd);
+    };
+  }, []);
 
   useEffect(() => {
     if (showComboAnim) {
@@ -1105,15 +1118,24 @@ export default function App() {
     }
 
     const currentCombo = useGameStore.getState().comboCount;
-    let coinBonus = 0;
+    const maxPassed = useGameStore.getState().maxLevelCompleted;
+    const isNewLevel = level > maxPassed;
+    
+    let localCoinBonus = 0;
 
     if (isCombo) {
-      // Tiered Bonus Logic (Linear Cap)
-      if (currentCombo <= 3) coinBonus = 2;
-      else if (currentCombo < 10) coinBonus = 5;
-      else coinBonus = 10; // Max Cap for economy stability
+      if (isNewLevel) {
+        // Tiered Bonus Logic (Linear Cap)
+        if (currentCombo <= 3) localCoinBonus = 2;
+        else if (currentCombo < 10) localCoinBonus = 5;
+        else localCoinBonus = 10;
+      } else {
+        // Repeated level combo: +1, +2, +3... Max capped at 10 to avoid extreme farming
+        localCoinBonus = Math.min(currentCombo, 10);
+      }
 
       setLastCombo(currentCombo);
+      setLastComboBonus(localCoinBonus);
       setShowComboAnim(false);
       setTimeout(() => setShowComboAnim(true), 10);
     } else {
@@ -1136,14 +1158,15 @@ export default function App() {
       localStorage.setItem('zeka_checkpoint_time', String(finalTime));
     }
 
-    // ANTI-FARMING: Only award coins if this is a NEW level completion
-    const maxPassed = useGameStore.getState().maxLevelCompleted;
+    // ANTI-FARMING: Reward Logic
     let earnedThisLevel = 0;
 
-    if (level > maxPassed) {
-      earnedThisLevel = 5 + coinBonus;
+    if (isNewLevel) {
+      earnedThisLevel = 5 + localCoinBonus;
       useGameStore.setState({ maxLevelCompleted: level });
       localStorage.setItem('zeka_max_level', String(level));
+    } else {
+      earnedThisLevel = localCoinBonus; // Only combo coins on played levels
     }
 
     useGameStore.setState(s => ({
@@ -1233,45 +1256,44 @@ export default function App() {
         ) : (
           <>
             {/* GAME HEADER */}
-            <header className="flex justify-between items-center px-4 py-3 md:p-6 w-full max-w-2xl mx-auto z-10 shrink-0">
+            <header className="flex justify-between items-start px-4 py-3 md:p-6 w-full max-w-2xl mx-auto z-10 shrink-0">
               <div className="flex flex-col">
                 <span className="text-4xl font-black tracking-tighter flex items-center gap-3 relative">
                   {t.header_level} {level}
                   {isDevMode && <span className="text-xs bg-amber-500 text-white px-2 py-1 rounded-full font-bold tracking-widest uppercase">{t.dev_test}</span>}
-                  
-                  {/* COMBO INDICATOR - ANCHORED TO LEVEL */}
-                  <AnimatePresence mode="wait">
-                    {showComboAnim && (
-                      <motion.div 
-                        key={`combo-anchor-${level}`}
-                        initial={{ scale: 0, x: -10, opacity: 0 }}
-                        animate={{ scale: 1, x: 0, opacity: 1 }}
-                        exit={{ scale: 0, x: 10, opacity: 0 }}
-                        className="absolute left-[calc(100%+12px)] top-1/2 -translate-y-1/2 z-20"
-                      >
-                        <ComboDisplay 
-                          levelKey={level} 
-                          count={lastCombo} 
-                          bonus={lastCombo * 2} 
-                        />
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
                 </span>
                 <span className="text-sm font-semibold tracking-widest text-neutral-500 mt-1 uppercase">
                   {t.header_time} <span className="text-neutral-900">{isDevMode ? '∞' : `${totalTimeSpent.toFixed(2)}s`}</span>
                 </span>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-start gap-3 mt-1">
                 <button
                   onClick={() => setShowExitConfirm(true)}
-                  className="w-10 h-10 flex items-center justify-center bg-white border border-neutral-200 rounded-2xl shadow-sm text-neutral-400 hover:text-neutral-900 transition-colors"
+                  className="w-[38px] h-[38px] flex items-center justify-center bg-white border border-neutral-200 rounded-[14px] shadow-sm text-neutral-400 hover:text-neutral-900 transition-colors shrink-0"
                 >
-                  <Icons.Home className="w-5 h-5" />
+                  <Icons.Home className="w-5 h-5 -mt-0.5" />
                 </button>
-                <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-full border border-neutral-200/60 shadow-sm">
-                  <div className="w-2.5 h-2.5 rounded-full bg-amber-400 shrink-0"></div>
-                  <span className="font-black text-sm md:text-base tabular-nums leading-none" style={{ color: '#000000' }}>{coins}</span>
+                <div className="flex flex-col bg-white rounded-[20px] border border-neutral-200/60 shadow-sm overflow-hidden z-20 min-w-[70px]">
+                  <div className="flex items-center gap-2 px-3 h-[38px] justify-center bg-white z-20 shrink-0">
+                    <div className="w-2.5 h-2.5 rounded-full bg-amber-400 shrink-0"></div>
+                    <span className="font-black text-sm md:text-base tabular-nums leading-none" style={{ color: '#000000' }}>{coins}</span>
+                  </div>
+                  <AnimatePresence>
+                    {showComboAnim && lastComboBonus > 0 && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        className="flex flex-col items-center justify-center bg-amber-400 overflow-hidden"
+                      >
+                        <div className="py-1 px-2 flex items-center gap-1 opacity-90 border-t border-black/10 w-full justify-center">
+                          <span className="text-[10px] font-black italic leading-none whitespace-nowrap" style={{ color: '#000000' }}>x{lastCombo}</span>
+                          <div className="w-px h-2 bg-black/20" />
+                          <span className="text-[10px] font-black leading-none whitespace-nowrap" style={{ color: '#000000' }}>+{lastComboBonus}</span>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
               </div>
             </header>
@@ -1641,11 +1663,10 @@ export default function App() {
       <AnimatePresence>
         {adError && (
           <motion.div 
-            style={{ left: '50%', transform: 'translateX(-50%)' }}
             initial={{ y: 50, opacity: 0 }} 
             animate={{ y: 0, opacity: 1 }} 
             exit={{ y: 50, opacity: 0 }} 
-            className="fixed bottom-10 bg-red-500 text-white px-6 py-3 rounded-2xl font-bold shadow-[0_10px_30px_rgba(239,68,68,0.4)] z-[2000] text-xs whitespace-nowrap"
+            className="fixed bottom-10 left-0 right-0 mx-auto w-max px-6 py-3 bg-red-500 text-white rounded-2xl font-bold shadow-[0_10px_30px_rgba(239,68,68,0.4)] z-[2000] text-xs whitespace-nowrap"
           >
             {adError}
           </motion.div>
@@ -1680,13 +1701,3 @@ function CheckpointBar({ level, t }: { level: number; t: any }) {
   );
 }
 
-function ComboDisplay({ count, bonus, levelKey }: { count: number; bonus: number; levelKey: number }) {
-  return (
-    <div key={levelKey} className="flex items-center gap-2 shrink-0">
-      <div className="w-8 h-8 rounded-full bg-[#1D1D1F] flex items-center justify-center shadow-lg border border-white/10 outline outline-1 outline-amber-400/20">
-        <span className="text-xs font-black italic text-amber-400">x{count}</span>
-      </div>
-      <span className="text-[10px] font-black text-[#1D1D1F] opacity-30 tabular-nums">+{bonus}</span>
-    </div>
-  );
-}
