@@ -623,25 +623,29 @@ function MenuScreen({
                   </div>
                 ) : (
                   <div className="space-y-2">
-                    {scores.map((entry, idx) => (
-                      <div key={entry.id} className={`flex items-center gap-3 p-2 sm:p-3 rounded-xl transition ${idx === 0 ? 'bg-yellow-50 border border-yellow-400 shadow-sm' : idx === 1 ? 'bg-slate-50 border border-slate-300 shadow-sm' : idx === 2 ? 'bg-orange-50 border border-orange-400 shadow-sm' : 'bg-white border border-transparent'}`}>
-                        <div className={`relative flex items-center justify-center font-black shrink-0 ${idx === 0 ? 'bg-yellow-400 text-yellow-950 border-2 border-yellow-200 shadow-md w-8 h-8 rounded-full text-sm' : idx === 1 ? 'bg-slate-200 text-slate-800 border-2 border-slate-100 shadow-sm w-7 h-7 rounded-full text-xs' : idx === 2 ? 'bg-orange-400 text-orange-950 border-2 border-orange-200 shadow-sm w-7 h-7 rounded-full text-xs' : 'bg-neutral-100 text-neutral-500 w-6 h-6 rounded-full text-[10px]'}`}>
-                          {idx === 0 && <span className="absolute -top-3 -right-1 text-sm drop-shadow-sm">👑</span>}
-                          {idx + 1}
+                    {scores.map((entry, idx) => {
+                      const isMe = personalRankData?.row.player_name === entry.player_name;
+                      return (
+                        <div key={entry.id} className={`flex items-center gap-3 p-2 sm:p-3 rounded-xl transition ${isMe ? 'bg-blue-50 border-2 border-blue-400 shadow-sm z-10 relative' : idx === 0 ? 'bg-yellow-50 border border-yellow-400 shadow-sm' : idx === 1 ? 'bg-slate-50 border border-slate-300 shadow-sm' : idx === 2 ? 'bg-orange-50 border border-orange-400 shadow-sm' : 'bg-white border border-transparent'}`}>
+                          <div className={`relative flex items-center justify-center font-black shrink-0 ${isMe ? 'bg-blue-400 text-white shadow-md ring-2 ring-blue-100 w-8 h-8 rounded-full text-sm' : idx === 0 ? 'bg-yellow-400 text-yellow-950 border-2 border-yellow-200 shadow-md w-8 h-8 rounded-full text-sm' : idx === 1 ? 'bg-slate-200 text-slate-800 border-2 border-slate-100 shadow-sm w-7 h-7 rounded-full text-xs' : idx === 2 ? 'bg-orange-400 text-orange-950 border-2 border-orange-200 shadow-sm w-7 h-7 rounded-full text-xs' : 'bg-neutral-100 text-neutral-500 w-6 h-6 rounded-full text-[10px]'}`}>
+                            {idx === 0 && <span className="absolute -top-3 -right-1 text-sm drop-shadow-sm">👑</span>}
+                            {idx + 1}
+                          </div>
+                          <div className="flex-1 min-w-0 pr-1">
+                            <span className={`font-bold text-xs sm:text-sm block truncate flex items-center gap-1 ${isMe ? 'text-blue-800' : ''}`}>
+                              {entry.country_code && <span className="text-[10px]">{entry.country_code.toUpperCase().replace(/./g, char => String.fromCodePoint(char.charCodeAt(0) + 127397))}</span>}
+                              {entry.player_name}
+                              {isMe && <span className="text-[9px] ml-1 bg-blue-100 text-blue-600 px-1.5 py-0.5 rounded-full uppercase tracking-wider">{t.lb_you || "(Sen)"}</span>}
+                            </span>
+                            <span className={`text-[9px] sm:text-[10px] font-medium ${isMe ? 'text-blue-400/80' : 'text-neutral-400'}`}>{Leaderboard.formatDate(entry.created_at)}</span>
+                          </div>
+                          <div className="text-right shrink-0">
+                            <span className={`font-black text-xs sm:text-sm block ${isMe ? 'text-blue-800' : ''}`}>{t.lb_b_level} {entry.level}</span>
+                            <span className={`text-[9px] sm:text-[10px] font-semibold ${isMe ? 'text-blue-400/80' : 'text-neutral-400'}`}>{Leaderboard.formatTime(entry.total_time)}</span>
+                          </div>
                         </div>
-                        <div className="flex-1 min-w-0 pr-1">
-                          <span className="font-bold text-xs sm:text-sm block truncate flex items-center gap-1">
-                            {entry.country_code && <span className="text-[10px]">{entry.country_code.toUpperCase().replace(/./g, char => String.fromCodePoint(char.charCodeAt(0) + 127397))}</span>}
-                            {entry.player_name}
-                          </span>
-                          <span className="text-[9px] sm:text-[10px] text-neutral-400 font-medium">{Leaderboard.formatDate(entry.created_at)}</span>
-                        </div>
-                        <div className="text-right shrink-0">
-                          <span className="font-black text-xs sm:text-sm block">{t.lb_b_level} {entry.level}</span>
-                          <span className="text-[9px] sm:text-[10px] text-neutral-400 font-semibold">{Leaderboard.formatTime(entry.total_time)}</span>
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                     {personalRankData && !scores.some(s => s.player_name === personalRankData.row.player_name) && (
                       <>
                         <div className="my-2 border-t-2 border-dashed border-neutral-200"></div>
@@ -1273,22 +1277,22 @@ export default function App() {
                 >
                   <Icons.Home className="w-5 h-5 -mt-0.5" />
                 </button>
-                <div className="flex flex-col bg-white rounded-[20px] border border-neutral-200/60 shadow-sm overflow-hidden z-20 min-w-[70px]">
-                  <div className="flex items-center gap-2 px-3 h-[38px] justify-center bg-white z-20 shrink-0">
+                <div className="flex flex-col rounded-[20px] border border-neutral-200/60 shadow-sm overflow-visible z-20 min-w-[70px] relative">
+                  <div className="flex items-center gap-2 px-3 h-[38px] justify-center bg-white z-20 shrink-0 rounded-[20px]">
                     <div className="w-2.5 h-2.5 rounded-full bg-amber-400 shrink-0"></div>
                     <span className="font-black text-sm md:text-base tabular-nums leading-none" style={{ color: '#000000' }}>{coins}</span>
                   </div>
                   <AnimatePresence>
                     {showComboAnim && lastComboBonus > 0 && (
                       <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: 'auto', opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        className="flex flex-col items-center justify-center bg-amber-400 overflow-hidden"
+                        initial={{ height: 0, opacity: 0, y: -20 }}
+                        animate={{ height: 'auto', opacity: 1, y: 0 }}
+                        exit={{ height: 0, opacity: 0, y: -20 }}
+                        className="absolute top-[32px] left-[-1px] right-[-1px] -z-10 flex flex-col items-center justify-center bg-amber-400 overflow-hidden rounded-b-[20px] pb-1.5 pt-2 border-b border-l border-r border-amber-500/50"
                       >
-                        <div className="py-1 px-2 flex items-center gap-1 opacity-90 border-t border-black/10 w-full justify-center">
+                        <div className="flex items-center gap-1 opacity-90 w-full justify-center">
                           <span className="text-[10px] font-black italic leading-none whitespace-nowrap" style={{ color: '#000000' }}>x{lastCombo}</span>
-                          <div className="w-px h-2 bg-black/20" />
+                          <div className="w-[1px] h-2 bg-black/20" />
                           <span className="text-[10px] font-black leading-none whitespace-nowrap" style={{ color: '#000000' }}>+{lastComboBonus}</span>
                         </div>
                       </motion.div>
