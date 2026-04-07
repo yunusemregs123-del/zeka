@@ -1277,27 +1277,36 @@ export default function App() {
                 >
                   <Icons.Home className="w-5 h-5 -mt-0.5" />
                 </button>
-                <div className="flex flex-col rounded-[20px] border border-neutral-200/60 shadow-sm overflow-visible z-20 min-w-[70px] relative">
-                  <div className="flex items-center gap-2 px-3 h-[38px] justify-center bg-white z-20 shrink-0 rounded-[20px]">
-                    <div className="w-2.5 h-2.5 rounded-full bg-amber-400 shrink-0"></div>
-                    <span className="font-black text-sm md:text-base tabular-nums leading-none" style={{ color: '#000000' }}>{coins}</span>
+                <div className="relative z-20">
+                  {/* INVISIBLE SHADOW CONTAINER to reserve space in DOM without pushing when expanded */}
+                  <div className="flex items-center gap-2 px-3 h-[38px] justify-center min-w-[70px] opacity-0 pointer-events-none">
+                    <div className="w-2.5 h-2.5 rounded-full shrink-0"></div>
+                    <span className="font-black text-sm md:text-base tabular-nums leading-none">{coins}</span>
                   </div>
-                  <AnimatePresence>
-                    {showComboAnim && lastComboBonus > 0 && (
-                      <motion.div
-                        initial={{ height: 0, opacity: 0, y: -20 }}
-                        animate={{ height: 'auto', opacity: 1, y: 0 }}
-                        exit={{ height: 0, opacity: 0, y: -20 }}
-                        className="absolute top-[32px] left-[-1px] right-[-1px] -z-10 flex flex-col items-center justify-center bg-amber-400 overflow-hidden rounded-b-[20px] pb-1.5 pt-2 border-b border-l border-r border-amber-500/50"
-                      >
-                        <div className="flex items-center gap-1 opacity-90 w-full justify-center">
-                          <span className="text-[10px] font-black italic leading-none whitespace-nowrap" style={{ color: '#000000' }}>x{lastCombo}</span>
-                          <div className="w-[1px] h-2 bg-black/20" />
-                          <span className="text-[10px] font-black leading-none whitespace-nowrap" style={{ color: '#000000' }}>+{lastComboBonus}</span>
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+
+                  {/* VISUAL CONTAINER (Absolute, expands without pushing layout) */}
+                  <div className="absolute top-0 right-0 w-full flex flex-col bg-white rounded-[20px] border border-neutral-200/60 shadow-sm overflow-hidden z-20">
+                    <div className="flex items-center gap-2 px-3 h-[38px] justify-center bg-white z-20 shrink-0">
+                      <div className="w-2.5 h-2.5 rounded-full bg-amber-400 shrink-0"></div>
+                      <span className="font-black text-sm md:text-base tabular-nums leading-none" style={{ color: '#000000' }}>{coins}</span>
+                    </div>
+                    <AnimatePresence>
+                      {showComboAnim && lastComboBonus > 0 && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: 'auto', opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          className="flex flex-col items-center justify-center bg-amber-400 overflow-hidden"
+                        >
+                          <div className="py-1 px-2 flex items-center gap-1 opacity-90 border-t border-black/10 w-full justify-center">
+                            <span className="text-[10px] font-black italic leading-none whitespace-nowrap" style={{ color: '#000000' }}>x{lastCombo}</span>
+                            <div className="w-[1px] h-2 bg-black/20" />
+                            <span className="text-[10px] font-black leading-none whitespace-nowrap" style={{ color: '#000000' }}>+{lastComboBonus}</span>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
                 </div>
               </div>
             </header>
