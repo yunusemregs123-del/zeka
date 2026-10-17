@@ -44,7 +44,8 @@ let isBotMatch = false;
 let activeBotOpponent: OpponentInfo | null = null;
 let syncInterval: any = null;
 let matchmakingInterval: any = null;
-let simulatedBotInterval: any = null;
+let simulatedBotTimeout: any = null;
+let botTargetDeathScore = 0;
 let botScoreTracker = 0;
 let currentScore = 0;
 let lastReportedOpponentScore = -1;
@@ -53,13 +54,95 @@ let lastSeenEmote: string | null = null;
 let activeGameCallbacks: GameCallbacks = {};
 
 const BOT_ROSTER: OpponentInfo[] = [
-  { id: 'bot-1', name: 'Alex (Berlin)', country: 'DE', isBot: true },
-  { id: 'bot-2', name: 'Sora (Tokyo)', country: 'JP', isBot: true },
-  { id: 'bot-3', name: 'Lucas (São Paulo)', country: 'BR', isBot: true },
-  { id: 'bot-4', name: 'Elena (Madrid)', country: 'ES', isBot: true },
-  { id: 'bot-5', name: 'Emma (London)', country: 'GB', isBot: true },
-  { id: 'bot-6', name: 'Can (Istanbul)', country: 'TR', isBot: true },
+  { id: 'bot-1', name: 'alperen_06', country: 'TR', isBot: true },
+  { id: 'bot-2', name: 'berkay.k', country: 'TR', isBot: true },
+  { id: 'bot-3', name: 'selin_d', country: 'TR', isBot: true },
+  { id: 'bot-4', name: 'mert_yılmaz', country: 'TR', isBot: true },
+  { id: 'bot-5', name: 'kaan_arslan', country: 'TR', isBot: true },
+  { id: 'bot-6', name: 'zeynep_t', country: 'TR', isBot: true },
+  { id: 'bot-7', name: 'caner_k', country: 'TR', isBot: true },
+  { id: 'bot-8', name: 'aylin_x', country: 'TR', isBot: true },
+  { id: 'bot-9', name: 'yigit_34', country: 'TR', isBot: true },
+  { id: 'bot-10', name: 'deniz_g', country: 'TR', isBot: true },
+  { id: 'bot-11', name: 'tolga_b', country: 'TR', isBot: true },
+  { id: 'bot-12', name: 'melis_a', country: 'TR', isBot: true },
+  { id: 'bot-13', name: 'eren_k', country: 'TR', isBot: true },
+  { id: 'bot-14', name: 'furkan.d', country: 'TR', isBot: true },
+  { id: 'bot-15', name: 'cemre_s', country: 'TR', isBot: true },
+  { id: 'bot-16', name: 'baris_y', country: 'TR', isBot: true },
+  { id: 'bot-17', name: 'oguzhan_k', country: 'TR', isBot: true },
+  { id: 'bot-18', name: 'ece_n', country: 'TR', isBot: true },
+  { id: 'bot-19', name: 'umut_c', country: 'TR', isBot: true },
+  { id: 'bot-20', name: 'burak_o', country: 'TR', isBot: true },
+  { id: 'bot-21', name: 'damla_k', country: 'TR', isBot: true },
+  { id: 'bot-22', name: 'kerem_v', country: 'TR', isBot: true },
+  { id: 'bot-23', name: 'alex_m', country: 'DE', isBot: true },
+  { id: 'bot-24', name: 'lucas_br', country: 'BR', isBot: true },
+  { id: 'bot-25', name: 'elena_s', country: 'ES', isBot: true },
+  { id: 'bot-26', name: 'sora_k', country: 'JP', isBot: true },
+  { id: 'bot-27', name: 'emily_w', country: 'GB', isBot: true },
+  { id: 'bot-28', name: 'noah_d', country: 'NL', isBot: true },
 ];
+
+function clearBotSimulation() {
+  if (simulatedBotTimeout) {
+    clearTimeout(simulatedBotTimeout);
+    simulatedBotTimeout = null;
+  }
+}
+
+function startBotSimulation(myId: string, initialCallback?: (score: number) => void) {
+  clearBotSimulation();
+
+  // Intelligent bot: randomly eliminated between levels 15 and 100
+  botTargetDeathScore = Math.floor(Math.random() * (100 - 15 + 1)) + 15;
+  botScoreTracker = 0;
+
+  function scheduleNextStep() {
+    if (isMatchFinishedReported) return;
+
+    // Dynamic, natural human-like reaction time depending on depth
+    let delay = 2200;
+    if (botScoreTracker < 10) {
+      delay = 1800 + Math.random() * 800; // 1.8s - 2.6s
+    } else if (botScoreTracker < 25) {
+      delay = 2100 + Math.random() * 1000; // 2.1s - 3.1s
+    } else if (botScoreTracker < 50) {
+      delay = 2400 + Math.random() * 1200; // 2.4s - 3.6s
+    } else {
+      delay = 2700 + Math.random() * 1400; // 2.7s - 4.1s
+    }
+
+    simulatedBotTimeout = setTimeout(() => {
+      if (isMatchFinishedReported) return;
+
+      // Check if bot reached its elimination threshold
+      if (botScoreTracker >= botTargetDeathScore) {
+        isMatchFinishedReported = true;
+        activeGameCallbacks.onMatchFinish?.(myId, true, botScoreTracker);
+        return;
+      }
+
+      botScoreTracker += 1;
+      initialCallback?.(botScoreTracker);
+      activeGameCallbacks.onOpponentScore?.(botScoreTracker);
+
+      // Occasional lively emote
+      if (botScoreTracker % 7 === 0 && Math.random() < 0.35) {
+        const emojis = ['🔥', '⚡', '🧠', '😎', '👏'];
+        const emoji = emojis[Math.floor(Math.random() * emojis.length)];
+        activeGameCallbacks.onOpponentEmote?.(emoji);
+      }
+
+      scheduleNextStep();
+    }, Math.round(delay));
+  }
+
+  // Natural pause before answering the first level
+  simulatedBotTimeout = setTimeout(() => {
+    scheduleNextStep();
+  }, 2200);
+}
 
 export const DuelService = {
   /**
@@ -233,8 +316,8 @@ export const DuelService = {
           // ignore
         }
 
-        // After 6s, fallback to high-octane competitive bot
-        if (searchElapsed >= 6000) {
+        // After minimum 7s (7200ms = 9 polling attempts), fallback to intelligent challenger bot
+        if (searchElapsed >= 7200) {
           clearInterval(matchmakingInterval);
           this.cancelMatchmaking(myId);
 
@@ -247,24 +330,7 @@ export const DuelService = {
           currentActiveSeed = botSeed;
           isMatchFinishedReported = false;
 
-          botScoreTracker = 0;
-          simulatedBotInterval = setInterval(() => {
-            const botErrorChance = botScoreTracker < 5 ? 0.08 : (botScoreTracker < 10 ? 0.16 : 0.25);
-            const isBotMistake = Math.random() < botErrorChance;
-
-            if (isBotMistake) {
-              clearInterval(simulatedBotInterval);
-              if (!isMatchFinishedReported) {
-                isMatchFinishedReported = true;
-                activeGameCallbacks.onMatchFinish?.(myId, true, botScoreTracker);
-              }
-            } else {
-              botScoreTracker += 1;
-              callbacks.onOpponentScore(botScoreTracker);
-              activeGameCallbacks.onOpponentScore?.(botScoreTracker);
-            }
-          }, 3800);
-
+          startBotSimulation(myId, (score) => callbacks.onOpponentScore(score));
           callbacks.onMatchStart(randomBot, botSeed, true, botRoom);
         }
       }, 800);
@@ -397,7 +463,7 @@ export const DuelService = {
     isMatchFinishedReported = true;
     const myId = getDuelPlayerId();
     if (isBotMatch) {
-      clearInterval(simulatedBotInterval);
+      clearBotSimulation();
       activeGameCallbacks.onMatchFinish?.('bot', false, botScoreTracker);
       return;
     }
@@ -425,25 +491,11 @@ export const DuelService = {
       const newSeed = Math.floor(Math.random() * 900000) + 100000;
       currentActiveSeed = newSeed;
       currentScore = 0;
-      botScoreTracker = 0;
       isMatchFinishedReported = false;
+      hasReportedRematchInvite = false;
+      lastReportedOpponentScore = -1;
 
-      clearInterval(simulatedBotInterval);
-      simulatedBotInterval = setInterval(() => {
-        const botErrorChance = botScoreTracker < 5 ? 0.08 : (botScoreTracker < 10 ? 0.16 : 0.25);
-        const isBotMistake = Math.random() < botErrorChance;
-
-        if (isBotMistake) {
-          clearInterval(simulatedBotInterval);
-          if (!isMatchFinishedReported) {
-            isMatchFinishedReported = true;
-            activeGameCallbacks.onMatchFinish?.(getDuelPlayerId(), true, botScoreTracker);
-          }
-        } else {
-          botScoreTracker += 1;
-          activeGameCallbacks.onOpponentScore?.(botScoreTracker);
-        }
-      }, 3800);
+      startBotSimulation(getDuelPlayerId());
 
       setTimeout(() => {
         activeGameCallbacks.onRematchStart?.(newSeed);
@@ -517,10 +569,9 @@ export const DuelService = {
   cleanup() {
     clearInterval(syncInterval);
     clearInterval(matchmakingInterval);
-    clearInterval(simulatedBotInterval);
+    clearBotSimulation();
     syncInterval = null;
     matchmakingInterval = null;
-    simulatedBotInterval = null;
     currentActiveSeed = 0;
     isMatchFinishedReported = false;
     hasReportedRematchInvite = false;
