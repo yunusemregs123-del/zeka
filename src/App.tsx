@@ -1544,22 +1544,46 @@ export default function App() {
     haptic.cancel();
     clearMemoryTimer();
     activeRematchSeedRef.current = null;
-    if ((isDuelActive || gameMode === 'DUEL') && gameState === 'PLAYING') {
+    const wasInDuel = isDuelActive || gameMode === 'DUEL';
+    if (wasInDuel && gameState === 'PLAYING') {
       DuelService.reportForfeit();
     }
-    // Clean up duel immediately to stop any polling or background vibrations
-    if (duelCleanupTimerRef.current) {
-      clearTimeout(duelCleanupTimerRef.current);
-      duelCleanupTimerRef.current = null;
-    }
-    DuelService.cleanup();
+
     goToMenu();
     setIsDuelActive(false);
     setDuelWinner(null);
     setDuelRematchRequested(false);
     duelRewardHandledRef.current = false;
-    setPendingRematchInvite(null);
-    setDuelOpponentRematchPending(false);
+
+    // If leaving from a duel that was finished and room code is still present
+    if (wasInDuel && DuelService.getActiveRoomCode()) {
+      // If opponent had ALREADY requested rematch while on the GameOver screen:
+      if (duelOpponentRematchPending && duelOpponent) {
+        setPendingRematchInvite({
+          roomCode: DuelService.getActiveRoomCode(),
+          opponentName: duelOpponent.name || t.duel_opponent || 'Opponent',
+        });
+      }
+
+      // Keep sync active for 25s so user can receive / accept rematch invite on the main menu
+      if (duelCleanupTimerRef.current) {
+        clearTimeout(duelCleanupTimerRef.current);
+      }
+      duelCleanupTimerRef.current = setTimeout(() => {
+        DuelService.cleanup();
+        setPendingRematchInvite(null);
+        setDuelOpponentRematchPending(false);
+        duelCleanupTimerRef.current = null;
+      }, 25000);
+    } else {
+      if (duelCleanupTimerRef.current) {
+        clearTimeout(duelCleanupTimerRef.current);
+        duelCleanupTimerRef.current = null;
+      }
+      DuelService.cleanup();
+      setPendingRematchInvite(null);
+      setDuelOpponentRematchPending(false);
+    }
   };
 
   const handleStartGame = (asDev = false, startLevel?: number, mode?: GameMode) => {
@@ -1704,6 +1728,7 @@ export default function App() {
       },
       onOpponentQuit: () => {
         setDuelOpponentLeft(true);
+        setPendingRematchInvite(null);
         if (useGameStore.getState().gameState === 'PLAYING') {
           setDuelWinner('ME');
           awardDuelWin();
@@ -2008,6 +2033,11 @@ export default function App() {
               <button
                 onClick={() => {
                   setPendingRematchInvite(null);
+                  setDuelOpponentRematchPending(false);
+                  if (duelCleanupTimerRef.current) {
+                    clearTimeout(duelCleanupTimerRef.current);
+                    duelCleanupTimerRef.current = null;
+                  }
                   DuelService.cleanup();
                 }}
                 className="p-2 text-neutral-400 hover:text-white rounded-lg transition-colors"

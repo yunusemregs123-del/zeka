@@ -306,8 +306,6 @@ export const DuelService = {
           // 2. Match Finished (immediate simultaneous screen transition)
           if ((data.status === 'FINISHED' || data.status === 'FORFEIT') && data.winnerId && !isMatchFinishedReported) {
             isMatchFinishedReported = true;
-            clearInterval(syncInterval);
-            syncInterval = null;
             haptic.cancel();
             const isWinner = data.winnerId === myId;
             const finalOppScore = typeof data.opponentScore === 'number' ? data.opponentScore : 0;
@@ -382,8 +380,6 @@ export const DuelService = {
           }
           if ((data.status === 'FINISHED' || data.status === 'FORFEIT') && data.winnerId && !isMatchFinishedReported) {
             isMatchFinishedReported = true;
-            clearInterval(syncInterval);
-            syncInterval = null;
             haptic.cancel();
             const isWinner = data.winnerId === myId;
             const finalOppScore = typeof data.opponentScore === 'number' ? data.opponentScore : 0;
