@@ -9,9 +9,15 @@ interface BrainStoryModalProps {
   onClose: () => void;
   brainAge: number;
   speedScore: number;
+  speedMs: number;
   memoryScore: number;
+  memorySpan: string;
   flexibilityScore: number;
+  ruleComplexity: string;
   focusScore: number;
+  focusAccuracy: number;
+  cognitiveIndex: number;
+  percentile: number;
   playSound: (type: 'click' | 'success' | 'fail') => void;
 }
 
@@ -20,9 +26,15 @@ export const BrainStoryModal: React.FC<BrainStoryModalProps> = ({
   onClose,
   brainAge,
   speedScore,
+  speedMs,
   memoryScore,
+  memorySpan,
   flexibilityScore,
+  ruleComplexity,
   focusScore,
+  focusAccuracy,
+  cognitiveIndex,
+  percentile,
   playSound,
 }) => {
   const { language } = useGameStore();
@@ -32,7 +44,7 @@ export const BrainStoryModal: React.FC<BrainStoryModalProps> = ({
   const [isCopied, setIsCopied] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
 
-  // Render high-res 1080x1920 (9:16) canvas
+  // Render high-res 1080x1920 (9:16) canvas adhering to ZEKA brand standards
   useEffect(() => {
     if (!isOpen) {
       setImageUrl(null);
@@ -45,28 +57,6 @@ export const BrainStoryModal: React.FC<BrainStoryModalProps> = ({
     canvas.height = 1920;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-
-    // 1. Deep Obsidian Gradient Background
-    const bgGrad = ctx.createLinearGradient(0, 0, 0, 1920);
-    bgGrad.addColorStop(0, '#090A10');
-    bgGrad.addColorStop(0.5, '#0E1018');
-    bgGrad.addColorStop(1, '#07080D');
-    ctx.fillStyle = bgGrad;
-    ctx.fillRect(0, 0, 1080, 1920);
-
-    // 2. Ambient Glowing Gradients
-    const glow1 = ctx.createRadialGradient(540, 680, 50, 540, 680, 600);
-    glow1.addColorStop(0, 'rgba(245, 158, 11, 0.18)');
-    glow1.addColorStop(0.5, 'rgba(245, 158, 11, 0.05)');
-    glow1.addColorStop(1, 'rgba(0, 0, 0, 0)');
-    ctx.fillStyle = glow1;
-    ctx.fillRect(0, 0, 1080, 1920);
-
-    const glow2 = ctx.createRadialGradient(850, 1400, 40, 850, 1400, 500);
-    glow2.addColorStop(0, 'rgba(99, 102, 241, 0.12)');
-    glow2.addColorStop(1, 'rgba(0, 0, 0, 0)');
-    ctx.fillStyle = glow2;
-    ctx.fillRect(0, 0, 1080, 1920);
 
     // Helper: Rounded Rectangle
     const roundRect = (
@@ -101,60 +91,116 @@ export const BrainStoryModal: React.FC<BrainStoryModalProps> = ({
       }
     };
 
-    // 3. Card Frame (960 x 1800)
-    roundRect(60, 60, 960, 1800, 56, 'rgba(255, 255, 255, 0.025)', 'rgba(255, 255, 255, 0.08)', 2);
+    // 1. Deep Matte Obsidian Background
+    const bgGrad = ctx.createLinearGradient(0, 0, 0, 1920);
+    bgGrad.addColorStop(0, '#0A0B0F');
+    bgGrad.addColorStop(0.4, '#10121A');
+    bgGrad.addColorStop(1, '#09090D');
+    ctx.fillStyle = bgGrad;
+    ctx.fillRect(0, 0, 1080, 1920);
 
-    // 4. Header Badge: ZEKA • MIND INTELLIGENCE REPORT
-    roundRect(330, 130, 420, 56, 28, 'rgba(255, 255, 255, 0.06)', 'rgba(255, 255, 255, 0.12)', 1.5);
+    // 2. Ambient Warm Amber Glow (Central focus)
+    const glow1 = ctx.createRadialGradient(540, 680, 40, 540, 680, 580);
+    glow1.addColorStop(0, 'rgba(245, 158, 11, 0.16)');
+    glow1.addColorStop(0.5, 'rgba(245, 158, 11, 0.04)');
+    glow1.addColorStop(1, 'rgba(0, 0, 0, 0)');
+    ctx.fillStyle = glow1;
+    ctx.fillRect(0, 0, 1080, 1920);
+
+    // 3. Precision Outer Border (Card framing)
+    roundRect(50, 50, 980, 1820, 56, 'rgba(255, 255, 255, 0.02)', 'rgba(255, 255, 255, 0.07)', 2);
+
+    // 4. ZEKA APP ICON & LOGO (Exact game standard)
+    const iconX = 470;
+    const iconY = 120;
+    const iconSize = 140;
+    // Squircle background
+    roundRect(iconX, iconY, iconSize, iconSize, 42, '#1D1D1F', 'rgba(255, 255, 255, 0.16)', 2);
+
+    // Micro geometric accents inside icon
+    ctx.beginPath();
+    ctx.arc(iconX + 32, iconY + 32, 7, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.25)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Small triangle in bottom right
+    ctx.beginPath();
+    ctx.moveTo(iconX + iconSize - 34, iconY + iconSize - 20);
+    ctx.lineTo(iconX + iconSize - 22, iconY + iconSize - 20);
+    ctx.lineTo(iconX + iconSize - 28, iconY + iconSize - 32);
+    ctx.closePath();
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.25)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Iconic 'Z'
     ctx.fillStyle = '#FFFFFF';
-    ctx.font = '900 22px system-ui, -apple-system, sans-serif';
+    ctx.font = '900 82px system-ui, -apple-system, sans-serif';
     ctx.textAlign = 'center';
-    ctx.letterSpacing = '4px';
-    ctx.fillText('ZEKA • COGNITIVE LABS', 540, 166);
+    ctx.fillText('Z', iconX + iconSize / 2, iconY + 98);
 
-    // 5. Brain Age Hero Card
-    roundRect(120, 240, 840, 360, 44, 'rgba(255, 255, 255, 0.04)', 'rgba(245, 158, 11, 0.25)', 2);
+    // Game Title & Subtitle
+    ctx.font = '900 52px system-ui, -apple-system, sans-serif';
+    ctx.letterSpacing = '-1.5px';
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillText('ZEKA', 540, 325);
+
+    ctx.font = '800 18px system-ui, -apple-system, sans-serif';
+    ctx.letterSpacing = '5px';
+    ctx.fillStyle = '#9CA3AF';
+    ctx.fillText((t.menu_subtitle || 'MIND PUZZLE').toUpperCase(), 540, 360);
+
+    // Report Header Badge
+    roundRect(310, 390, 460, 44, 22, 'rgba(255, 255, 255, 0.05)', 'rgba(255, 255, 255, 0.1)', 1.5);
+    ctx.fillStyle = '#E5E7EB';
+    ctx.font = '800 13px system-ui, -apple-system, sans-serif';
+    ctx.letterSpacing = '2.5px';
+    ctx.fillText('COGNITIVE PERFORMANCE REPORT', 540, 417);
+
+    // 5. HERO BRAIN AGE CARD (Mathematical & Clean)
+    const heroY = 465;
+    const heroH = 265;
+    roundRect(100, heroY, 880, heroH, 44, 'rgba(255, 255, 255, 0.035)', 'rgba(245, 158, 11, 0.25)', 2);
 
     ctx.fillStyle = '#9CA3AF';
-    ctx.font = '800 24px system-ui, -apple-system, sans-serif';
-    ctx.letterSpacing = '6px';
-    ctx.fillText((t.brain_age_label || 'ESTIMATED BRAIN AGE').toUpperCase(), 540, 305);
+    ctx.font = '800 20px system-ui, -apple-system, sans-serif';
+    ctx.letterSpacing = '4px';
+    ctx.fillText((t.brain_age_label || 'ESTIMATED BRAIN AGE').toUpperCase(), 540, heroY + 52);
 
-    // Giant Glowing Age Number
+    // Glowing Age
     ctx.save();
     ctx.shadowColor = 'rgba(245, 158, 11, 0.45)';
-    ctx.shadowBlur = 30;
+    ctx.shadowBlur = 28;
     ctx.fillStyle = '#F59E0B';
-    ctx.font = '900 160px system-ui, -apple-system, sans-serif';
+    ctx.font = '900 135px system-ui, -apple-system, sans-serif';
     ctx.letterSpacing = '-4px';
-    ctx.fillText(String(brainAge), 500, 470);
+    ctx.fillText(String(brainAge), 495, heroY + 172);
     ctx.restore();
 
     ctx.fillStyle = '#E5E7EB';
-    ctx.font = '800 40px system-ui, -apple-system, sans-serif';
+    ctx.font = '800 36px system-ui, -apple-system, sans-serif';
     ctx.textAlign = 'left';
-    ctx.fillText(t.brain_age_years || 'YAŞ', 630, 455);
+    ctx.fillText(t.brain_age_years || 'YAŞ', 595, heroY + 160);
     ctx.textAlign = 'center';
 
-    // Insight pill
-    const insightText = brainAge <= 25 
-      ? (t.brain_insight_high || 'Üstün refleksler ve dinamik zihin!') 
-      : brainAge <= 35 
-      ? (t.brain_insight_mid || 'Dengeli ve keskin bilişsel kapasite.') 
-      : (t.brain_insight_low || 'Düzenli egzersizle zihnini genç tut!');
-
-    roundRect(160, 515, 760, 52, 26, 'rgba(245, 158, 11, 0.12)', 'rgba(245, 158, 11, 0.2)', 1.5);
+    // Mathematical Cognitive Index Pill
+    roundRect(240, heroY + 195, 600, 44, 22, 'rgba(245, 158, 11, 0.12)', 'rgba(245, 158, 11, 0.22)', 1.5);
     ctx.fillStyle = '#FCD34D';
-    ctx.font = '700 21px system-ui, -apple-system, sans-serif';
-    ctx.letterSpacing = '0.5px';
-    ctx.fillText(insightText, 540, 549);
+    ctx.font = '800 16px system-ui, -apple-system, sans-serif';
+    ctx.letterSpacing = '1px';
+    ctx.fillText(
+      `${t.brain_cognitive_index || 'BİLİŞSEL İNDEKS'}: %${cognitiveIndex.toFixed(1)}  •  ${t.brain_percentile || 'TOP'} %${percentile}`,
+      540,
+      heroY + 223
+    );
 
-    // 6. Minimalist Radar Diagram
+    // 6. RADAR POLYGON DIAGRAM
     const centerX = 540;
-    const centerY = 890;
-    const radius = 210;
+    const centerY = 970;
+    const radius = 190;
 
-    // Concentric guideline diamonds
+    // Guideline diamonds
     [0.25, 0.5, 0.75, 1.0].forEach((scale) => {
       ctx.beginPath();
       ctx.moveTo(centerX, centerY - radius * scale);
@@ -162,7 +208,7 @@ export const BrainStoryModal: React.FC<BrainStoryModalProps> = ({
       ctx.lineTo(centerX, centerY + radius * scale);
       ctx.lineTo(centerX - radius * scale, centerY);
       ctx.closePath();
-      ctx.strokeStyle = scale === 1.0 ? 'rgba(255, 255, 255, 0.15)' : 'rgba(255, 255, 255, 0.05)';
+      ctx.strokeStyle = scale === 1.0 ? 'rgba(255, 255, 255, 0.14)' : 'rgba(255, 255, 255, 0.05)';
       ctx.lineWidth = 1.5;
       if (scale < 1.0) {
         ctx.setLineDash([4, 6]);
@@ -196,83 +242,157 @@ export const BrainStoryModal: React.FC<BrainStoryModalProps> = ({
     ctx.lineTo(p4.x, p4.y);
     ctx.closePath();
 
-    ctx.fillStyle = 'rgba(245, 158, 11, 0.35)';
+    ctx.fillStyle = 'rgba(245, 158, 11, 0.28)';
     ctx.fill();
     ctx.strokeStyle = '#F59E0B';
-    ctx.lineWidth = 5;
+    ctx.lineWidth = 4;
     ctx.stroke();
 
     // Vertices
     [p1, p2, p3, p4].forEach((p) => {
       ctx.beginPath();
-      ctx.arc(p.x, p.y, 8, 0, Math.PI * 2);
+      ctx.arc(p.x, p.y, 7, 0, Math.PI * 2);
       ctx.fillStyle = '#FFFFFF';
       ctx.fill();
       ctx.strokeStyle = '#F59E0B';
-      ctx.lineWidth = 4;
+      ctx.lineWidth = 3.5;
       ctx.stroke();
     });
 
     // Radar Labels
-    ctx.font = '900 24px system-ui, -apple-system, sans-serif';
+    ctx.font = '900 22px system-ui, -apple-system, sans-serif';
     ctx.fillStyle = '#F3F4F6';
     ctx.textAlign = 'center';
-    ctx.fillText(`${t.brain_speed || 'HIZ'} %${speedScore}`, centerX, centerY - radius - 24);
-    ctx.fillText(`${t.brain_flexibility || 'ESNEKLİK'} %${flexibilityScore}`, centerX, centerY + radius + 40);
+    ctx.fillText(`${t.brain_speed || 'HIZ'} %${speedScore}`, centerX, centerY - radius - 20);
+    ctx.fillText(`${t.brain_flexibility || 'ESNEKLİK'} %${flexibilityScore}`, centerX, centerY + radius + 36);
 
     ctx.textAlign = 'left';
-    ctx.fillText(`${t.brain_memory_stat || 'HAFIZA'} %${memoryScore}`, centerX + radius + 24, centerY + 8);
+    ctx.fillText(`${t.brain_memory_stat || 'HAFIZA'} %${memoryScore}`, centerX + radius + 22, centerY + 8);
 
     ctx.textAlign = 'right';
-    ctx.fillText(`${t.brain_focus || 'ODAK'} %${focusScore}`, centerX - radius - 24, centerY + 8);
+    ctx.fillText(`${t.brain_focus || 'ODAK'} %${focusScore}`, centerX - radius - 22, centerY + 8);
     ctx.textAlign = 'center';
 
-    // 7. Stat Cards (4 metrics with bars)
-    const stats = [
-      { name: t.brain_speed || 'HIZ', score: speedScore, icon: '⚡' },
-      { name: t.brain_memory_stat || 'HAFIZA', score: memoryScore, icon: '🧠' },
-      { name: t.brain_flexibility || 'ESNEKLİK', score: flexibilityScore, icon: '🔄' },
-      { name: t.brain_focus || 'ODAK', score: focusScore, icon: '🎯' },
+    // 7. 4 SCIENTIFIC METRIC CARDS (2x2 Grid)
+    const metrics = [
+      {
+        name: t.brain_speed || 'HIZ',
+        score: speedScore,
+        icon: '⚡',
+        detail: `${t.brain_reaction || 'Reaksiyon'}: ~${speedMs}s`,
+      },
+      {
+        name: t.brain_memory_stat || 'HAFIZA',
+        score: memoryScore,
+        icon: '🧠',
+        detail: `${t.brain_memory_span || 'Kapasite'}: ${memorySpan} Chunk`,
+      },
+      {
+        name: t.brain_flexibility || 'ESNEKLİK',
+        score: flexibilityScore,
+        icon: '🔄',
+        detail: `${t.brain_logic_depth || 'Derinlik'}: ${ruleComplexity}`,
+      },
+      {
+        name: t.brain_focus || 'ODAK',
+        score: focusScore,
+        icon: '🎯',
+        detail: `${t.brain_accuracy || 'İsabet'}: %${focusAccuracy}`,
+      },
     ];
 
-    const gridY = 1220;
-    stats.forEach((st, i) => {
+    const gridY = 1240;
+    metrics.forEach((m, i) => {
       const col = i % 2;
       const row = Math.floor(i / 2);
-      const bx = 120 + col * 430;
-      const by = gridY + row * 160;
+      const bx = 100 + col * 450;
+      const by = gridY + row * 155;
+      const bw = 430;
+      const bh = 135;
 
-      roundRect(bx, by, 410, 130, 28, 'rgba(255, 255, 255, 0.04)', 'rgba(255, 255, 255, 0.08)', 1.5);
+      roundRect(bx, by, bw, bh, 28, 'rgba(255, 255, 255, 0.035)', 'rgba(255, 255, 255, 0.08)', 1.5);
 
       // Icon & Name
       ctx.textAlign = 'left';
-      ctx.font = '700 22px system-ui, -apple-system, sans-serif';
-      ctx.fillStyle = '#9CA3AF';
-      ctx.fillText(`${st.icon} ${st.name}`, bx + 24, by + 46);
+      ctx.font = '800 21px system-ui, -apple-system, sans-serif';
+      ctx.fillStyle = '#E5E7EB';
+      ctx.fillText(`${m.icon} ${m.name}`, bx + 22, by + 42);
 
-      // Percentage
+      // Score
       ctx.textAlign = 'right';
-      ctx.font = '900 26px system-ui, -apple-system, sans-serif';
+      ctx.font = '900 24px system-ui, -apple-system, sans-serif';
       ctx.fillStyle = '#F59E0B';
-      ctx.fillText(`%${st.score}`, bx + 386, by + 46);
+      ctx.fillText(`%${m.score}`, bx + bw - 22, by + 42);
 
-      // Progress Track
-      roundRect(bx + 24, by + 74, 362, 16, 8, 'rgba(255, 255, 255, 0.08)');
-      roundRect(bx + 24, by + 74, (362 * st.score) / 100, 16, 8, '#F59E0B');
+      // Progress bar
+      roundRect(bx + 22, by + 60, bw - 44, 12, 6, 'rgba(255, 255, 255, 0.08)');
+      roundRect(bx + 22, by + 60, ((bw - 44) * m.score) / 100, 12, 6, '#F59E0B');
+
+      // Scientific micro-detail
+      ctx.textAlign = 'left';
+      ctx.font = '700 17px system-ui, -apple-system, sans-serif';
+      ctx.fillStyle = '#9CA3AF';
+      ctx.fillText(m.detail, bx + 22, by + 106);
     });
 
-    // 8. Footer CTA / Social Proof
+    // 8. MINIMAL FOOTER WITH APP STORE & GOOGLE PLAY BADGES (No website URL)
     const footerY = 1600;
-    roundRect(160, footerY, 760, 140, 36, 'rgba(255, 255, 255, 0.03)', 'rgba(255, 255, 255, 0.08)', 1.5);
+    const footerH = 150;
+    roundRect(100, footerY, 880, footerH, 36, 'rgba(255, 255, 255, 0.025)', 'rgba(255, 255, 255, 0.07)', 1.5);
 
-    ctx.textAlign = 'center';
-    ctx.font = '800 26px system-ui, -apple-system, sans-serif';
+    // Left info: ZEKA • Mind Puzzle
+    ctx.textAlign = 'left';
     ctx.fillStyle = '#FFFFFF';
-    ctx.fillText('Senin zihnin kaç yaşında? 🧠', 540, footerY + 54);
+    ctx.font = '900 26px system-ui, -apple-system, sans-serif';
+    ctx.letterSpacing = '-0.5px';
+    ctx.fillText('ZEKA', 145, footerY + 62);
 
-    ctx.font = '700 22px system-ui, -apple-system, sans-serif';
-    ctx.fillStyle = '#F59E0B';
-    ctx.fillText('zeka.arcn.games', 540, footerY + 98);
+    ctx.fillStyle = '#9CA3AF';
+    ctx.font = '600 17px system-ui, -apple-system, sans-serif';
+    ctx.letterSpacing = '0.5px';
+    ctx.fillText('Minimal Mind Puzzle', 145, footerY + 98);
+
+    // Right badges: Minimal App Store & Google Play pills
+    const badgeW = 200;
+    const badgeH = 56;
+    const appStoreX = 540;
+    const googlePlayX = 755;
+    const badgeY = footerY + 47;
+
+    // App Store Badge
+    roundRect(appStoreX, badgeY, badgeW, badgeH, 16, 'rgba(255, 255, 255, 0.06)', 'rgba(255, 255, 255, 0.12)', 1.2);
+    // Apple icon
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = '900 22px system-ui, -apple-system, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('', appStoreX + 32, badgeY + 36);
+
+    ctx.textAlign = 'left';
+    ctx.font = '600 10px system-ui, -apple-system, sans-serif';
+    ctx.fillStyle = '#9CA3AF';
+    ctx.fillText('Download on the', appStoreX + 54, badgeY + 23);
+    ctx.font = '800 16px system-ui, -apple-system, sans-serif';
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillText('App Store', appStoreX + 54, badgeY + 43);
+
+    // Google Play Badge
+    roundRect(googlePlayX, badgeY, badgeW, badgeH, 16, 'rgba(255, 255, 255, 0.06)', 'rgba(255, 255, 255, 0.12)', 1.2);
+    // Play Triangle icon
+    ctx.beginPath();
+    ctx.moveTo(googlePlayX + 24, badgeY + 19);
+    ctx.lineTo(googlePlayX + 38, badgeY + 28);
+    ctx.lineTo(googlePlayX + 24, badgeY + 37);
+    ctx.closePath();
+    ctx.fillStyle = '#34D399';
+    ctx.fill();
+
+    ctx.textAlign = 'left';
+    ctx.font = '600 10px system-ui, -apple-system, sans-serif';
+    ctx.fillStyle = '#9CA3AF';
+    ctx.fillText('GET IT ON', googlePlayX + 50, badgeY + 23);
+    ctx.font = '800 16px system-ui, -apple-system, sans-serif';
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillText('Google Play', googlePlayX + 50, badgeY + 43);
 
     // Convert to Blob & Data URL
     canvas.toBlob((blob) => {
@@ -282,7 +402,21 @@ export const BrainStoryModal: React.FC<BrainStoryModalProps> = ({
         setImageUrl(url);
       }
     }, 'image/png');
-  }, [isOpen, brainAge, speedScore, memoryScore, flexibilityScore, focusScore, language]);
+  }, [
+    isOpen,
+    brainAge,
+    speedScore,
+    speedMs,
+    memoryScore,
+    memorySpan,
+    flexibilityScore,
+    ruleComplexity,
+    focusScore,
+    focusAccuracy,
+    cognitiveIndex,
+    percentile,
+    language,
+  ]);
 
   const handleNativeShare = async () => {
     haptic.impact('medium');
@@ -291,18 +425,18 @@ export const BrainStoryModal: React.FC<BrainStoryModalProps> = ({
 
     try {
       if (imageBlob && navigator.canShare) {
-        const file = new File([imageBlob], 'zeka-beyin-yasi.png', { type: 'image/png' });
+        const file = new File([imageBlob], 'zeka-brain-age.png', { type: 'image/png' });
         if (navigator.canShare({ files: [file] })) {
           await navigator.share({
             files: [file],
-            title: `ZEKA Beyin Yaşım: ${brainAge}`,
-            text: `ZEKA'da beyin yaşım ${brainAge} çıktı! ⚡ Senin zihnin kaç yaşında? Hemen test et: https://zeka.arcn.games`,
+            title: `ZEKA Brain Age: ${brainAge}`,
+            text: `ZEKA'da beyin yaşım ${brainAge} çıktı! ⚡ Bilişsel İndeks: %${cognitiveIndex.toFixed(1)} (Top %${percentile})`,
           });
           setIsSharing(false);
           return;
         }
       }
-    } catch (e) {
+    } catch {
       // User dismissed share dialog
     }
 

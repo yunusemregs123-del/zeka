@@ -21,22 +21,40 @@ export const BrainAnalyticsModal: React.FC<BrainAnalyticsModalProps> = ({
   const t = Translations[language];
   const [showStoryModal, setShowStoryModal] = useState(false);
 
-  // Calculate scores (0 - 100)
-  const speedScore = Math.min(100, Math.max(30, Math.round(50 + (timeAttackBest * 3))));
-  const memoryScore = Math.min(100, Math.max(35, Math.round(40 + (memoryBest * 4) + (maxLevelCompleted > 51 ? 25 : 0))));
-  const flexibilityScore = Math.min(100, Math.max(25, Math.round(45 + (maxLevelCompleted * 0.8))));
-  const focusScore = Math.min(100, Math.max(40, Math.round(55 + (comboCount * 5) + (streak * 2))));
+  // 1. SPEED SCORE (Processing Speed & Reaction):
+  const speedRaw = 35 + (timeAttackBest * 3.2) + Math.min(15, comboCount * 2.5);
+  const speedScore = Math.min(100, Math.max(30, Math.round(speedRaw)));
+  const speedMs = Math.max(0.8, Number((3.5 - Math.min(2.5, (speedScore - 30) * 0.035)).toFixed(2)));
 
-  // Brain Age calculation (between 20 and 70)
-  const averagePerformance = (speedScore + memoryScore + flexibilityScore + focusScore) / 4;
-  const brainAge = Math.max(20, Math.min(68, Math.round(75 - (averagePerformance * 0.65))));
+  // 2. MEMORY SCORE (Working Memory Span & N-Back Recall):
+  const memoryBonus = maxLevelCompleted >= 131 ? 25 : (maxLevelCompleted >= 51 ? 15 : 0);
+  const memoryRaw = 35 + (memoryBest * 5.0) + memoryBonus + Math.min(15, maxLevelCompleted * 0.15);
+  const memoryScore = Math.min(100, Math.max(30, Math.round(memoryRaw)));
+  const memorySpan = (4.0 + (memoryScore / 20)).toFixed(1);
+
+  // 3. AGILITY / FLEXIBILITY SCORE (Cognitive Switching & Mathematical Operations):
+  const flexibilityRaw = 35 + (Math.min(120, maxLevelCompleted) * 0.5) + Math.min(10, streak * 1.5);
+  const flexibilityScore = Math.min(100, Math.max(30, Math.round(flexibilityRaw)));
+  const ruleComplexity = Math.min(10, Math.max(1, Math.round(1 + (maxLevelCompleted / 14)))) + '/10';
+
+  // 4. FOCUS SCORE (Inhibitory Control & Sustained Accuracy):
+  const focusRaw = 40 + Math.min(35, streak * 3.5) + Math.min(25, comboCount * 3.0);
+  const focusScore = Math.min(100, Math.max(35, Math.round(focusRaw)));
+  const focusAccuracy = Math.min(99.6, Number((88 + (focusScore * 0.11)).toFixed(1)));
+
+  // OVERALL COGNITIVE INDEX (0 - 100):
+  const cognitiveIndex = Number(((speedScore * 0.25) + (memoryScore * 0.30) + (flexibilityScore * 0.25) + (focusScore * 0.20)).toFixed(1));
+  const percentile = Math.max(1, Math.round(100 - (cognitiveIndex * 0.95)));
+
+  // PSYCHOMETRIC BRAIN AGE (Standardized Curve):
+  const brainAge = Math.max(20, Math.min(68, Math.round(72 - (cognitiveIndex * 0.53))));
 
   const [copied, setCopied] = useState(false);
 
   const handleShare = () => {
     haptic.impact('medium');
     playSound('click');
-    const shareText = `ZEKA: Mind Puzzle 🧠\n${t.brain_age_label}: ${brainAge} ⚡\n• ${t.brain_speed}: %${speedScore}\n• ${t.brain_memory_stat}: %${memoryScore}\n• ${t.brain_flexibility}: %${flexibilityScore}\n• ${t.brain_focus}: %${focusScore}\nhttps://zeka.arcn.games`;
+    const shareText = `ZEKA: Mind Puzzle 🧠\n${t.brain_age_label}: ${brainAge} ⚡\n• ${t.brain_cognitive_index || 'BİLİŞSEL İNDEKS'}: %${cognitiveIndex.toFixed(1)} (${t.brain_percentile || 'TOP'} %${percentile})\n• ${t.brain_speed}: %${speedScore} (~${speedMs}s)\n• ${t.brain_memory_stat}: %${memoryScore} (${memorySpan} Chunk)\n• ${t.brain_flexibility}: %${flexibilityScore}\n• ${t.brain_focus}: %${focusScore} (%${focusAccuracy})`;
     
     if (typeof navigator !== 'undefined' && navigator.clipboard) {
       navigator.clipboard.writeText(shareText);
@@ -99,7 +117,13 @@ export const BrainAnalyticsModal: React.FC<BrainAnalyticsModalProps> = ({
                     </span>
                     <span className="text-sm font-bold text-neutral-300">{t.brain_age_years}</span>
                   </div>
-                  <span className="text-[11px] font-medium text-neutral-300 leading-relaxed block mt-1">
+                  {/* Mathematical Cognitive Index Badge */}
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-400/10 border border-amber-400/20 rounded-full text-[10px] font-black text-amber-300 my-1">
+                    <span>{t.brain_cognitive_index || 'BİLİŞSEL İNDEKS'}: %{cognitiveIndex.toFixed(1)}</span>
+                    <span>•</span>
+                    <span>{t.brain_percentile || 'TOP'} %{percentile}</span>
+                  </div>
+                  <span className="text-[11px] font-medium text-neutral-300 leading-relaxed block mt-1.5">
                     {brainAge <= 25 ? t.brain_insight_high : brainAge <= 35 ? t.brain_insight_mid : t.brain_insight_low}
                   </span>
                 </div>
@@ -176,9 +200,15 @@ export const BrainAnalyticsModal: React.FC<BrainAnalyticsModalProps> = ({
         onClose={() => setShowStoryModal(false)}
         brainAge={brainAge}
         speedScore={speedScore}
+        speedMs={speedMs}
         memoryScore={memoryScore}
+        memorySpan={memorySpan}
         flexibilityScore={flexibilityScore}
+        ruleComplexity={ruleComplexity}
         focusScore={focusScore}
+        focusAccuracy={focusAccuracy}
+        cognitiveIndex={cognitiveIndex}
+        percentile={percentile}
         playSound={playSound}
       />
     </>

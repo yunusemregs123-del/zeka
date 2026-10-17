@@ -140,27 +140,6 @@ export const DuelModal: React.FC<DuelModalProps> = ({
     setTimeout(() => setCodeCopied(false), 2500);
   };
 
-  const handleShareInvite = async () => {
-    haptic.impact('medium');
-    playSound('click');
-    const inviteText = `ZEKA'da 1v1 Zeka Düellosuna davet edildin! 🧠⚔️\nOda Kodum: ${roomCode}\nKatılmak için tıkla: https://zeka.arcn.games`;
-    if (typeof navigator !== 'undefined' && navigator.share) {
-      try {
-        await navigator.share({
-          title: "ZEKA 1v1 Düello Daveti",
-          text: inviteText,
-          url: "https://zeka.arcn.games",
-        });
-        return;
-      } catch {
-        // User cancelled share dialog
-      }
-    }
-    copyToClipboard(inviteText);
-    setCodeCopied(true);
-    setTimeout(() => setCodeCopied(false), 2500);
-  };
-
   const handleWatchAdForCoins = async () => {
     setIsWatchingAd(true);
     haptic.selection();
@@ -406,29 +385,18 @@ export const DuelModal: React.FC<DuelModalProps> = ({
                     <span>{t.duel_waiting_friend}</span>
                   </div>
 
-                  <div className="flex gap-2 w-full">
-                    <motion.button
-                      whileTap={{ scale: 0.96 }}
-                      onClick={handleCopyCode}
-                      className={`flex-1 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-1.5 transition-colors ${
-                        codeCopied
-                          ? 'bg-emerald-600 text-white shadow-sm'
-                          : 'bg-neutral-900 hover:bg-black text-white'
-                      }`}
-                    >
-                      <span>{codeCopied ? '✓' : '📋'}</span>
-                      <span>{codeCopied ? (t.duel_code_copied || 'KOPYALANDI!') : (t.duel_copy_btn || 'KODU KOPYALA')}</span>
-                    </motion.button>
-
-                    <motion.button
-                      whileTap={{ scale: 0.96 }}
-                      onClick={handleShareInvite}
-                      className="px-3.5 py-2.5 bg-amber-400 hover:bg-amber-500 text-neutral-900 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-1 shadow-xs transition-colors shrink-0"
-                    >
-                      <span>🚀</span>
-                      <span>{t.duel_share_invite_btn || 'GÖNDER'}</span>
-                    </motion.button>
-                  </div>
+                  <motion.button
+                    whileTap={{ scale: 0.96 }}
+                    onClick={handleCopyCode}
+                    className={`w-full py-3 rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all ${
+                      codeCopied
+                        ? 'bg-emerald-600 text-white shadow-sm'
+                        : 'bg-neutral-900 hover:bg-black text-white'
+                    }`}
+                  >
+                    <span>{codeCopied ? '✓' : '📋'}</span>
+                    <span>{codeCopied ? (t.duel_code_copied || 'KOPYALANDI!') : (t.duel_copy_btn || 'KODU KOPYALA')}</span>
+                  </motion.button>
                 </div>
 
                 <div className="flex items-center gap-2 px-2">
