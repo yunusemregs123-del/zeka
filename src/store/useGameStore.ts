@@ -1,7 +1,10 @@
 import { create } from "zustand";
 
+export type GameMode = 'CLASSIC' | 'TIME_ATTACK' | 'MEMORY';
+
 interface GameState {
   gameState: 'MENU' | 'PLAYING' | 'GAMEOVER';
+  gameMode: GameMode;
   level: number;
   totalTimeSpent: number;
   coins: number;
@@ -13,6 +16,12 @@ interface GameState {
   isDevMode: boolean; // Developer mode toggle
   hasRevivedInCurrentGame: boolean;
   language: 'en' | 'tr' | 'de' | 'ja' | 'pt';
+  
+  // Modes & Records
+  timeAttackScore: number;
+  timeAttackBest: number;
+  memoryScore: number;
+  memoryBest: number;
   
   lastRewardTime: number | null;
   dailyRewardsToday: number;
@@ -30,10 +39,11 @@ interface GameState {
 
   // Actions
   setLanguage: (lang: 'en' | 'tr' | 'de' | 'ja' | 'pt') => void;
+  setGameMode: (mode: GameMode) => void;
   goToMenu: () => void;
   unlockMedal: (id: string) => void;
   claimMedalReward: (id: string, reward: number) => void;
-  startGame: (asDev?: boolean, startLevel?: number) => void;
+  startGame: (asDev?: boolean, startLevel?: number, mode?: GameMode) => void;
   incrementStreak: () => void;
   resetStreak: () => void;
   incrementCombo: () => void;
@@ -54,6 +64,7 @@ interface GameState {
   toggleDevMode: () => void;
   devAdvanceLevel: (lvl: number) => void;
   claimDailyReward: () => void;
+  incrementModeScore: () => void;
 }
 
 const getDailyRewardState = () => {
@@ -81,6 +92,7 @@ const getInitialLanguage = (): 'en' | 'tr' | 'de' | 'ja' | 'pt' => {
 
 export const useGameStore = create<GameState>((set, get) => ({
   gameState: 'MENU',
+  gameMode: 'CLASSIC',
   level: 1,
   totalTimeSpent: 0,
   currentValue: 0,
@@ -91,6 +103,10 @@ export const useGameStore = create<GameState>((set, get) => ({
   isDevMode: false,
   hasRevivedInCurrentGame: false,
   language: getInitialLanguage(),
+  timeAttackScore: 0,
+  timeAttackBest: Number(localStorage.getItem('zeka_ta_best')) || 0,
+  memoryScore: 0,
+  memoryBest: Number(localStorage.getItem('zeka_mem_best')) || 0,
   medals: JSON.parse(localStorage.getItem('zeka_medals') || '[]'),
   claimedMedals: JSON.parse(localStorage.getItem('zeka_medals_claimed') || '[]'),
   streak: 0,
@@ -107,6 +123,8 @@ export const useGameStore = create<GameState>((set, get) => ({
   // Starting coins: default 200 if new player
   coins: localStorage.getItem('zeka_coins') !== null ? Number(localStorage.getItem('zeka_coins')) : 200,
 
+  setGameMode: (mode) => set({ gameMode: mode }),
+
   setLanguage: (lang) => {
     localStorage.setItem('zeka_lang', lang);
     const used = get().langsUsed;
@@ -121,30 +139,73 @@ export const useGameStore = create<GameState>((set, get) => ({
 
   goToMenu: () => set({ gameState: 'MENU' }),
   
-  startGame: (asDev = false, startLevel?: number) => {
+  startGame: (asDev = false, startLevel?: number, mode?: GameMode) => {
+    const activeMode = mode || get().gameMode;
     const checkpoint = get().checkpointLevel;
     const initialTime = get().checkpointTime;
-    const initialLevel = startLevel || (asDev ? 1 : checkpoint);
+    const initialLevel = activeMode === 'CLASSIC' ? (startLevel || (asDev ? 1 : checkpoint)) : 1;
+    const startingTime = activeMode === 'TIME_ATTACK' ? 30 : (activeMode === 'MEMORY' ? 15 : (initialLevel <= 50 ? 20 : Math.max(5, 20 - Math.floor((initialLevel - 50) / 10))));
+
     set({ 
-      level: initialLevel, 
-      totalTimeSpent: startLevel ? 0 : (asDev ? 0 : initialTime), 
-      previousAnswers: [0,0], 
       gameState: 'PLAYING',
+      gameMode: activeMode,
+      level: initialLevel, 
+      totalTimeSpent: startLevel ? 0 : (asDev ? 0 : (activeMode === 'CLASSIC' ? initialTime : 0)), 
+      previousAnswers: [0,0], 
       isDevMode: asDev,
       hasRevivedInCurrentGame: false,
       streak: 0,
       comboCount: 0,
+      timeAttackScore: 0,
+      memoryScore: 0,
+      timeLeft: startingTime,
+      maxTime: startingTime,
     });
     get().startNewLevel(true);
   },
 
   startNewLevel: (_isRetry = false) => {
-    const currentMaxTime = get().level <= 50 ? 20 : Math.max(5, 20 - Math.floor((get().level - 50) / 10));
+    const mode = get().gameMode;
+    
+    if (mode === 'TIME_ATTACK') {
+      if (_isRetry || get().timeLeft <= 0) {
+        set({
+          currentValue: 0,
+          timeLeft: 30,
+          maxTime: 30,
+        });
+      } else {
+        set({ currentValue: 0 });
+      }
+      return;
+    }
+
+    const currentMaxTime = mode === 'MEMORY' ? 15 : (get().level <= 50 ? 20 : Math.max(5, 20 - Math.floor((get().level - 50) / 10)));
     set({
       currentValue: 0,
       timeLeft: get().isDevMode ? 999 : currentMaxTime,
       maxTime: get().isDevMode ? 999 : currentMaxTime,
     });
+  },
+
+  incrementModeScore: () => {
+    const mode = get().gameMode;
+    if (mode === 'TIME_ATTACK') {
+      const newScore = get().timeAttackScore + 1;
+      const best = Math.max(newScore, get().timeAttackBest);
+      localStorage.setItem('zeka_ta_best', String(best));
+      // Bonus time in Time Attack for correct answer (+2s, capped at 60s)
+      set((s) => ({
+        timeAttackScore: newScore,
+        timeAttackBest: best,
+        timeLeft: Math.min(60, s.timeLeft + 2.0)
+      }));
+    } else if (mode === 'MEMORY') {
+      const newScore = get().memoryScore + 1;
+      const best = Math.max(newScore, get().memoryBest);
+      localStorage.setItem('zeka_mem_best', String(best));
+      set({ memoryScore: newScore, memoryBest: best });
+    }
   },
 
   submitAnswer: (_answer: number) => {},

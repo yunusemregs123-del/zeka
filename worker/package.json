@@ -1,0 +1,16 @@
+{
+  "name": "zeka-edge-worker",
+  "version": "1.0.0",
+  "description": "Cloudflare Edge Worker & D1 Database API for ZEKA: Mind Puzzle",
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "d1:init": "wrangler d1 execute zeka-db --file=./schema.sql"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20241011.0",
+    "typescript": "^5.6.3",
+    "wrangler": "^3.80.0"
+  }
+}

@@ -118,7 +118,20 @@ export const evaluateSequence = (sequence: SymbolType[], prevAnswers: number[]):
   return { result: runningTotal, valid: true };
 };
 
-export const generatePuzzle = (level: number, previousResults: number[]): { sequence: SymbolType[], expectedResult: number } => {
+export function createPRNG(seed: number): () => number {
+  let s = Math.abs(seed) % 2147483647;
+  if (s <= 0) s = 1;
+  return function() {
+    s = (s * 16807) % 2147483647;
+    return (s - 1) / 2147483646;
+  };
+}
+
+export const generatePuzzle = (
+  level: number, 
+  previousResults: number[],
+  rng: () => number = Math.random
+): { sequence: SymbolType[], expectedResult: number } => {
   const unlocked = getUnlockedSymbols(level);
   const maxTries = 3000;
   
@@ -139,17 +152,17 @@ export const generatePuzzle = (level: number, previousResults: number[]): { sequ
     const canUsePrev2 = level >= 133 && level !== lastCheckpoint && !isJustAfterCheckpoint && !isSecondAfterCheckpoint;
 
     // Prev2 intro modal is at 131. Give grace period (133) + Checkpoint grace (3 turns)
-    if (canUsePrev2 && Math.random() < 0.08) {
+    if (canUsePrev2 && rng() < 0.08) {
       memorySymbolToAdd = 'Prev2';
     } 
     // Prev1 intro modal is at 51. Give grace period (52) + Checkpoint grace (2 turns)
-    else if (canUsePrev1 && Math.random() < 0.35) {
+    else if (canUsePrev1 && rng() < 0.35) {
       memorySymbolToAdd = 'Prev1';
     }
     
     // Choose which segment will hold the memory symbol (must not be c=0 since c=0 is circles)
     const memoryInstallIndex = memorySymbolToAdd && combinationsCount > 1 
-      ? Math.floor(Math.random() * (combinationsCount - 1)) + 1 
+      ? Math.floor(rng() * (combinationsCount - 1)) + 1 
       : -1;
 
     for (let c = 0; c < combinationsCount; c++) {
@@ -165,12 +178,12 @@ export const generatePuzzle = (level: number, previousResults: number[]): { sequ
         if (level <= 10) {
           len = level;
         } else {
-          len = Math.max(1, Math.floor(Math.random() * 5) + 2);
+          len = Math.max(1, Math.floor(rng() * 5) + 2);
         }
 
         const limitedLen = Math.min(len, 9);
         for (let i = 0; i < limitedLen; i++) {
-          sequence.push(Math.random() > 0.5 ? 'CircleFilled' : 'CircleEmpty');
+          sequence.push(rng() > 0.5 ? 'CircleFilled' : 'CircleEmpty');
         }
       } else {
         let sym: SymbolType;
@@ -186,11 +199,11 @@ export const generatePuzzle = (level: number, previousResults: number[]): { sequ
           }
 
           if (pool.length === 0) pool = ['TriangleUp']; 
-          sym = pool[Math.floor(Math.random() * pool.length)];
+          sym = pool[Math.floor(rng() * pool.length)];
         }
 
         const canBeReversed = ['TriangleUp', 'TriangleDown', 'Mul2', 'Div2'].includes(sym);
-        if (canBeReversed && unlocked.includes('ReverseNext') && Math.random() > 0.7) {
+        if (canBeReversed && unlocked.includes('ReverseNext') && rng() > 0.7) {
           sequence.push('ReverseNext');
         }
 
@@ -198,15 +211,15 @@ export const generatePuzzle = (level: number, previousResults: number[]): { sequ
       }
     }
 
-    if (unlocked.includes('Star') && Math.random() > 0.85) {
+    if (unlocked.includes('Star') && rng() > 0.85) {
       sequence.push('Plus', 'Star');
     }
     
-    if (unlocked.includes('Heart') && !sequence.includes('Star') && Math.random() > 0.85) {
+    if (unlocked.includes('Heart') && !sequence.includes('Star') && rng() > 0.85) {
       sequence.push('Plus', 'Heart');
     }
 
-    if (unlocked.includes('InvertAll') && !sequence.includes('Star') && Math.random() > 0.80) {
+    if (unlocked.includes('InvertAll') && !sequence.includes('Star') && rng() > 0.80) {
       sequence.push('Plus', 'InvertAll');
     }
 

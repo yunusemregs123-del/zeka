@@ -2,8 +2,8 @@ import { createPortal } from 'react-dom';
 import { useEffect, useState } from 'react';
 import { StatusBar } from '@capacitor/status-bar';
 import { App as CapApp } from '@capacitor/app';
-import { useGameStore } from './store/useGameStore';
-import { generatePuzzle, isTutorialLevel, getTutorialSymbols, getCheckpointForLevel, getNextCheckpoint, type SymbolType } from './lib/LevelEngine';
+import { useGameStore, type GameMode } from './store/useGameStore';
+import { generatePuzzle, isTutorialLevel, getTutorialSymbols, getCheckpointForLevel, type SymbolType, createPRNG } from './lib/LevelEngine';
 import * as Leaderboard from './lib/Leaderboard';
 import * as Icons from './components/Icons';
 import { GameSymbol } from './components/GameSymbol';
@@ -12,6 +12,12 @@ import { AmbientMusic } from './lib/AmbientMusic';
 import { Ads } from './lib/Ads';
 import { Translations, type LanguageCode } from './lib/Translations';
 import { ACHIEVEMENTS } from './lib/Achievements';
+import { haptic } from './lib/Haptics';
+import { BrainAnalyticsModal } from './components/BrainAnalyticsModal';
+import { DuelModal, type StartDuelPayload } from './components/DuelModal';
+import { DuelService, type OpponentInfo } from './lib/DuelService';
+import { JourneyMap } from './components/JourneyMap';
+import { RollingNumber } from './components/RollingNumber';
 
 let audioCtx: AudioContext | null = null;
 let ambientMusic: AmbientMusic | null = null;
@@ -157,26 +163,37 @@ function MenuScreen({
   showLeaderboard, setShowLeaderboard,
   showMedals, setShowMedals,
   selectedMedal, setSelectedMedal,
-  showLangMenu, setShowLangMenu
+  showLangMenu, setShowLangMenu,
+  openBrainStats, openDuel
 }: {
-  startGame: (asDev?: boolean, startLevel?: number) => void,
+  startGame: (asDev?: boolean, startLevel?: number, mode?: GameMode) => void,
   openDailyReward: () => void,
   coins: number,
   showInfo: boolean, setShowInfo: (v: boolean) => void,
   showLeaderboard: boolean, setShowLeaderboard: (v: boolean) => void,
   showMedals: boolean, setShowMedals: (v: boolean) => void,
   selectedMedal: any, setSelectedMedal: (v: any) => void,
-  showLangMenu: boolean, setShowLangMenu: (v: boolean) => void
+  showLangMenu: boolean, setShowLangMenu: (v: boolean) => void,
+  openBrainStats: () => void,
+  openDuel: () => void,
 }) {
-  const { language, setLanguage, medals, claimedMedals, claimMedalReward } = useGameStore();
+  const {
+    language, setLanguage, medals, claimedMedals, claimMedalReward,
+    checkpointLevel, streak, timeAttackBest, memoryBest, isDevMode, toggleDevMode
+  } = useGameStore();
   const t = Translations[language];
   const [tab, setTab] = useState<'daily' | 'weekly' | 'alltime'>('daily');
   const [scores, setScores] = useState<Leaderboard.ScoreEntry[]>([]);
   const [personalRankData, setPersonalRankData] = useState<{ rank: number, row: Leaderboard.ScoreEntry } | null>(null);
   const [loading, setLoading] = useState(true);
-  const personalBest = Leaderboard.getPersonalBest();
   const [muteAudio, setMuteAudio] = useState(localStorage.getItem('zeka_mute') === 'true');
   const logoControls = useAnimation();
+
+  const tabLabels: Record<'daily' | 'weekly' | 'alltime', string> = {
+    daily: t.lb_tab_daily || (language === 'tr' ? 'BUGÜN' : 'DAILY'),
+    weekly: t.lb_tab_weekly || (language === 'tr' ? 'BU HAFTA' : 'WEEKLY'),
+    alltime: t.lb_tab_alltime || (language === 'tr' ? 'TÜMÜ' : 'ALL TIME'),
+  };
 
   const toggleMute = () => {
     const newMute = !muteAudio;
@@ -289,54 +306,77 @@ function MenuScreen({
     };
   }, [muteAudio]);
 
-  const tabLabels = { daily: t.menu_daily_tab, weekly: t.menu_weekly_tab, alltime: t.menu_alltime_tab };
+  const [isHapticsOn, setIsHapticsOn] = useState(haptic.getStatus());
+  const [selectedMode, setSelectedMode] = useState<GameMode | 'DUEL'>('CLASSIC');
+
+  const toggleHaptics = () => {
+    const next = !isHapticsOn;
+    setIsHapticsOn(next);
+    haptic.setEnabled(next);
+  };
 
   return (
-    <div className="min-h-[100dvh] bg-[#F5F5F7] text-[#1D1D1F] flex flex-col items-center justify-center font-sans selection:bg-neutral-200 p-4 md:p-6 relative overflow-hidden">
+    <div className="min-h-[100dvh] bg-[#F5F5F7] text-[#1D1D1F] flex flex-col justify-between font-sans selection:bg-neutral-200 relative overflow-hidden p-4">
 
-      {/* HOME HEADER - CONSTRAINED FOR WEB */}
-      <div className="absolute inset-x-0 top-[1.5rem] z-10 px-4 md:p-6 w-full max-w-2xl mx-auto flex justify-between items-start pointer-events-none">
-
-        {/* LEFT: DAILY REWARD */}
-        <DailyRewardButton onClick={openDailyReward} />
-
-        {/* RIGHT: COINS - FORCED BLACK TEXT */}
-        <div className="pointer-events-auto flex items-center gap-2 bg-white px-4 py-2 rounded-full border border-neutral-200/60 shadow-sm transform active:scale-95 transition-all">
-          <div className="w-2.5 h-2.5 rounded-full bg-amber-400 shrink-0"></div>
-          <span className="font-black text-sm md:text-base tabular-nums leading-none" style={{ color: '#000000', opacity: 1 }}>{coins}</span>
-        </div>
-      </div>
-
-      {/* DEV START REMOVED */}
-
-
-      <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="text-center w-full max-w-sm z-0">
-
-        {/* Rhythmic Bouncing Logo Syncing with Ambient Music */}
-        <motion.div
-          animate={logoControls}
-          className="mx-auto w-fit mb-8"
+      {/* TOP STATUS BAR (HEADER) */}
+      <header className="w-full max-w-sm mx-auto flex items-center justify-between z-20 shrink-0 pt-2">
+        {/* Daily Reward Button */}
+        <button
+          onClick={openDailyReward}
+          className="flex items-center gap-2 bg-white px-3.5 py-2 rounded-2xl border border-neutral-200/80 shadow-sm active:scale-95 transition-all text-neutral-800"
         >
-          <div className="w-24 h-24 bg-[#1D1D1F] text-white rounded-[2.5rem] flex items-center justify-center shadow-[0_20px_40px_rgba(0,0,0,0.2)] transition-transform relative overflow-hidden">
-            {/* Minimal Decorative Shapes Behind Z */}
+          <div className="p-1 rounded-lg bg-amber-400 text-white animate-pulse">
+            <Icons.Gift className="w-4 h-4" />
+          </div>
+          <span className="text-[10px] font-black uppercase tracking-wider">{t.daily_reward}</span>
+        </button>
+
+        {/* Coins & Streak */}
+        <div className="flex items-center gap-2">
+          {streak > 0 && (
+            <div className="flex items-center gap-1 bg-white border border-amber-200/80 px-2.5 py-1.5 rounded-full shadow-sm">
+              <span className="text-amber-500 text-xs">🔥</span>
+              <span className="text-xs font-black text-amber-700 tabular-nums">{streak}</span>
+            </div>
+          )}
+
+          <div className="flex items-center gap-1.5 bg-white border border-neutral-200/80 px-3 py-1.5 rounded-full shadow-sm">
+            <div className="w-2.5 h-2.5 rounded-full bg-amber-400"></div>
+            <span className="font-black text-xs tabular-nums text-neutral-900 leading-none">{coins}</span>
+          </div>
+        </div>
+      </header>
+
+      {/* CENTER HERO AREA */}
+      <motion.div
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        className="text-center w-full max-w-sm mx-auto my-auto flex flex-col items-center justify-center z-10 py-4"
+      >
+        {/* Rhythmic Bouncing Logo Syncing with Ambient Music */}
+        <motion.div animate={logoControls} className="mx-auto w-fit mb-4">
+          <div className="w-24 h-24 bg-[#1D1D1F] text-white rounded-[2.5rem] flex items-center justify-center shadow-[0_20px_40px_rgba(0,0,0,0.18)] transition-transform relative overflow-hidden">
             <div className="absolute top-4 left-4 w-4 h-4 rounded-full border border-white/10" />
             <div className="absolute bottom-4 right-4 w-0 h-0 border-l-[8px] border-l-transparent border-r-[8px] border-r-transparent border-b-[14px] border-b-white/10" />
-            
-            <h1 className="text-5xl font-black relative z-10">Z</h1>
+            <h1 className="text-5xl font-black relative z-10 select-none">Z</h1>
           </div>
         </motion.div>
 
-        <h1 className="text-6xl font-black tracking-tighter mb-2 text-[#1D1D1F]">ZEKA</h1>
-        <p className="text-lg text-neutral-400 font-semibold mb-6 tracking-widest uppercase">{t.menu_subtitle}</p>
+        <h1 className="text-5xl sm:text-6xl font-black tracking-tighter text-[#1D1D1F] mb-1">
+          ZEKA
+        </h1>
+        <p className="text-sm font-bold text-neutral-400 tracking-[0.25em] uppercase mb-5">
+          {t.menu_subtitle}
+        </p>
 
         {/* LANGUAGE SWITCHER */}
         <div className="relative w-fit mx-auto mb-6 z-20">
           <button
             onClick={() => setShowLangMenu(!showLangMenu)}
-            className="flex items-center justify-between gap-3 px-4 py-2 bg-white border border-neutral-200 rounded-xl shadow-sm text-xs font-bold tracking-widest uppercase hover:bg-neutral-50 hover:border-neutral-300 transition-all text-[#1D1D1F]"
+            className="flex items-center justify-between gap-2 px-3 py-1.5 bg-white border border-neutral-200/80 rounded-full shadow-sm text-[10px] font-black tracking-widest uppercase hover:bg-neutral-50 transition-all text-neutral-700"
           >
             <span>{language}</span>
-            <Icons.ChevronDown className={`w-3 h-3 transition-transform ${showLangMenu ? 'rotate-180' : ''}`} />
+            <Icons.ChevronDown className={`w-2.5 h-2.5 transition-transform ${showLangMenu ? 'rotate-180' : ''}`} />
           </button>
 
           <AnimatePresence>
@@ -345,13 +385,13 @@ function MenuScreen({
                 initial={{ opacity: 0, y: -5, scale: 0.95 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: -5, scale: 0.95 }}
-                className="absolute top-10 inset-x-0 w-full bg-white border border-neutral-200 rounded-xl shadow-xl overflow-hidden flex flex-col items-stretch"
+                className="absolute top-9 left-1/2 -translate-x-1/2 bg-white border border-neutral-200 rounded-2xl shadow-xl overflow-hidden flex flex-col items-stretch z-30 min-w-[80px]"
               >
                 {(['en', 'tr', 'de', 'ja', 'pt'] as LanguageCode[]).map(lang => (
                   <button
                     key={lang}
                     onClick={() => { setLanguage(lang); setShowLangMenu(false); }}
-                    className={`py-2 text-xs font-bold tracking-widest uppercase transition-colors ${language === lang ? 'bg-neutral-100 text-amber-500' : 'text-neutral-500 hover:bg-neutral-50 hover:text-[#1D1D1F]'}`}
+                    className={`py-2 text-[10px] font-black tracking-widest uppercase transition-colors ${language === lang ? 'bg-neutral-100 text-amber-500' : 'text-neutral-500 hover:bg-neutral-50'}`}
                   >
                     {lang}
                   </button>
@@ -361,39 +401,141 @@ function MenuScreen({
           </AnimatePresence>
         </div>
 
-        <button
-          onClick={() => startGame(false)}
-          className="w-full py-6 bg-[#1D1D1F] text-white rounded-full font-bold tracking-[0.2em] text-xl shadow-[0_10px_30px_rgba(0,0,0,0.2)] hover:scale-105 active:scale-95 transition-all"
-        >
-          {t.menu_start}
-        </button>
-
-        {/* BOTTOM ACTION BUTTONS */}
-        <div className="flex justify-center gap-3 mt-6">
-          <button onClick={toggleMute} className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-md border border-neutral-100 text-neutral-500 hover:text-black hover:-translate-y-1 transition-all">
-            {muteAudio ? <Icons.MusicOff className="w-5 h-5" /> : <Icons.MusicOn className="w-5 h-5" />}
+        {/* MINIMAL GAME MODE SELECTOR PILLS */}
+        <div className="w-full flex items-center justify-center gap-1 p-1 bg-white border border-neutral-200/80 rounded-2xl shadow-sm mb-5">
+          <button
+            onClick={() => { haptic.impact('light'); setSelectedMode('CLASSIC'); }}
+            className={`flex-1 py-2 rounded-xl text-[10px] sm:text-xs font-black tracking-wider transition-all flex items-center justify-center gap-1 ${
+              selectedMode === 'CLASSIC' ? 'bg-[#1D1D1F] text-white shadow-sm' : 'text-neutral-500 hover:text-black'
+            }`}
+          >
+            <span>🌟</span>
+            <span className="truncate">{t.mode_classic}</span>
           </button>
-          <button onClick={() => setShowLeaderboard(true)} className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-md border border-neutral-100 text-amber-500 hover:text-amber-600 hover:-translate-y-1 transition-all">
-            <Icons.Trophy className="w-5 h-5" />
+          <button
+            onClick={() => { haptic.impact('light'); setSelectedMode('TIME_ATTACK'); }}
+            className={`flex-1 py-2 rounded-xl text-[10px] sm:text-xs font-black tracking-wider transition-all flex items-center justify-center gap-1 ${
+              selectedMode === 'TIME_ATTACK' ? 'bg-amber-500 text-white shadow-sm' : 'text-neutral-500 hover:text-black'
+            }`}
+          >
+            <span>⚡</span>
+            <span className="truncate">{t.mode_time_attack}</span>
           </button>
-          <button onClick={() => setShowMedals(true)} className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-md border border-neutral-100 text-neutral-500 hover:text-black hover:-translate-y-1 transition-all relative group">
-            <Icons.Medal className={`w-5 h-5 ${medals.length > claimedMedals.length ? 'animate-bounce' : ''}`} />
-            {medals.length > claimedMedals.length && (
-              <div className="absolute top-1 right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white animate-pulse" />
-            )}
+          <button
+            onClick={() => { haptic.impact('light'); setSelectedMode('MEMORY'); }}
+            className={`flex-1 py-2 rounded-xl text-[10px] sm:text-xs font-black tracking-wider transition-all flex items-center justify-center gap-1 ${
+              selectedMode === 'MEMORY' ? 'bg-blue-600 text-white shadow-sm' : 'text-neutral-500 hover:text-black'
+            }`}
+          >
+            <span>👁️</span>
+            <span className="truncate">{t.mode_memory}</span>
           </button>
-          <button onClick={() => setShowInfo(true)} className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-md border border-neutral-100 text-neutral-500 hover:text-black hover:-translate-y-1 transition-all">
-            <Icons.Info className="w-5 h-5" />
+          <button
+            onClick={() => { haptic.impact('light'); setSelectedMode('DUEL'); }}
+            className={`flex-1 py-2 rounded-xl text-[10px] sm:text-xs font-black tracking-wider transition-all flex items-center justify-center gap-1 ${
+              selectedMode === 'DUEL' ? 'bg-rose-500 text-white shadow-sm' : 'text-neutral-500 hover:text-black'
+            }`}
+          >
+            <span>⚔️</span>
+            <span className="truncate">{t.mode_duel}</span>
           </button>
         </div>
 
-        {personalBest && (
-          <div className="mt-8 text-center opacity-70">
-            <span className="text-[10px] font-black text-amber-500 tracking-widest uppercase block mb-1">{t.personal_best}</span>
-            <span className="text-lg font-black text-neutral-800 tracking-wide">{t.level} {personalBest.level}</span>
-          </div>
-        )}
+        {/* GIANT ICONIC PLAY BUTTON */}
+        <motion.button
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={() => {
+            haptic.impact('heavy');
+            if (selectedMode === 'DUEL') {
+              openDuel();
+            } else if (selectedMode === 'TIME_ATTACK') {
+              startGame(false, 1, 'TIME_ATTACK');
+            } else if (selectedMode === 'MEMORY') {
+              startGame(false, 1, 'MEMORY');
+            } else {
+              startGame(false, undefined, 'CLASSIC');
+            }
+          }}
+          className={`w-full py-5 rounded-full font-black tracking-[0.2em] text-lg sm:text-xl shadow-[0_15px_35px_rgba(0,0,0,0.18)] transition-all flex items-center justify-center gap-2 ${
+            selectedMode === 'TIME_ATTACK'
+              ? 'bg-amber-500 text-white'
+              : selectedMode === 'MEMORY'
+              ? 'bg-blue-600 text-white'
+              : selectedMode === 'DUEL'
+              ? 'bg-gradient-to-r from-rose-500 to-amber-500 text-white'
+              : 'bg-[#1D1D1F] text-white'
+          }`}
+        >
+          <span>
+            {selectedMode === 'DUEL'
+              ? `${t.mode_duel}`
+              : selectedMode === 'TIME_ATTACK'
+              ? `${t.play_start} ⚡`
+              : selectedMode === 'MEMORY'
+              ? `${t.play_start} 👁️`
+              : (checkpointLevel > 1 ? t.play_continue : t.play_start)}
+          </span>
+          <Icons.Play className="w-5 h-5 fill-current ml-0.5" />
+        </motion.button>
+
+        {/* SUBTLE MODE METADATA */}
+        <div className="mt-3 text-[11px] font-black tracking-widest uppercase text-neutral-400">
+          {selectedMode === 'CLASSIC' && (
+            <span>{t.checkpoint_label} {checkpointLevel}</span>
+          )}
+          {selectedMode === 'TIME_ATTACK' && (
+            <span className="text-amber-600">🏆 {t.time_attack_best}: {timeAttackBest} • 30s</span>
+          )}
+          {selectedMode === 'MEMORY' && (
+            <span className="text-blue-600">🏆 {t.memory_best}: {memoryBest} • 2.5s</span>
+          )}
+          {selectedMode === 'DUEL' && (
+            <span className="text-rose-600">⚔️ {t.mode_duel_desc}</span>
+          )}
+        </div>
       </motion.div>
+
+      {/* BOTTOM ACTION BUTTONS BAR */}
+      <footer className="w-full max-w-sm mx-auto flex items-center justify-center gap-3 z-20 shrink-0 pb-2">
+        <button
+          onClick={toggleMute}
+          className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-md border border-neutral-100 text-neutral-500 hover:text-black hover:-translate-y-0.5 active:scale-95 transition-all"
+        >
+          {muteAudio ? <Icons.MusicOff className="w-5 h-5" /> : <Icons.MusicOn className="w-5 h-5" />}
+        </button>
+
+        <button
+          onClick={() => { haptic.impact('light'); setShowLeaderboard(true); }}
+          className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-md border border-neutral-100 text-amber-500 hover:text-amber-600 hover:-translate-y-0.5 active:scale-95 transition-all"
+        >
+          <Icons.Trophy className="w-5 h-5" />
+        </button>
+
+        <button
+          onClick={() => { haptic.impact('light'); openBrainStats(); }}
+          className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-md border border-neutral-100 text-blue-500 hover:text-blue-600 hover:-translate-y-0.5 active:scale-95 transition-all"
+        >
+          <Icons.Brain className="w-5 h-5" />
+        </button>
+
+        <button
+          onClick={() => { haptic.impact('light'); setShowMedals(true); }}
+          className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-md border border-neutral-100 text-neutral-500 hover:text-black hover:-translate-y-0.5 active:scale-95 transition-all relative"
+        >
+          <Icons.Medal className={`w-5 h-5 ${medals.length > claimedMedals.length ? 'animate-bounce text-amber-500' : ''}`} />
+          {medals.length > claimedMedals.length && (
+            <div className="absolute top-1 right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white animate-pulse" />
+          )}
+        </button>
+
+        <button
+          onClick={() => { haptic.impact('light'); setShowInfo(true); }}
+          className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-md border border-neutral-100 text-neutral-500 hover:text-black hover:-translate-y-0.5 active:scale-95 transition-all"
+        >
+          <Icons.Settings className="w-5 h-5" />
+        </button>
+      </footer>
 
       {/* MEDALS MODAL */}
       <AnimatePresence>
@@ -532,7 +674,49 @@ function MenuScreen({
                 {t.info_desc}
               </p>
 
-              <div className="flex flex-col gap-2 mb-6 max-h-[300px] overflow-y-auto pr-1">
+              {/* Settings Toggles */}
+              <div className="flex flex-col gap-2 mb-4">
+                <div className="flex items-center justify-between p-2.5 bg-neutral-50 rounded-2xl border border-neutral-100">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm">{muteAudio ? '🔇' : '🔊'}</span>
+                    <span className="text-xs font-bold text-neutral-800">Ses Efektleri</span>
+                  </div>
+                  <button
+                    onClick={toggleMute}
+                    className={`w-10 h-6 rounded-full p-0.5 transition-colors flex items-center ${!muteAudio ? 'bg-[#1D1D1F]' : 'bg-neutral-300'}`}
+                  >
+                    <div className={`w-5 h-5 rounded-full bg-white shadow-sm transition-transform ${!muteAudio ? 'translate-x-4' : 'translate-x-0'}`} />
+                  </button>
+                </div>
+
+                <div className="flex items-center justify-between p-2.5 bg-neutral-50 rounded-2xl border border-neutral-100">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm">📳</span>
+                    <span className="text-xs font-bold text-neutral-800">Haptik Titreşim</span>
+                  </div>
+                  <button
+                    onClick={toggleHaptics}
+                    className={`w-10 h-6 rounded-full p-0.5 transition-colors flex items-center ${isHapticsOn ? 'bg-[#1D1D1F]' : 'bg-neutral-300'}`}
+                  >
+                    <div className={`w-5 h-5 rounded-full bg-white shadow-sm transition-transform ${isHapticsOn ? 'translate-x-4' : 'translate-x-0'}`} />
+                  </button>
+                </div>
+
+                <div className="flex items-center justify-between p-2.5 bg-neutral-50 rounded-2xl border border-neutral-100">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm">🛠️</span>
+                    <span className="text-xs font-bold text-neutral-800">Geliştirici Modu</span>
+                  </div>
+                  <button
+                    onClick={toggleDevMode}
+                    className={`w-10 h-6 rounded-full p-0.5 transition-colors flex items-center ${isDevMode ? 'bg-amber-500' : 'bg-neutral-300'}`}
+                  >
+                    <div className={`w-5 h-5 rounded-full bg-white shadow-sm transition-transform ${isDevMode ? 'translate-x-4' : 'translate-x-0'}`} />
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-2 mb-6 max-h-[220px] overflow-y-auto pr-1">
                 {[
                   { symKey: 'CircleFilled', label: t.info_sym1, desc: t.info_sym1_desc || Translations['en'].info_sym1_desc },
                   { symKey: 'CircleEmpty', label: t.info_sym1_neg, desc: t.info_sym1_neg_desc || Translations['en'].info_sym1_neg_desc },
@@ -678,46 +862,24 @@ function MenuScreen({
   );
 }
 
-function DailyRewardButton({ onClick }: { onClick: () => void }) {
-  const { lastRewardTime, dailyRewardsToday, language } = useGameStore();
-  const t = Translations[language];
-
-  const COOLDOWN_MS = 3 * 60 * 60 * 1000;
-  const timePassed = lastRewardTime ? Date.now() - lastRewardTime : COOLDOWN_MS;
-  const canClaim = dailyRewardsToday < 3 && timePassed >= COOLDOWN_MS;
-
-  const getTimeRemaining = () => {
-    if (!lastRewardTime) return "";
-    const remaining = Math.max(0, COOLDOWN_MS - timePassed);
-    const hours = Math.floor(remaining / (60 * 60 * 1000));
-    const mins = Math.floor((remaining % (60 * 60 * 1000)) / (60 * 1000));
-    return `${hours > 0 ? hours + (t.unit_hour || 'h') + ' ' : ''}${mins}${t.unit_min || 'min'}`;
-  };
-
-  return (
-    <motion.button
-      whileHover={{ scale: 1.05 }}
-      whileTap={{ scale: 0.95 }}
-      onClick={onClick}
-      className={`pointer-events-auto flex items-center gap-2 px-3 py-2 md:px-4 md:py-2.5 rounded-2xl shadow-md border transition-all ${canClaim ? 'bg-amber-100 border-amber-200 text-amber-700' : 'bg-white border-neutral-100 text-neutral-400'}`}
-    >
-      <div className={`p-1 md:p-1.5 rounded-lg ${canClaim ? 'bg-amber-400 text-white animate-pulse' : 'bg-neutral-100 text-neutral-300'}`}>
-        <Icons.Gift className="w-4 h-4 md:w-5 md:h-5" />
-      </div>
-      <div className="flex flex-col items-start leading-none">
-        <span className="text-[10px] md:text-xs font-black tracking-tight uppercase">{t.daily_reward}</span>
-        <span className="text-[9px] md:text-[10px] font-bold opacity-70">
-          {canClaim ? t.daily_reward_claim : (dailyRewardsToday >= 3 ? t.daily_reward_done : `${getTimeRemaining()}${t.daily_reward_wait}`)}
-        </span>
-      </div>
-    </motion.button>
-  );
-}
-
 // ─── GAME OVER SCREEN ──────────────────────────────────────
-function GameOverScreen({ level, totalTimeSpent, expected, isDevMode, hasRevivedInCurrentGame, goToMenu, onAdError }: {
+function GameOverScreen({
+  level, totalTimeSpent, expected, isDevMode, hasRevivedInCurrentGame, goToMenu, onAdError,
+  gameMode, timeAttackScore, memoryScore, onPlayAgain,
+  isDuel, duelWinner, duelMyScore, duelOpponentName, duelOpponentScore, onPlayDuelAgain
+}: {
   level: number; totalTimeSpent: number; expected: number; isDevMode: boolean; hasRevivedInCurrentGame: boolean; goToMenu: () => void;
   onAdError?: () => void;
+  gameMode: GameMode;
+  timeAttackScore: number;
+  memoryScore: number;
+  onPlayAgain: () => void;
+  isDuel?: boolean;
+  duelWinner?: 'ME' | 'OPPONENT' | null;
+  duelMyScore?: number;
+  duelOpponentName?: string;
+  duelOpponentScore?: number;
+  onPlayDuelAgain?: () => void;
 }) {
   const { language } = useGameStore();
   const t = Translations[language];
@@ -731,11 +893,177 @@ function GameOverScreen({ level, totalTimeSpent, expected, isDevMode, hasRevived
 
   useEffect(() => {
     Leaderboard.fetchAndCacheCountry();
-    if (!isDevMode) {
+    if (!isDevMode && gameMode === 'CLASSIC' && !isDuel) {
       const newBest = Leaderboard.updatePersonalBest(level, totalTimeSpent);
       if (newBest) setIsNewBest(true);
     }
-  }, [level, totalTimeSpent, isDevMode]);
+  }, [level, totalTimeSpent, isDevMode, gameMode, isDuel]);
+
+  // DUEL GAME OVER VIEW
+  if (isDuel) {
+    const won = duelWinner === 'ME';
+    return (
+      <div className="min-h-[100dvh] bg-[#F5F5F7] text-[#1D1D1F] flex flex-col items-center justify-center font-sans selection:bg-neutral-200 p-4">
+        <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="text-center bg-white p-6 rounded-[2.5rem] shadow-2xl w-full max-w-[340px] border border-neutral-100 relative overflow-hidden">
+          <div className={`absolute top-0 inset-x-0 h-2.5 ${won ? 'bg-amber-400' : 'bg-rose-500'}`}></div>
+
+          <div className={`w-16 h-16 ${won ? 'bg-amber-100 text-amber-500' : 'bg-rose-100 text-rose-500'} rounded-3xl flex items-center justify-center mx-auto mb-3 shadow-md`}>
+            {won ? <Icons.Trophy className="w-8 h-8" /> : <Icons.Swords className="w-8 h-8" />}
+          </div>
+
+          <h1 className="text-3xl font-black tracking-tight text-neutral-900 mb-1">
+            {won ? t.duel_victory : t.duel_defeat}
+          </h1>
+          <p className="text-xs font-semibold text-neutral-400 uppercase tracking-widest mb-5">
+            {won ? '🎉 +50 COIN' : t.mode_duel}
+          </p>
+
+          <div className="bg-neutral-50 p-4 rounded-2xl border border-neutral-100 mb-6 flex flex-col gap-2.5">
+            <div className="flex justify-between items-center">
+              <span className="text-xs font-black text-neutral-500 uppercase tracking-wider">SEN</span>
+              <span className={`text-2xl font-black ${won ? 'text-emerald-600' : 'text-neutral-700'}`}>{duelMyScore}/10</span>
+            </div>
+            <div className="border-t border-neutral-200/60" />
+            <div className="flex justify-between items-center">
+              <span className="text-xs font-black text-neutral-500 uppercase tracking-wider truncate max-w-[150px]">{duelOpponentName}</span>
+              <span className={`text-2xl font-black ${!won ? 'text-rose-600' : 'text-neutral-700'}`}>{duelOpponentScore}/10</span>
+            </div>
+          </div>
+
+          <button
+            onClick={onPlayDuelAgain}
+            className="w-full py-4 bg-[#1D1D1F] hover:bg-black text-white rounded-2xl font-black tracking-widest text-xs shadow-xl hover:scale-[1.02] active:scale-95 transition-all mb-2.5 flex items-center justify-center gap-2"
+          >
+            <Icons.Swords className="w-4 h-4 fill-current" />
+            <span>{t.duel_play_again}</span>
+          </button>
+
+          <button
+            onClick={goToMenu}
+            className="w-full py-3 bg-neutral-100 text-neutral-500 rounded-2xl font-black tracking-widest text-xs hover:bg-neutral-200 transition-colors"
+          >
+            {t.gameover_menu}
+          </button>
+        </motion.div>
+      </div>
+    );
+  }
+
+  // TIME ATTACK GAME OVER VIEW
+  if (gameMode === 'TIME_ATTACK') {
+    const isNewRecord = timeAttackScore >= useGameStore.getState().timeAttackBest && timeAttackScore > 0;
+    return (
+      <div className="min-h-[100dvh] bg-[#F5F5F7] text-[#1D1D1F] flex flex-col items-center justify-center font-sans selection:bg-neutral-200 p-4">
+        <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="text-center bg-white p-6 rounded-[2.5rem] shadow-2xl w-full max-w-[340px] border border-neutral-100 relative overflow-hidden">
+          <div className="absolute top-0 inset-x-0 h-2 bg-amber-500"></div>
+
+          {isNewRecord && (
+            <motion.div initial={{ scale: 0, y: -20 }} animate={{ scale: 1, y: 0 }}
+              className="bg-amber-50 border border-amber-200 text-amber-700 rounded-full px-3 py-1 inline-flex items-center gap-1.5 font-black text-[10px] tracking-widest mb-3"
+            >
+              <span>⚡</span> {t.new_record}
+            </motion.div>
+          )}
+
+          <div className="w-14 h-14 bg-amber-100 text-amber-600 rounded-2xl flex items-center justify-center mx-auto mb-3">
+            <Icons.Zap className="w-7 h-7 fill-amber-500" />
+          </div>
+
+          <h1 className="text-2xl font-black tracking-tight text-[#1D1D1F] mb-1">{t.gameover_time_up}</h1>
+          <p className="text-xs font-semibold text-neutral-400 uppercase tracking-widest mb-5">
+            {t.mode_time_attack}
+          </p>
+
+          <div className="bg-neutral-50 p-4 rounded-2xl border border-neutral-100 mb-6 flex flex-col gap-2">
+            <div className="flex justify-between items-center">
+              <span className="text-[10px] font-black text-neutral-400 uppercase tracking-wider">{t.gameover_solved}</span>
+              <span className="text-3xl font-black text-amber-500">{timeAttackScore}</span>
+            </div>
+            <div className="border-t border-neutral-200/60" />
+            <div className="flex justify-between items-center">
+              <span className="text-[10px] font-black text-neutral-400 uppercase tracking-wider">{t.gameover_best}</span>
+              <span className="text-lg font-black text-neutral-800">{useGameStore.getState().timeAttackBest}</span>
+            </div>
+          </div>
+
+          <button
+            onClick={onPlayAgain}
+            className="w-full py-4 bg-[#1D1D1F] text-white rounded-2xl font-black tracking-widest text-xs shadow-xl hover:scale-[1.02] active:scale-95 transition-all mb-2.5 flex items-center justify-center gap-2"
+          >
+            <Icons.Play className="w-4 h-4 fill-current" />
+            <span>{t.gameover_retry}</span>
+          </button>
+
+          <button
+            onClick={goToMenu}
+            className="w-full py-3 bg-neutral-100 text-neutral-500 rounded-2xl font-black tracking-widest text-xs hover:bg-neutral-200 transition-colors"
+          >
+            {t.gameover_menu}
+          </button>
+        </motion.div>
+      </div>
+    );
+  }
+
+  // MEMORY MODE GAME OVER VIEW
+  if (gameMode === 'MEMORY') {
+    const isNewRecord = memoryScore >= useGameStore.getState().memoryBest && memoryScore > 0;
+    return (
+      <div className="min-h-[100dvh] bg-[#F5F5F7] text-[#1D1D1F] flex flex-col items-center justify-center font-sans selection:bg-neutral-200 p-4">
+        <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="text-center bg-white p-6 rounded-[2.5rem] shadow-2xl w-full max-w-[340px] border border-neutral-100 relative overflow-hidden">
+          <div className="absolute top-0 inset-x-0 h-2 bg-blue-500"></div>
+
+          {isNewRecord && (
+            <motion.div initial={{ scale: 0, y: -20 }} animate={{ scale: 1, y: 0 }}
+              className="bg-blue-50 border border-blue-200 text-blue-700 rounded-full px-3 py-1 inline-flex items-center gap-1.5 font-black text-[10px] tracking-widest mb-3"
+            >
+              <span>🧠</span> {t.gameover_newbest || 'YENİ REKOR!'}
+            </motion.div>
+          )}
+
+          <div className="w-14 h-14 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-3">
+            <Icons.EyeOff className="w-7 h-7" />
+          </div>
+
+          <h1 className="text-2xl font-black tracking-tight text-[#1D1D1F] mb-1">{t.gameover_title}</h1>
+          <p className="text-xs font-semibold text-neutral-400 uppercase tracking-widest mb-3">
+            {t.mode_memory}
+          </p>
+
+          <p className="text-[11px] text-neutral-400 font-bold mb-4 uppercase tracking-tight">
+            {t.gameover_correct} <strong className="text-black text-lg ml-1">{expected > 0 ? `+${expected}` : expected}</strong>
+          </p>
+
+          <div className="bg-neutral-50 p-4 rounded-2xl border border-neutral-100 mb-6 flex flex-col gap-2">
+            <div className="flex justify-between items-center">
+              <span className="text-[10px] font-black text-neutral-400 uppercase tracking-wider">{t.gameover_solved}</span>
+              <span className="text-3xl font-black text-blue-600">{memoryScore}</span>
+            </div>
+            <div className="border-t border-neutral-200/60" />
+            <div className="flex justify-between items-center">
+              <span className="text-[10px] font-black text-neutral-400 uppercase tracking-wider">{t.gameover_best}</span>
+              <span className="text-lg font-black text-neutral-800">{useGameStore.getState().memoryBest}</span>
+            </div>
+          </div>
+
+          <button
+            onClick={onPlayAgain}
+            className="w-full py-4 bg-[#1D1D1F] text-white rounded-2xl font-black tracking-widest text-xs shadow-xl hover:scale-[1.02] active:scale-95 transition-all mb-2.5 flex items-center justify-center gap-2"
+          >
+            <Icons.Play className="w-4 h-4 fill-current" />
+            <span>{t.gameover_retry}</span>
+          </button>
+
+          <button
+            onClick={goToMenu}
+            className="w-full py-3 bg-neutral-100 text-neutral-500 rounded-2xl font-black tracking-widest text-xs hover:bg-neutral-200 transition-colors"
+          >
+            {t.gameover_menu}
+          </button>
+        </motion.div>
+      </div>
+    );
+  }
 
   const handleSaveScore = async () => {
     if (isDevMode) { goToMenu(); return; }
@@ -882,9 +1210,11 @@ function GameOverScreen({ level, totalTimeSpent, expected, isDevMode, hasRevived
 
 export default function App() {
   const {
-    gameState, level, totalTimeSpent, currentValue, timeLeft, maxTime, coins, previousAnswers, hideIntro, isDevMode, hasRevivedInCurrentGame, language,
+    gameState, gameMode, level, totalTimeSpent, currentValue, timeLeft, maxTime, coins, previousAnswers, hideIntro, isDevMode, hasRevivedInCurrentGame, language,
+    timeAttackScore, memoryScore, timeAttackBest, memoryBest,
     streak, helpCount, langsUsed, dailyRewardsToday, lastRewardTime,
-    startNewLevel, setCurrentValue, tickTimer, addLevelTime, setHideIntro, startGame, goToMenu, resetStreak, unlockMedal, claimDailyReward, devAdvanceLevel
+    startNewLevel, setCurrentValue, tickTimer, addLevelTime, setHideIntro, startGame, goToMenu, resetStreak, unlockMedal, claimDailyReward, devAdvanceLevel,
+    incrementModeScore
   } = useGameStore();
   const t = Translations[language];
 
@@ -896,6 +1226,27 @@ export default function App() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showTrackingModal, setShowTrackingModal] = useState(false);
   const [showCompanySplash, setShowCompanySplash] = useState(true);
+
+  // New Modals
+  const [showBrainStats, setShowBrainStats] = useState(false);
+  const [showDuel, setShowDuel] = useState(false);
+
+  // 1v1 Real-Time Duel State
+  const [isDuelActive, setIsDuelActive] = useState(false);
+  const [duelOpponent, setDuelOpponent] = useState<OpponentInfo | null>(null);
+  const [duelSeed, setDuelSeed] = useState<number | null>(null);
+  const [duelRoomCode, setDuelRoomCode] = useState<string>('');
+  const [duelMyScore, setDuelMyScore] = useState(0);
+  const [duelOpponentScore, setDuelOpponentScore] = useState(0);
+  const [duelWinner, setDuelWinner] = useState<'ME' | 'OPPONENT' | null>(null);
+  const [duelEmote, setDuelEmote] = useState<{ emoji: string, id: number } | null>(null);
+  const [isDuelPenalty, setIsDuelPenalty] = useState(false);
+
+  // Visual Feedback & Juiciness
+  const [isSuccessFlash, setIsSuccessFlash] = useState(false);
+  const [isErrorShake, setIsErrorShake] = useState(false);
+  const [isMemoryMasked, setIsMemoryMasked] = useState(false);
+  const [isWatchingHintAd, setIsWatchingHintAd] = useState(false);
 
   // Modals
   const [showTutorialModal, setShowTutorialModal] = useState(false);
@@ -1069,12 +1420,58 @@ export default function App() {
     });
   }, [level, coins, streak, helpCount, langsUsed.length, totalTimeSpent]);
 
-  const handleStartGame = (asDev = false) => {
+  const handleReturnToMenu = () => {
+    DuelService.cleanup();
+    setIsDuelActive(false);
+    setDuelWinner(null);
+    goToMenu();
+  };
+
+  const handleStartGame = (asDev = false, startLevel?: number, mode?: GameMode) => {
+    DuelService.cleanup();
+    setIsDuelActive(false);
     setShowSolution(false);
     setHasPaidForSolution(false);
-    startGame(asDev);
+    startGame(asDev, startLevel, mode);
   };
-  
+
+  const handleStartDuel = (payload: StartDuelPayload) => {
+    setIsDuelActive(true);
+    setDuelOpponent(payload.opponent);
+    setDuelSeed(payload.seed);
+    setDuelRoomCode(payload.roomCode);
+    setDuelMyScore(0);
+    setDuelOpponentScore(0);
+    setDuelWinner(null);
+    setShowDuel(false);
+    setShowSolution(false);
+    setHasPaidForSolution(false);
+
+    DuelService.setGameCallbacks({
+      onOpponentScore: (score) => {
+        setDuelOpponentScore(score);
+        haptic.impact('light');
+        playSound('tick');
+        if (score >= 10) {
+          setDuelWinner('OPPONENT');
+          handleGameOver();
+        }
+      },
+      onOpponentEmote: (emoji) => {
+        setDuelEmote({ emoji, id: Date.now() });
+        setTimeout(() => setDuelEmote(null), 2500);
+      },
+      onOpponentQuit: () => {
+        setDuelWinner('ME');
+        useGameStore.getState().addCoins(50);
+        haptic.notification('success');
+        handleGameOver();
+      },
+    });
+
+    startGame(false, 1, 'CLASSIC');
+  };
+
   // AUTO-SHOW TRACKING MODAL FOR NEW PLAYERS
   useEffect(() => {
     const hasSeenTracking = localStorage.getItem('tracking_seen_v1'); // New key to force reset
@@ -1087,16 +1484,31 @@ export default function App() {
   }, []);
 
   const initLevel = () => {
-    const puzzle = generatePuzzle(level, previousAnswers);
+    let puzzle;
+    if (isDuelActive && duelSeed) {
+      const rng = createPRNG(duelSeed + level);
+      puzzle = generatePuzzle(level, previousAnswers, rng);
+    } else {
+      puzzle = generatePuzzle(level, previousAnswers);
+    }
     setSequence(puzzle.sequence);
     setExpected(puzzle.expectedResult);
     setShowSolution(false);
     setHasPaidForSolution(false);
     setIsPaused(false);
+    setIsMemoryMasked(false);
     startNewLevel();
+
+    // In Memory Mode, mask symbols after 2.5 seconds
+    if (gameMode === 'MEMORY') {
+      setTimeout(() => {
+        setIsMemoryMasked(true);
+      }, 2500);
+    }
   };
 
   const handleGameOver = () => {
+    haptic.notification('error');
     playSound('fail');
     resetStreak();
     setShowSolution(false); // Reset solution when entering GameOver
@@ -1180,17 +1592,54 @@ export default function App() {
     }));
   };
 
-
-
-
   const handleSubmission = () => {
-    if (isSubmitting) return;
+    if (isSubmitting || isDuelPenalty) return;
     setIsSubmitting(true);
 
     if (currentValue === expected) {
+      haptic.notification('success');
+      setIsSuccessFlash(true);
+      setTimeout(() => setIsSuccessFlash(false), 450);
+
+      if (isDuelActive) {
+        const nextScore = duelMyScore + 1;
+        setDuelMyScore(nextScore);
+        DuelService.sendScore(nextScore);
+        if (nextScore >= 10) {
+          setDuelWinner('ME');
+          useGameStore.getState().addCoins(50);
+          haptic.notification('success');
+          playSound('success');
+          handleGameOver();
+          setTimeout(() => setIsSubmitting(false), 300);
+          return;
+        }
+      }
+
+      if (gameMode === 'TIME_ATTACK' || gameMode === 'MEMORY') {
+        incrementModeScore();
+      }
+
       handleLevelComplete();
     } else {
-      handleGameOver();
+      haptic.notification('error');
+      setIsErrorShake(true);
+      setTimeout(() => setIsErrorShake(false), 450);
+
+      if (isDuelActive) {
+        playSound('fail');
+        setIsDuelPenalty(true);
+        setTimeout(() => setIsDuelPenalty(false), 1200);
+        setCurrentValue(0);
+      } else if (gameMode === 'TIME_ATTACK') {
+        useGameStore.setState(s => ({ timeLeft: Math.max(0, s.timeLeft - 3) }));
+        playSound('fail');
+        if (timeLeft <= 3) {
+          handleGameOver();
+        }
+      } else {
+        handleGameOver();
+      }
     }
 
     // Release lock slightly after state transition
@@ -1200,8 +1649,39 @@ export default function App() {
   };
 
   const adjustValue = (dir: number) => {
+    if (isDuelPenalty) return;
+    haptic.impact('light');
     playSound('click');
     setCurrentValue(currentValue + dir);
+  };
+
+  const handleWatchAdForSolution = async () => {
+    setIsWatchingHintAd(true);
+    haptic.selection();
+    const res = await Ads.showRewardedAd();
+    setIsWatchingHintAd(false);
+    if (res.success) {
+      setShowSolution(true);
+      setHasPaidForSolution(true);
+      haptic.notification('success');
+      playSound('success');
+    } else {
+      setAdError(t.ad_error);
+    }
+  };
+
+  const handleWatchAdForTime = async () => {
+    setIsWatchingHintAd(true);
+    haptic.selection();
+    const res = await Ads.showRewardedAd();
+    setIsWatchingHintAd(false);
+    if (res.success) {
+      useGameStore.setState(s => ({ timeLeft: s.timeLeft + 15 }));
+      haptic.notification('success');
+      playSound('success');
+    } else {
+      setAdError(t.ad_error);
+    }
   };
 
   const handleToggleSolution = () => {
@@ -1232,7 +1712,12 @@ export default function App() {
   };
 
   return (
-    <div className="h-[100dvh] w-full bg-[#F5F5F7] text-[#1D1D1F] font-sans selection:bg-neutral-200 overflow-hidden relative" style={{ display: 'block' }}>
+    <div
+      className={`h-[100dvh] w-full bg-[#F5F5F7] text-[#1D1D1F] font-sans selection:bg-neutral-200 overflow-hidden relative transition-colors duration-300 ${
+        isSuccessFlash ? 'ring-8 ring-emerald-400/90 ring-inset' : isErrorShake ? 'ring-8 ring-rose-500/90 ring-inset' : ''
+      }`}
+      style={{ display: 'block' }}
+    >
       
       {/* MAIN SCREEN CONTENT */}
       <div className="absolute inset-0 flex flex-col overflow-hidden">
@@ -1246,6 +1731,8 @@ export default function App() {
             showMedals={showMedals} setShowMedals={setShowMedals}
             selectedMedal={selectedMedal} setSelectedMedal={setSelectedMedal}
             showLangMenu={showLangMenu} setShowLangMenu={setShowLangMenu}
+            openBrainStats={() => setShowBrainStats(true)}
+            openDuel={() => setShowDuel(true)}
           />
         ) : gameState === 'GAMEOVER' ? (
           <GameOverScreen
@@ -1254,65 +1741,160 @@ export default function App() {
             expected={expected}
             isDevMode={isDevMode}
             hasRevivedInCurrentGame={hasRevivedInCurrentGame}
-            goToMenu={goToMenu}
+            goToMenu={handleReturnToMenu}
             onAdError={() => setAdError(t.ad_error)}
+            gameMode={gameMode}
+            timeAttackScore={timeAttackScore}
+            memoryScore={memoryScore}
+            onPlayAgain={() => handleStartGame(false, 1, gameMode)}
+            isDuel={isDuelActive}
+            duelWinner={duelWinner}
+            duelMyScore={duelMyScore}
+            duelOpponentName={duelOpponent?.name || 'Rakip'}
+            duelOpponentScore={duelOpponentScore}
+            onPlayDuelAgain={() => {
+              setIsDuelActive(false);
+              setDuelWinner(null);
+              setShowDuel(true);
+            }}
           />
         ) : (
           <>
-            {/* GAME HEADER */}
-            <header className="flex justify-between items-start px-4 py-3 md:p-6 w-full max-w-2xl mx-auto z-10 shrink-0">
-              <div className="flex flex-col">
-                <span className="text-4xl font-black tracking-tighter flex items-center gap-3 relative">
-                  {t.header_level} {level}
-                  {isDevMode && <span className="text-xs bg-amber-500 text-white px-2 py-1 rounded-full font-bold tracking-widest uppercase">{t.dev_test}</span>}
-                </span>
-                <span className="text-sm font-semibold tracking-widest text-neutral-500 mt-1 uppercase">
-                  {t.header_time} <span className="text-neutral-900">{isDevMode ? '∞' : `${totalTimeSpent.toFixed(2)}s`}</span>
-                </span>
+            {/* LIVE 1V1 DUEL BANNER */}
+            {isDuelActive && (
+              <div className="w-full bg-gradient-to-r from-red-600 via-amber-500 to-red-600 text-white py-1.5 px-4 text-center flex items-center justify-between text-xs font-black uppercase tracking-wider shrink-0 z-30 shadow-md relative overflow-hidden">
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-white animate-pulse"></span>
+                  <span>SEN: {duelMyScore}/10</span>
+                </div>
+
+                {/* Quick Emote Reactions & Room Badge */}
+                <div className="flex items-center gap-1.5 bg-black/25 px-2 py-0.5 rounded-full">
+                  {duelRoomCode && (
+                    <span className="text-[9px] font-mono opacity-70 border-r border-white/20 pr-1 mr-0.5">
+                      {duelRoomCode}
+                    </span>
+                  )}
+                  {['👋', '⚡', '🤯', '👏'].map(em => (
+                    <button
+                      key={em}
+                      onClick={() => {
+                        haptic.impact('light');
+                        DuelService.sendEmote(em);
+                      }}
+                      className="text-xs hover:scale-125 active:scale-95 transition-transform"
+                    >
+                      {em}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="flex items-center gap-1.5 relative">
+                  <span className="truncate max-w-[110px]">{duelOpponent?.name || 'Rakip'}: {duelOpponentScore}/10</span>
+                  <span className="w-2 h-2 rounded-full bg-white/60"></span>
+                  {duelEmote && (
+                    <motion.div
+                      key={duelEmote.id}
+                      initial={{ scale: 0, y: 10, opacity: 0 }}
+                      animate={{ scale: 1.3, y: -22, opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="absolute -top-3 right-0 bg-white text-neutral-900 rounded-full px-1.5 py-0.5 shadow-lg text-sm pointer-events-none"
+                    >
+                      {duelEmote.emoji}
+                    </motion.div>
+                  )}
+                </div>
               </div>
-              <div className="flex items-start gap-3 mt-1">
-                <button
+            )}
+
+            {/* IN-GAME HEADER */}
+            <header className="flex justify-between items-center px-4 py-2.5 md:p-6 w-full max-w-2xl mx-auto z-10 shrink-0">
+              {/* LEFT: Home Button & Level/Score */}
+              <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+                <motion.button
+                  whileTap={{ scale: 0.9 }}
                   onClick={() => setShowExitConfirm(true)}
-                  className="w-[38px] h-[38px] flex items-center justify-center bg-white border border-neutral-200 rounded-[14px] shadow-sm text-neutral-400 hover:text-neutral-900 transition-colors shrink-0"
+                  className="w-10 h-10 flex items-center justify-center bg-white border border-neutral-200 rounded-xl shadow-sm text-neutral-500 hover:text-neutral-900 transition-colors shrink-0"
                 >
-                  <Icons.Home className="w-5 h-5 -mt-0.5" />
-                </button>
-                <div className="relative z-20">
-                  {/* INVISIBLE SHADOW CONTAINER to reserve space in DOM without pushing when expanded */}
-                  <div className="flex items-center gap-2 px-3 h-[38px] justify-center min-w-[70px] opacity-0 pointer-events-none">
-                    <div className="w-2.5 h-2.5 rounded-full shrink-0"></div>
-                    <span className="font-black text-sm md:text-base tabular-nums leading-none">{coins}</span>
+                  <Icons.Home className="w-5 h-5" />
+                </motion.button>
+
+                <div className="flex flex-col min-w-0">
+                  <span className="text-base sm:text-2xl font-black tracking-tight text-[#1D1D1F] flex items-center gap-1.5 leading-tight truncate">
+                    {gameMode === 'TIME_ATTACK' ? (
+                      <span className="text-amber-500 flex items-center gap-1 font-black">
+                        <Icons.Zap className="w-4 h-4 sm:w-5 sm:h-5 fill-amber-500 shrink-0" />
+                        <span>{t.mode_time_attack}</span>
+                      </span>
+                    ) : gameMode === 'MEMORY' ? (
+                      <span className="text-blue-500 flex items-center gap-1 font-black">
+                        <Icons.EyeOff className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
+                        <span>{t.mode_memory}</span>
+                      </span>
+                    ) : (
+                      <>
+                        {t.header_level} <RollingNumber value={level} />
+                      </>
+                    )}
+                    {isDevMode && <span className="text-[9px] bg-amber-500 text-white px-1.5 py-0.5 rounded-full font-bold uppercase shrink-0">{t.dev_test}</span>}
+                  </span>
+                  <span className="text-[10px] sm:text-xs font-bold tracking-wider text-neutral-400 uppercase leading-none mt-0.5 truncate">
+                    {gameMode === 'TIME_ATTACK' ? (
+                      <span>{t.score_label}: <strong className="text-neutral-900"><RollingNumber value={timeAttackScore} /></strong> • {t.time_attack_best}: <strong className="text-amber-600">{timeAttackBest}</strong></span>
+                    ) : gameMode === 'MEMORY' ? (
+                      <span>{t.score_label}: <strong className="text-neutral-900"><RollingNumber value={memoryScore} /></strong> • {t.memory_best}: <strong className="text-blue-600">{memoryBest}</strong></span>
+                    ) : (
+                      <span>{t.header_time} <span className="text-neutral-900">{isDevMode ? '∞' : `${totalTimeSpent.toFixed(1)}s`}</span></span>
+                    )}
+                  </span>
+                </div>
+              </div>
+
+              {/* RIGHT: Timer Pill + Coins Pill */}
+              <div className="flex items-center gap-2 shrink-0">
+                {gameMode === 'TIME_ATTACK' && (
+                  <motion.div
+                    animate={timeLeft <= 8 ? { scale: [1, 1.05, 1] } : {}}
+                    transition={{ repeat: Infinity, duration: 0.6 }}
+                    className={`px-3 py-1.5 rounded-full flex items-center gap-1 shadow-sm border font-black text-xs sm:text-sm tabular-nums transition-colors ${
+                      timeLeft <= 8
+                        ? 'bg-red-500 border-red-600 text-white animate-pulse'
+                        : 'bg-amber-100 border-amber-300 text-amber-900'
+                    }`}
+                  >
+                    <span>⏱️</span>
+                    <span>{timeLeft.toFixed(1)}s</span>
+                  </motion.div>
+                )}
+
+                <div className="relative">
+                  <div className="flex items-center gap-1.5 bg-white border border-neutral-200 px-3 py-1.5 rounded-full shadow-sm">
+                    <div className="w-2.5 h-2.5 rounded-full bg-amber-400 shrink-0" />
+                    <span className="font-black text-xs sm:text-sm tabular-nums text-neutral-900 leading-none">
+                      <RollingNumber value={coins} />
+                    </span>
                   </div>
 
-                  {/* VISUAL CONTAINER (Absolute, expands without pushing layout) */}
-                  <div className="absolute top-0 right-0 w-full flex flex-col bg-white rounded-[20px] border border-neutral-200/60 shadow-sm overflow-hidden z-20">
-                    <div className="flex items-center gap-2 px-3 h-[38px] justify-center bg-white z-20 shrink-0">
-                      <div className="w-2.5 h-2.5 rounded-full bg-amber-400 shrink-0"></div>
-                      <span className="font-black text-sm md:text-base tabular-nums leading-none" style={{ color: '#000000' }}>{coins}</span>
-                    </div>
-                    <AnimatePresence>
-                      {showComboAnim && lastComboBonus > 0 && (
-                        <motion.div
-                          initial={{ height: 0, opacity: 0 }}
-                          animate={{ height: 'auto', opacity: 1 }}
-                          exit={{ height: 0, opacity: 0 }}
-                          className="flex flex-col items-center justify-center bg-amber-400 overflow-hidden"
-                        >
-                          <div className="py-1 px-2 flex items-center gap-1 opacity-90 border-t border-black/10 w-full justify-center">
-                            <span className="text-[10px] font-black italic leading-none whitespace-nowrap" style={{ color: '#000000' }}>x{lastCombo}</span>
-                            <div className="w-[1px] h-2 bg-black/20" />
-                            <span className="text-[10px] font-black leading-none whitespace-nowrap" style={{ color: '#000000' }}>+{lastComboBonus}</span>
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
+                  <AnimatePresence>
+                    {showComboAnim && lastComboBonus > 0 && (
+                      <motion.div
+                        initial={{ y: 0, opacity: 0, scale: 0.8 }}
+                        animate={{ y: 22, opacity: 1, scale: 1 }}
+                        exit={{ y: 28, opacity: 0 }}
+                        className="absolute right-0 top-0 bg-amber-400 text-neutral-900 text-[10px] font-black px-2 py-0.5 rounded-full shadow-sm whitespace-nowrap z-30 pointer-events-none"
+                      >
+                        x{lastCombo} +{lastComboBonus}C
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
               </div>
             </header>
 
-            <CheckpointBar level={level} t={t} />
-
+            {/* CONSTELLATION JOURNEY PROGRESS MAP */}
+            {gameMode === 'CLASSIC' && (
+              <JourneyMap level={level} isDark={false} />
+            )}
 
             {/* DEV LEVEL JUMP — visible only in dev mode */}
             {isDevMode && (
@@ -1335,20 +1917,32 @@ export default function App() {
 
             {/* MAIN GAME AREA */}
             <main className="flex-1 flex flex-col items-center justify-center px-2 md:px-4 w-full max-w-2xl mx-auto relative z-10 pb-2 overflow-hidden">
-              {/* SEQUENCE DISPLAY */}
+              {/* SEQUENCE DISPLAY WITH JUICINESS & MEMORY MODE MASK */}
               <motion.div
                 layout
-                className="flex-1 min-h-0 flex flex-wrap justify-center content-center items-center gap-[2px] md:gap-1.5 mb-2 md:mb-4 px-2 py-4 md:px-6 md:py-6 rounded-3xl bg-white shadow-[0_20px_40px_rgb(0,0,0,0.04)] border border-neutral-100 w-full relative overflow-y-auto"
+                animate={isErrorShake ? { x: [-8, 8, -6, 6, -3, 3, 0] } : {}}
+                transition={{ duration: 0.4 }}
+                className="flex-1 min-h-0 flex flex-wrap justify-center content-center items-center gap-[2px] md:gap-1.5 mb-2 md:mb-4 px-2 py-4 md:px-6 md:py-6 rounded-3xl bg-white shadow-sm border border-neutral-200/90 w-full relative overflow-y-auto"
               >
-                <div className="absolute inset-0 bg-gradient-to-b from-transparent to-neutral-50/50 pointer-events-none"></div>
+                <div className="absolute inset-0 bg-gradient-to-b from-transparent to-neutral-50/20 pointer-events-none"></div>
 
                 <AnimatePresence mode="popLayout">
                   {sequence.map((sym, i) => {
                     if (sym === 'ReverseNext') {
                       return (
                         <div key={`${level}-${i}-revgroup`} className="flex flex-nowrap items-center shrink-0">
-                          <SymbolDisplay type="ReverseNext" />
-                          {i + 1 < sequence.length && sequence[i + 1] !== 'InvertAll' && <SymbolDisplay type={sequence[i + 1]} />}
+                          {isMemoryMasked ? (
+                            <div className="w-10 h-10 md:w-12 md:h-12 rounded-2xl bg-neutral-100/90 border border-neutral-300 flex items-center justify-center font-black text-xl text-neutral-400 select-none shadow-inner">?</div>
+                          ) : (
+                            <SymbolDisplay type="ReverseNext" />
+                          )}
+                          {i + 1 < sequence.length && sequence[i + 1] !== 'InvertAll' && (
+                            isMemoryMasked ? (
+                              <div className="w-10 h-10 md:w-12 md:h-12 rounded-2xl bg-neutral-100/90 border border-neutral-300 flex items-center justify-center font-black text-xl text-neutral-400 select-none shadow-inner ml-1">?</div>
+                            ) : (
+                              <SymbolDisplay type={sequence[i + 1]} />
+                            )
+                          )}
                         </div>
                       );
                     }
@@ -1356,7 +1950,13 @@ export default function App() {
 
                     return (
                       <div key={`${level}-${i}-${sym}`} className="shrink-0 flex items-center">
-                        <SymbolDisplay type={sym} />
+                        {isMemoryMasked && sym !== 'Plus' ? (
+                          <div className="w-10 h-10 md:w-12 md:h-12 rounded-2xl bg-neutral-100/90 border border-neutral-300 flex items-center justify-center font-black text-xl text-neutral-400 select-none shadow-inner">
+                            ?
+                          </div>
+                        ) : (
+                          <SymbolDisplay type={sym} />
+                        )}
                       </div>
                     );
                   })}
@@ -1413,10 +2013,21 @@ export default function App() {
             </main>
 
             {/* FOOTER */}
-            <footer className="w-full max-w-2xl mx-auto px-4 pb-4 md:px-6 md:pb-6 flex flex-col gap-4 z-10 relative shrink-0">
+            <footer className="w-full max-w-2xl mx-auto px-4 pb-4 md:px-6 md:pb-6 flex flex-col gap-2 z-10 relative shrink-0">
+              {/* Live countdown numeric indicator */}
+              <div className="flex items-center justify-between text-[11px] font-black tracking-wider uppercase px-1">
+                <span className="text-neutral-400 flex items-center gap-1">
+                  <span>⏱️</span>
+                  {gameMode === 'TIME_ATTACK' ? t.timer_countdown : gameMode === 'MEMORY' ? t.timer_memory : t.timer_general}
+                </span>
+                <span className={`tabular-nums font-black ${timeLeft <= 5 ? 'text-red-500 text-sm animate-pulse' : 'text-neutral-800'}`}>
+                  {isDevMode ? '∞' : `${timeLeft.toFixed(1)}s`}
+                </span>
+              </div>
+
               <div className="w-full h-3 bg-neutral-200/60 rounded-full overflow-hidden shadow-inner">
                 <motion.div
-                  className={`h-full ${isDevMode ? 'bg-amber-400' : (timeLeft < 5 ? 'bg-red-500' : 'bg-[#1D1D1F]')}`}
+                  className={`h-full ${isDevMode ? 'bg-amber-400' : (timeLeft < 5 ? 'bg-red-500' : gameMode === 'TIME_ATTACK' ? 'bg-amber-500' : 'bg-[#1D1D1F]')}`}
                   animate={{ width: `${timePercent}%` }}
                   transition={{ ease: "linear", duration: 0.1 }}
                 />
@@ -1432,23 +2043,29 @@ export default function App() {
                   <span className="text-[8px] bg-amber-50 text-amber-600 px-1.5 py-0.5 rounded-full mt-1">50C</span>
                 </button>
 
-                <button
-                  onClick={() => useGameStore.getState().addTime(10)}
-                  disabled={isPaused || showTutorialModal || showIntroModal || coins < 10}
-                  className="flex flex-col items-center justify-center p-2 rounded-xl bg-white border border-neutral-100 text-[9px] font-bold tracking-widest shadow-sm disabled:opacity-30"
+                <motion.button
+                  whileTap={{ scale: 0.95 }}
+                  onClick={coins >= 10 ? () => useGameStore.getState().addTime(10) : handleWatchAdForTime}
+                  disabled={isPaused || showTutorialModal || showIntroModal || isWatchingHintAd}
+                  className="flex flex-col items-center justify-center p-2 rounded-xl bg-white border border-neutral-100 text-[9px] font-bold tracking-widest shadow-sm disabled:opacity-30 transition-all hover:bg-neutral-50"
                 >
-                  <span>{t.btn_plus10}</span>
-                  <span className="text-[8px] bg-amber-50 text-amber-600 px-1.5 py-0.5 rounded-full mt-1">10C</span>
-                </button>
+                  <span>{coins >= 10 ? t.btn_plus10 : t.btn_plus_ad}</span>
+                  <span className="text-[8px] bg-amber-50 text-amber-600 px-1.5 py-0.5 rounded-full mt-1">
+                    {coins >= 10 ? '10C' : t.ad_label}
+                  </span>
+                </motion.button>
 
-                <button
-                  onClick={handleToggleSolution}
-                  disabled={isPaused || showTutorialModal || showIntroModal || (!showSolution && !isDevMode && !hasPaidForSolution && coins < 50)}
-                  className="flex flex-col items-center justify-center p-2 rounded-xl bg-white border border-neutral-100 text-[9px] font-bold tracking-widest shadow-sm disabled:opacity-30"
+                <motion.button
+                  whileTap={{ scale: 0.95 }}
+                  onClick={coins >= 50 || isDevMode || hasPaidForSolution ? handleToggleSolution : handleWatchAdForSolution}
+                  disabled={isPaused || showTutorialModal || showIntroModal || isWatchingHintAd}
+                  className="flex flex-col items-center justify-center p-2 rounded-xl bg-white border border-neutral-100 text-[9px] font-bold tracking-widest shadow-sm disabled:opacity-30 transition-all hover:bg-neutral-50"
                 >
-                  <span>{showSolution ? t.btn_hide : t.btn_reveal}</span>
-                  <span className="text-[8px] bg-amber-50 text-amber-600 px-1.5 py-0.5 rounded-full mt-1">50C</span>
-                </button>
+                  <span>{showSolution ? t.btn_hide : (coins >= 50 || isDevMode || hasPaidForSolution ? t.btn_reveal : t.btn_reveal_ad)}</span>
+                  <span className="text-[8px] bg-amber-50 text-amber-600 px-1.5 py-0.5 rounded-full mt-1">
+                    {coins >= 50 || isDevMode || hasPaidForSolution ? '50C' : t.ad_label}
+                  </span>
+                </motion.button>
               </div>
             </footer>
           </>
@@ -1685,31 +2302,21 @@ export default function App() {
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
-  );
-}
 
-// ─── HELPERS & SUB-COMPONENTS ────────────────────────────────
+      {/* BRAIN ANALYTICS & BRAIN AGE MODAL */}
+      <BrainAnalyticsModal
+        isOpen={showBrainStats}
+        onClose={() => setShowBrainStats(false)}
+        playSound={playSound}
+      />
 
-function CheckpointBar({ level, t }: { level: number; t: any }) {
-  const lastCP = getCheckpointForLevel(level);
-  const nextCP = getNextCheckpoint(level);
-  const progress = Math.max(0, Math.min(100, ((level - lastCP) / (nextCP - lastCP)) * 100));
-  
-  return (
-    <div className="w-full max-w-2xl mx-auto px-4 md:px-6 mb-6 mt-2">
-      <div className="flex justify-between items-center mb-1.5 px-0.5">
-        <span className="text-[10px] font-black text-neutral-400 tabular-nums tracking-tight uppercase">{t.level} {lastCP}</span>
-        <span className="text-[10px] font-black text-neutral-300 tabular-nums tracking-tight uppercase opacity-60">{t.level} {nextCP}</span>
-      </div>
-      <div className="h-[2px] w-full bg-neutral-200/50 rounded-full overflow-hidden relative">
-        <motion.div 
-          initial={false}
-          animate={{ width: `${progress}%` }}
-          transition={{ type: 'spring', stiffness: 45, damping: 20 }}
-          className="h-full bg-[#1D1D1F] rounded-full"
-        />
-      </div>
+      {/* 1v1 LIVE DUEL MODAL */}
+      <DuelModal
+        isOpen={showDuel}
+        onClose={() => setShowDuel(false)}
+        onStartDuel={(payload) => handleStartDuel(payload)}
+        playSound={playSound}
+      />
     </div>
   );
 }

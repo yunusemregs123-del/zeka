@@ -1,5 +1,9 @@
-// Leaderboard system using Supabase for global scores + localStorage for personal best
-import { supabase } from './supabaseClient';
+/**
+ * ZEKA: Mind Puzzle - 100% Cloudflare Edge Leaderboard System
+ * Powered exclusively by Cloudflare Edge Workers & Cloudflare D1
+ */
+
+const CF_WORKER_URL = (import.meta.env.VITE_CF_WORKER_URL || 'https://zeka-edge-api.zekagame.workers.dev').replace(/\/$/, '');
 
 export interface ScoreEntry {
   id: string;
@@ -7,10 +11,11 @@ export interface ScoreEntry {
   level: number;
   total_time: number;
   created_at: string;
+  country?: string;
   country_code?: string;
 }
 
-// --- Player Info ---
+// --- Player Storage Keys ---
 const PLAYER_NAME_KEY = 'zeka_player_name';
 const PERSONAL_BEST_KEY = 'zeka_personal_best';
 const PLAYER_COUNTRY_KEY = 'zeka_player_country';
@@ -38,6 +43,19 @@ export async function fetchAndCacheCountry(): Promise<string> {
   if (cached) return cached;
   
   try {
+    const res = await fetch(`${CF_WORKER_URL}/api/health`);
+    if (res.ok) {
+      const data = await res.json();
+      if (data.country) {
+        localStorage.setItem(PLAYER_COUNTRY_KEY, data.country);
+        return data.country;
+      }
+    }
+  } catch (e) {
+    // If worker connection is cold, use public IP geo
+  }
+
+  try {
     const res = await fetch('https://ipapi.co/json/');
     const data = await res.json();
     if (data.country_code) {
@@ -45,16 +63,16 @@ export async function fetchAndCacheCountry(): Promise<string> {
       return data.country_code;
     }
   } catch (e) {
-    console.error('Country fetch error', e);
+    console.warn('Country detection error', e);
   }
-  return '';
+  return 'TR';
 }
 
 export function getCachedCountry(): string {
-  return localStorage.getItem(PLAYER_COUNTRY_KEY) || '';
+  return localStorage.getItem(PLAYER_COUNTRY_KEY) || 'TR';
 }
 
-// --- Personal Best (local) ---
+// --- Personal Best (Local Cache) ---
 export interface PersonalBest {
   level: number;
   totalTime: number;
@@ -88,121 +106,164 @@ export function updatePersonalBest(level: number, totalTime: number): boolean {
   return isBetter;
 }
 
-// --- Supabase Score Operations ---
+// --- Cloudflare D1 Score Operations ---
 
 export async function isNameTaken(name: string): Promise<boolean> {
-  const { data, error } = await supabase
-    .from('scores')
-    .select('id')
-    .ilike('player_name', name.trim())
-    .limit(1);
+  const trimmed = name.trim();
+  if (!trimmed) return false;
 
-  if (error) {
-    console.error('İsim kontrol hatası:', error);
-    return false;
+  try {
+    const res = await fetch(`${CF_WORKER_URL}/api/check-name?name=${encodeURIComponent(trimmed)}`);
+    if (res.ok) {
+      const data = await res.json();
+      return !!data.taken;
+    }
+  } catch (e) {
+    console.warn('Cloudflare isNameTaken check failed:', e);
   }
-  return data && data.length > 0;
+  return false;
 }
 
 export async function addScore(playerName: string, level: number, totalTime: number): Promise<ScoreEntry | null> {
   const nameToUse = playerName.trim().substring(0, 15) || 'Anonim';
-  const countryCode = getCachedCountry();
   const deviceId = getDeviceId();
 
-  const { data: existing } = await supabase
-    .from('scores')
-    .select('*')
-    .eq('device_id', deviceId)
-    .limit(1);
+  try {
+    const res = await fetch(`${CF_WORKER_URL}/api/score`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        player_name: nameToUse,
+        device_id: deviceId,
+        level,
+        total_time: Number(totalTime.toFixed(2))
+      })
+    });
 
-  if (existing && existing.length > 0) {
-    const row = existing[0];
-    const isBetter = level > row.level || (level === row.level && totalTime < row.total_time);
-
-    const updates: any = {};
-    if (nameToUse !== row.player_name) updates.player_name = nameToUse;
-    
-    // Always update if it's a better score
-    if (isBetter) {
-      updates.level = level;
-      updates.total_time = Number(totalTime.toFixed(2));
-      updates.created_at = new Date().toISOString();
+    if (res.ok) {
+      const data = await res.json();
+      return {
+        id: deviceId,
+        player_name: nameToUse,
+        level,
+        total_time: Number(totalTime.toFixed(2)),
+        created_at: new Date().toISOString(),
+        country: data.country || 'TR',
+        country_code: data.country || 'TR'
+      };
     }
-    
-    if (countryCode && countryCode !== row.country_code) {
-      updates.country_code = countryCode;
-    }
-
-    if (Object.keys(updates).length > 0) {
-      const { data, error } = await supabase.from('scores').update(updates).eq('id', row.id).select().single();
-      if (!error && data) return data as ScoreEntry;
-    }
-    return row as ScoreEntry;
+  } catch (e) {
+    console.error('Cloudflare score submission error:', e);
   }
 
-  const { data, error } = await supabase
-    .from('scores')
-    .insert({
-      player_name: nameToUse,
-      device_id: deviceId,
-      level,
-      total_time: Number(totalTime.toFixed(2)),
-      country_code: countryCode || null
-    })
-    .select()
-    .single();
-  
-  if (error) {
-    console.error('Skor kayıt hatası:', error);
-    return null;
-  }
-  return data;
+  return null;
 }
 
 export async function getDailyScores(): Promise<ScoreEntry[]> {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  
-  const { data, error } = await supabase
-    .from('scores')
-    .select('*')
-    .gte('created_at', today.toISOString())
-    .order('level', { ascending: false })
-    .order('total_time', { ascending: true })
-    .limit(50);
-  
-  if (error) { console.error(error); return []; }
-  return data || [];
+  try {
+    const res = await fetch(`${CF_WORKER_URL}/api/leaderboard?period=daily`);
+    if (res.ok) {
+      const data = await res.json();
+      if (Array.isArray(data)) {
+        return data.map((item: any) => ({
+          id: String(item.id || item.player_name),
+          player_name: item.player_name,
+          level: Number(item.level),
+          total_time: Number(item.total_time),
+          created_at: item.created_at || new Date().toISOString(),
+          country: item.country || 'TR',
+          country_code: item.country || 'TR'
+        }));
+      }
+    }
+  } catch (e) {
+    console.warn('Cloudflare getDailyScores error:', e);
+  }
+  return [];
 }
 
 export async function getWeeklyScores(): Promise<ScoreEntry[]> {
-  const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-  
-  const { data, error } = await supabase
-    .from('scores')
-    .select('*')
-    .gte('created_at', weekAgo.toISOString())
-    .order('level', { ascending: false })
-    .order('total_time', { ascending: true })
-    .limit(50);
-  
-  if (error) { console.error(error); return []; }
-  return data || [];
+  try {
+    const res = await fetch(`${CF_WORKER_URL}/api/leaderboard?period=weekly`);
+    if (res.ok) {
+      const data = await res.json();
+      if (Array.isArray(data)) {
+        return data.map((item: any) => ({
+          id: String(item.id || item.player_name),
+          player_name: item.player_name,
+          level: Number(item.level),
+          total_time: Number(item.total_time),
+          created_at: item.created_at || new Date().toISOString(),
+          country: item.country || 'TR',
+          country_code: item.country || 'TR'
+        }));
+      }
+    }
+  } catch (e) {
+    console.warn('Cloudflare getWeeklyScores error:', e);
+  }
+  return [];
 }
 
 export async function getAllTimeScores(): Promise<ScoreEntry[]> {
-  const { data, error } = await supabase
-    .from('scores')
-    .select('*')
-    .order('level', { ascending: false })
-    .order('total_time', { ascending: true })
-    .limit(50);
-  
-  if (error) { console.error(error); return []; }
-  return data || [];
+  try {
+    const res = await fetch(`${CF_WORKER_URL}/api/leaderboard?period=alltime`);
+    if (res.ok) {
+      const data = await res.json();
+      if (Array.isArray(data)) {
+        return data.map((item: any) => ({
+          id: String(item.id || item.player_name),
+          player_name: item.player_name,
+          level: Number(item.level),
+          total_time: Number(item.total_time),
+          created_at: item.created_at || new Date().toISOString(),
+          country: item.country || 'TR',
+          country_code: item.country || 'TR'
+        }));
+      }
+    }
+  } catch (e) {
+    console.warn('Cloudflare getAllTimeScores error:', e);
+  }
+  return [];
 }
 
-// --- Formatting ---
+export async function getPersonalScoreAndRank(
+  period: 'daily' | 'weekly' | 'alltime', 
+  playerName: string
+): Promise<{ rank: number; row: ScoreEntry } | null> {
+  const nameToSearch = playerName.trim();
+  const deviceId = getDeviceId();
+
+  try {
+    const res = await fetch(
+      `${CF_WORKER_URL}/api/rank?name=${encodeURIComponent(nameToSearch)}&deviceId=${encodeURIComponent(deviceId)}&period=${period}`
+    );
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.rank && data.row) {
+        return {
+          rank: Number(data.rank),
+          row: {
+            id: String(data.row.id || data.row.player_name),
+            player_name: data.row.player_name,
+            level: Number(data.row.level),
+            total_time: Number(data.row.total_time),
+            created_at: data.row.created_at,
+            country: data.row.country || 'TR',
+            country_code: data.row.country || 'TR'
+          }
+        };
+      }
+    }
+  } catch (e) {
+    console.warn('Cloudflare getPersonalScoreAndRank error:', e);
+  }
+
+  return null;
+}
+
+// --- Formatting Helpers ---
 
 export function formatTime(seconds: number): string {
   if (seconds < 60) return `${seconds.toFixed(2)}s`;
@@ -218,38 +279,4 @@ export function formatDate(isoDate: string): string {
   const hours = d.getHours().toString().padStart(2, '0');
   const minutes = d.getMinutes().toString().padStart(2, '0');
   return `${day}.${month} ${hours}:${minutes}`;
-}
-
-export async function getPersonalScoreAndRank(period: 'daily'|'weekly'|'alltime', playerName: string): Promise<{rank: number, row: ScoreEntry} | null> {
-  const nameToSearch = playerName.trim();
-  if(!nameToSearch) return null;
-  
-  let query = supabase.from('scores').select('*').eq('device_id', getDeviceId()).limit(1);
-  if (period === 'daily') {
-    const today = new Date(); today.setHours(0,0,0,0);
-    query = query.gte('created_at', today.toISOString());
-  } else if (period === 'weekly') {
-    const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-    query = query.gte('created_at', weekAgo.toISOString());
-  }
-
-  const { data: myData, error } = await query;
-  if (!myData || myData.length === 0 || error) return null;
-  
-  const myRow = myData[0] as ScoreEntry;
-  const orFilter = `level.gt.${myRow.level},and(level.eq.${myRow.level},total_time.lt.${myRow.total_time})`;
-  
-  let countQuery = supabase.from('scores').select('*', { count: 'exact', head: true }).or(orFilter);
-
-  if (period === 'daily') {
-    const today = new Date(); today.setHours(0,0,0,0);
-    countQuery = countQuery.gte('created_at', today.toISOString());
-  } else if (period === 'weekly') {
-    const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-    countQuery = countQuery.gte('created_at', weekAgo.toISOString());
-  }
-
-  const { count } = await countQuery;
-  const rank = (count !== null ? count : 0) + 1;
-  return { rank, row: myRow };
 }
