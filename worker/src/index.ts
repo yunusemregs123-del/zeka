@@ -314,19 +314,27 @@ export default {
         if (!room) return json({ error: 'Oda bulunamadı' }, 404);
 
         const isHost = room.host_id === body.player_id;
+        const isGuest = room.guest_id === body.player_id;
+
+        // Security check: Only participants of this room can sync
+        if (!isHost && !isGuest) {
+          return json({ error: 'Bu odada oyuncu değilsiniz' }, 403);
+        }
 
         // 1. IMMUTABILITY: If match is ALREADY FINISHED or FORFEITED, never overwrite winner or status!
         if (room.status === 'FINISHED' || room.status === 'FORFEIT') {
           const opponentWantsRematch = isHost ? (room.rematch_guest === 1) : (room.rematch_host === 1);
           const myRematchRequested = isHost ? (room.rematch_host === 1) : (room.rematch_guest === 1);
+          const hostScore = Number(room.host_score) || 0;
+          const guestScore = Number(room.guest_score) || 0;
 
           return json({
             status: room.status,
             seed: room.seed,
             isHost,
-            host: { id: room.host_id, name: room.host_name, country: room.host_country, score: room.host_score, emote: room.host_emote },
-            guest: room.guest_id ? { id: room.guest_id, name: room.guest_name, country: room.guest_country, score: room.guest_score, emote: room.guest_emote } : null,
-            opponentScore: isHost ? room.guest_score : room.host_score,
+            host: { id: room.host_id, name: room.host_name, country: room.host_country, score: hostScore, emote: room.host_emote },
+            guest: room.guest_id ? { id: room.guest_id, name: room.guest_name, country: room.guest_country, score: guestScore, emote: room.guest_emote } : null,
+            opponentScore: isHost ? guestScore : hostScore,
             opponentEmote: isHost ? room.guest_emote : room.host_emote,
             opponentInfo: isHost ? (room.guest_id ? { id: room.guest_id, name: room.guest_name, country: room.guest_country } : null) : { id: room.host_id, name: room.host_name, country: room.host_country },
             winnerId: room.winner_id,
@@ -341,15 +349,27 @@ export default {
         // 2. ATOMIC FORFEIT: If player failed timer or gave up, award win to opponent atomically
         if (body.forfeit) {
           const winnerId = isHost ? (room.guest_id || null) : room.host_id;
-          await env.DB.prepare(`
-            UPDATE duel_rooms
-            SET status = 'FINISHED', winner_id = ?, updated_at = CURRENT_TIMESTAMP
-            WHERE room_code = ? AND status = 'ACTIVE'
-          `).bind(winnerId, roomCode).run();
+          const rawScore = Number(body.score);
+          const currentMyScore = Number(isHost ? room.host_score : room.guest_score) || 0;
+          const nextScore = !isNaN(rawScore) && rawScore > currentMyScore ? rawScore : currentMyScore;
+
+          if (isHost) {
+            await env.DB.prepare(`
+              UPDATE duel_rooms
+              SET status = 'FINISHED', winner_id = ?, host_score = ?, updated_at = CURRENT_TIMESTAMP
+              WHERE room_code = ? AND status = 'ACTIVE'
+            `).bind(winnerId, nextScore, roomCode).run();
+          } else {
+            await env.DB.prepare(`
+              UPDATE duel_rooms
+              SET status = 'FINISHED', winner_id = ?, guest_score = ?, updated_at = CURRENT_TIMESTAMP
+              WHERE room_code = ? AND status = 'ACTIVE'
+            `).bind(winnerId, nextScore, roomCode).run();
+          }
           hasChanges = true;
         } else {
           // 3. ZERO-WRITE OPTIMIZATION: Only update score/emote if they ACTUALLY changed!
-          const currentMyScore = isHost ? room.host_score : room.guest_score;
+          const currentMyScore = Number(isHost ? room.host_score : room.guest_score) || 0;
           const currentMyEmote = isHost ? room.host_emote : room.guest_emote;
           const rawScore = Number(body.score);
           const hasScoreIncrease = !isNaN(rawScore) && rawScore > currentMyScore;
@@ -384,14 +404,16 @@ export default {
 
         const opponentWantsRematch = isHost ? (updated.rematch_guest === 1) : (updated.rematch_host === 1);
         const myRematchRequested = isHost ? (updated.rematch_host === 1) : (updated.rematch_guest === 1);
+        const hostScore = Number(updated.host_score) || 0;
+        const guestScore = Number(updated.guest_score) || 0;
 
         return json({
           status: updated.status,
           seed: updated.seed,
           isHost,
-          host: { id: updated.host_id, name: updated.host_name, country: updated.host_country, score: updated.host_score, emote: updated.host_emote },
-          guest: updated.guest_id ? { id: updated.guest_id, name: updated.guest_name, country: updated.guest_country, score: updated.guest_score, emote: updated.guest_emote } : null,
-          opponentScore: isHost ? updated.guest_score : updated.host_score,
+          host: { id: updated.host_id, name: updated.host_name, country: updated.host_country, score: hostScore, emote: updated.host_emote },
+          guest: updated.guest_id ? { id: updated.guest_id, name: updated.guest_name, country: updated.guest_country, score: guestScore, emote: updated.guest_emote } : null,
+          opponentScore: isHost ? guestScore : hostScore,
           opponentEmote: isHost ? updated.guest_emote : updated.host_emote,
           opponentInfo: isHost ? (updated.guest_id ? { id: updated.guest_id, name: updated.guest_name, country: updated.guest_country } : null) : { id: updated.host_id, name: updated.host_name, country: updated.host_country },
           winnerId: updated.winner_id,

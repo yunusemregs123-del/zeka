@@ -286,6 +286,7 @@ export const DuelService = {
           body: JSON.stringify({
             room_code: roomCode,
             player_id: myId,
+            score: currentScore,
             emote: pendingEmote,
           }),
         });
@@ -300,6 +301,7 @@ export const DuelService = {
             currentScore = 0;
             isMatchFinishedReported = false;
             hasReportedRematchInvite = false;
+            lastReportedOpponentScore = -1;
             activeGameCallbacks.onRematchStart?.(data.seed);
           }
 
@@ -322,8 +324,8 @@ export const DuelService = {
             hasReportedRematchInvite = false;
           }
 
-          // 4. Opponent Score Update (ONLY notify if score actually increased!)
-          if (typeof data.opponentScore === 'number' && data.opponentScore > lastReportedOpponentScore) {
+          // 4. Opponent Score Update
+          if (typeof data.opponentScore === 'number' && data.opponentScore !== lastReportedOpponentScore) {
             lastReportedOpponentScore = data.opponentScore;
             callbacks?.onOpponentScore(data.opponentScore);
             activeGameCallbacks.onOpponentScore?.(data.opponentScore);
@@ -374,7 +376,7 @@ export const DuelService = {
       .then(async (res) => {
         if (res.ok) {
           const data = await res.json();
-          if (typeof data.opponentScore === 'number' && data.opponentScore > lastReportedOpponentScore) {
+          if (typeof data.opponentScore === 'number' && data.opponentScore !== lastReportedOpponentScore) {
             lastReportedOpponentScore = data.opponentScore;
             activeGameCallbacks.onOpponentScore?.(data.opponentScore);
           }
@@ -405,6 +407,7 @@ export const DuelService = {
       body: JSON.stringify({
         room_code: activeRoomCode,
         player_id: myId,
+        score: currentScore,
         forfeit: true,
       }),
     }).catch(() => {});
@@ -463,6 +466,7 @@ export const DuelService = {
           currentScore = 0;
           isMatchFinishedReported = false;
           hasReportedRematchInvite = false;
+          lastReportedOpponentScore = -1;
           activeGameCallbacks.onRematchStart?.(data.seed);
           return { success: true, started: true, seed: data.seed };
         }

@@ -1695,9 +1695,13 @@ export default function App() {
 
     DuelService.setGameCallbacks({
       onOpponentScore: (score) => {
-        setDuelOpponentScore(score);
-        haptic.impact('light');
-        playSound('tick');
+        setDuelOpponentScore((prev) => {
+          if (score > prev) {
+            haptic.impact('light');
+            playSound('tick');
+          }
+          return score;
+        });
       },
       onMatchFinish: (_winnerId, isWinner, finalOppScore) => {
         setDuelOpponentScore(finalOppScore);
