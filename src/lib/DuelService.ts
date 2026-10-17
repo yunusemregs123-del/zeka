@@ -3,7 +3,7 @@
  * Powered exclusively by Cloudflare Edge Worker & Cloudflare D1
  */
 
-import { getDeviceId, getPlayerName, getCachedCountry } from './Leaderboard';
+import { getDuelPlayerId, getPlayerName, getCachedCountry } from './Leaderboard';
 
 const CF_WORKER_URL = (import.meta.env.VITE_CF_WORKER_URL || 'https://zeka-edge-api.zekagame.workers.dev').replace(/\/$/, '');
 
@@ -58,7 +58,7 @@ export const DuelService = {
     isHostPlayer = true;
     currentScore = 0;
 
-    const myId = getDeviceId();
+    const myId = getDuelPlayerId();
     const myName = getPlayerName() || 'Oyuncu';
     const myCountry = getCachedCountry() || 'TR';
 
@@ -140,7 +140,7 @@ export const DuelService = {
     isHostPlayer = false;
     currentScore = 0;
 
-    const myId = getDeviceId();
+    const myId = getDuelPlayerId();
     const myName = getPlayerName() || 'Oyuncu';
     const myCountry = getCachedCountry() || 'TR';
 
@@ -215,7 +215,7 @@ export const DuelService = {
    */
   async startQuickMatch(callbacks: DuelCallbacks) {
     this.cleanup();
-    const myId = getDeviceId();
+    const myId = getDuelPlayerId();
     const myName = getPlayerName() || 'Oyuncu';
 
     try {
@@ -335,7 +335,7 @@ export const DuelService = {
 
   sendScore(newScore: number) {
     currentScore = newScore;
-    const myId = getDeviceId();
+    const myId = getDuelPlayerId();
     if (activeRoomCode) {
       fetch(`${CF_WORKER_URL}/api/duel/room/sync`, {
         method: 'POST',
@@ -345,13 +345,22 @@ export const DuelService = {
           player_id: myId,
           score: newScore,
         }),
-      }).catch(() => {});
+      })
+        .then(async (res) => {
+          if (res.ok) {
+            const data = await res.json();
+            if (typeof data.opponentScore === 'number') {
+              activeGameCallbacks.onOpponentScore?.(data.opponentScore);
+            }
+          }
+        })
+        .catch(() => {});
     }
   },
 
   sendEmote(emoji: string) {
     pendingEmote = emoji;
-    const myId = getDeviceId();
+    const myId = getDuelPlayerId();
     if (activeRoomCode) {
       fetch(`${CF_WORKER_URL}/api/duel/room/sync`, {
         method: 'POST',
@@ -388,7 +397,7 @@ export const DuelService = {
     simulatedBotInterval = null;
 
     if (activeRoomCode) {
-      const myId = getDeviceId();
+      const myId = getDuelPlayerId();
       fetch(`${CF_WORKER_URL}/api/duel/room/leave`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

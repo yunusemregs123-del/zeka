@@ -30,6 +30,19 @@ export function getDeviceId(): string {
   return id;
 }
 
+export function getDuelPlayerId(): string {
+  try {
+    let id = sessionStorage.getItem('zeka_duel_id');
+    if (!id) {
+      id = getDeviceId().substring(0, 8) + '_' + Math.random().toString(36).substring(2, 8);
+      sessionStorage.setItem('zeka_duel_id', id);
+    }
+    return id;
+  } catch (e) {
+    return getDeviceId();
+  }
+}
+
 export function getPlayerName(): string {
   return localStorage.getItem(PLAYER_NAME_KEY) || '';
 }

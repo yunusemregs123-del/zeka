@@ -920,13 +920,13 @@ function GameOverScreen({
 
           <div className="bg-neutral-50 p-4 rounded-2xl border border-neutral-100 mb-6 flex flex-col gap-2.5">
             <div className="flex justify-between items-center">
-              <span className="text-xs font-black text-neutral-500 uppercase tracking-wider">SEN</span>
-              <span className={`text-2xl font-black ${won ? 'text-emerald-600' : 'text-neutral-700'}`}>{duelMyScore}/10</span>
+              <span className="text-xs font-black text-neutral-500 uppercase tracking-wider">{t.duel_you || 'SEN'}</span>
+              <span className={`text-2xl font-black ${won ? 'text-emerald-600' : 'text-neutral-700'}`}>{duelMyScore}</span>
             </div>
             <div className="border-t border-neutral-200/60" />
             <div className="flex justify-between items-center">
               <span className="text-xs font-black text-neutral-500 uppercase tracking-wider truncate max-w-[150px]">{duelOpponentName}</span>
-              <span className={`text-2xl font-black ${!won ? 'text-rose-600' : 'text-neutral-700'}`}>{duelOpponentScore}/10</span>
+              <span className={`text-2xl font-black ${!won ? 'text-rose-600' : 'text-neutral-700'}`}>{duelOpponentScore}</span>
             </div>
           </div>
 
@@ -1239,7 +1239,6 @@ export default function App() {
   const [duelMyScore, setDuelMyScore] = useState(0);
   const [duelOpponentScore, setDuelOpponentScore] = useState(0);
   const [duelWinner, setDuelWinner] = useState<'ME' | 'OPPONENT' | null>(null);
-  const [duelEmote, setDuelEmote] = useState<{ emoji: string, id: number } | null>(null);
   const [isDuelPenalty, setIsDuelPenalty] = useState(false);
 
   // Visual Feedback & Juiciness
@@ -1456,10 +1455,6 @@ export default function App() {
           setDuelWinner('OPPONENT');
           handleGameOver();
         }
-      },
-      onOpponentEmote: (emoji) => {
-        setDuelEmote({ emoji, id: Date.now() });
-        setTimeout(() => setDuelEmote(null), 2500);
       },
       onOpponentQuit: () => {
         setDuelWinner('ME');
@@ -1761,51 +1756,91 @@ export default function App() {
         ) : (
           <>
             {/* LIVE 1V1 DUEL BANNER */}
-            {isDuelActive && (
-              <div className="w-full bg-gradient-to-r from-red-600 via-amber-500 to-red-600 text-white py-1.5 px-4 text-center flex items-center justify-between text-xs font-black uppercase tracking-wider shrink-0 z-30 shadow-md relative overflow-hidden">
-                <div className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-white animate-pulse"></span>
-                  <span>SEN: {duelMyScore}/10</span>
-                </div>
+            {/* LIVE 1V1 DUEL TUG-OF-WAR BANNER */}
+            {isDuelActive && (() => {
+              const duelTotal = duelMyScore + duelOpponentScore;
+              const myPercent = duelTotal === 0 ? 50 : Math.round((duelMyScore / duelTotal) * 100);
+              const oppPercent = 100 - myPercent;
 
-                {/* Quick Emote Reactions & Room Badge */}
-                <div className="flex items-center gap-1.5 bg-black/25 px-2 py-0.5 rounded-full">
-                  {duelRoomCode && (
-                    <span className="text-[9px] font-mono opacity-70 border-r border-white/20 pr-1 mr-0.5">
-                      {duelRoomCode}
-                    </span>
-                  )}
-                  {['👋', '⚡', '🤯', '👏'].map(em => (
-                    <button
-                      key={em}
-                      onClick={() => {
-                        haptic.impact('light');
-                        DuelService.sendEmote(em);
-                      }}
-                      className="text-xs hover:scale-125 active:scale-95 transition-transform"
-                    >
-                      {em}
-                    </button>
-                  ))}
-                </div>
+              return (
+                <div className="w-full bg-[#161618] border-b border-white/10 text-white py-2 px-3 sm:px-4 z-30 shadow-xl relative overflow-hidden select-none">
+                  {/* Background subtle neon glow */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/10 via-transparent to-rose-500/10 pointer-events-none" />
 
-                <div className="flex items-center gap-1.5 relative">
-                  <span className="truncate max-w-[110px]">{duelOpponent?.name || 'Rakip'}: {duelOpponentScore}/10</span>
-                  <span className="w-2 h-2 rounded-full bg-white/60"></span>
-                  {duelEmote && (
-                    <motion.div
-                      key={duelEmote.id}
-                      initial={{ scale: 0, y: 10, opacity: 0 }}
-                      animate={{ scale: 1.3, y: -22, opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      className="absolute -top-3 right-0 bg-white text-neutral-900 rounded-full px-1.5 py-0.5 shadow-lg text-sm pointer-events-none"
-                    >
-                      {duelEmote.emoji}
-                    </motion.div>
-                  )}
+                  {/* Top: Players & Live Numerical Scores */}
+                  <div className="flex items-center justify-between text-xs font-black uppercase tracking-wider relative z-10">
+                    {/* Left: You */}
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shrink-0 shadow-[0_0_8px_#34d399]" />
+                      <span className="text-xs font-black text-emerald-400 truncate max-w-[85px] sm:max-w-[130px]">
+                        {t.duel_you || 'SEN'}
+                      </span>
+                      <span className="text-base sm:text-lg font-black text-white bg-white/10 px-2 py-0.5 rounded-lg tabular-nums shrink-0">
+                        {duelMyScore}
+                      </span>
+                    </div>
+
+                    {/* Center: Target Badge */}
+                    <div className="flex flex-col items-center shrink-0 px-2">
+                      <span className="text-[9px] font-black tracking-widest text-white/50 uppercase">
+                        {t.duel_target || 'HEDEF'} 10
+                      </span>
+                      {duelRoomCode && (
+                        <span className="text-[8px] font-mono text-white/30 tracking-wider">
+                          {duelRoomCode}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Right: Opponent */}
+                    <div className="flex items-center gap-2 min-w-0 justify-end">
+                      <span className="text-base sm:text-lg font-black text-white bg-white/10 px-2 py-0.5 rounded-lg tabular-nums shrink-0">
+                        {duelOpponentScore}
+                      </span>
+                      <span className="text-xs font-black text-rose-400 truncate max-w-[85px] sm:max-w-[130px]">
+                        {duelOpponent?.name || t.duel_opponent || 'RAKİP'}
+                      </span>
+                      <div className="w-2.5 h-2.5 rounded-full bg-rose-400 animate-pulse shrink-0 shadow-[0_0_8px_#fb7185]" />
+                    </div>
+                  </div>
+
+                  {/* Dynamic Tug-of-War Momentum Progress Line */}
+                  <div className="w-full mt-1.5 relative z-10">
+                    <div className="w-full h-2.5 sm:h-3 bg-black/60 rounded-full overflow-hidden flex relative border border-white/10 shadow-inner">
+                      {/* My progress side (Emerald) */}
+                      <div
+                        className="h-full bg-gradient-to-r from-emerald-600 via-teal-500 to-emerald-400 transition-all duration-500 ease-out flex items-center justify-start pl-1.5 sm:pl-2"
+                        style={{ width: `${myPercent}%` }}
+                      >
+                        {myPercent >= 22 && (
+                          <span className="text-[8px] sm:text-[9px] font-black text-emerald-950 tabular-nums">
+                            %{myPercent}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Opponent progress side (Rose) */}
+                      <div
+                        className="h-full bg-gradient-to-l from-rose-600 via-red-500 to-amber-500 transition-all duration-500 ease-out flex items-center justify-end pr-1.5 sm:pr-2"
+                        style={{ width: `${oppPercent}%` }}
+                      >
+                        {oppPercent >= 22 && (
+                          <span className="text-[8px] sm:text-[9px] font-black text-rose-950 tabular-nums">
+                            %{oppPercent}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Tug-of-War Sliding Divider Needle */}
+                      <div
+                        className="absolute top-0 bottom-0 w-1 bg-white shadow-[0_0_8px_#ffffff] transition-all duration-500 ease-out z-20"
+                        style={{ left: `calc(${myPercent}% - 2px)` }}
+                      />
+                    </div>
+                  </div>
                 </div>
-              </div>
-            )}
+              );
+            })()}
 
             {/* IN-GAME HEADER */}
             <header className="flex justify-between items-center px-4 py-2.5 md:p-6 w-full max-w-2xl mx-auto z-10 shrink-0">
@@ -2033,40 +2068,61 @@ export default function App() {
                 />
               </div>
 
-              <div className="grid grid-cols-3 gap-2 w-full">
-                <button
-                  onClick={handleTogglePause}
-                  disabled={showTutorialModal || showIntroModal || (!isPaused && !isDevMode && coins < 50)}
-                  className={`flex flex-col items-center justify-center p-2 rounded-xl border text-[9px] font-bold tracking-widest transition disabled:opacity-30 ${isPaused ? 'bg-amber-100 border-amber-200 text-amber-900 shadow-inner' : 'bg-white border-neutral-100 text-neutral-600 shadow-sm'}`}
-                >
-                  <span>{isPaused ? t.btn_resume : t.btn_pause}</span>
-                  <span className="text-[8px] bg-amber-50 text-amber-600 px-1.5 py-0.5 rounded-full mt-1">50C</span>
-                </button>
+              {isDuelActive ? (
+                /* IN 1v1 DUEL: Only show Solution button! Pause & +10s are disabled in live competitive duels */
+                <div className="flex items-center justify-center w-full">
+                  <motion.button
+                    whileTap={{ scale: 0.96 }}
+                    onClick={coins >= 50 || isDevMode || hasPaidForSolution ? handleToggleSolution : handleWatchAdForSolution}
+                    disabled={isWatchingHintAd}
+                    className="w-full py-3.5 px-6 rounded-2xl bg-[#1D1D1F] hover:bg-black text-white font-black tracking-widest text-xs uppercase shadow-xl flex items-center justify-between hover:scale-[1.01] active:scale-95 transition-all"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="text-base">💡</span>
+                      <span>{showSolution ? t.btn_hide : (coins >= 50 || isDevMode || hasPaidForSolution ? t.btn_reveal : t.btn_reveal_ad)}</span>
+                    </div>
+                    <span className="text-[10px] bg-white/20 text-white px-2.5 py-1 rounded-full font-black">
+                      {coins >= 50 || isDevMode || hasPaidForSolution ? '50C' : t.ad_label}
+                    </span>
+                  </motion.button>
+                </div>
+              ) : (
+                /* SINGLE-PLAYER CONTROLS: Pause, +10s, Solution */
+                <div className="grid grid-cols-3 gap-2 w-full">
+                  <button
+                    onClick={handleTogglePause}
+                    disabled={showTutorialModal || showIntroModal || (!isPaused && !isDevMode && coins < 50)}
+                    className={`flex flex-col items-center justify-center p-2 rounded-xl border text-[9px] font-bold tracking-widest transition disabled:opacity-30 ${isPaused ? 'bg-amber-100 border-amber-200 text-amber-900 shadow-inner' : 'bg-white border-neutral-100 text-neutral-600 shadow-sm'}`}
+                  >
+                    <span>{isPaused ? t.btn_resume : t.btn_pause}</span>
+                    <span className="text-[8px] bg-amber-50 text-amber-600 px-1.5 py-0.5 rounded-full mt-1">50C</span>
+                  </button>
 
-                <motion.button
-                  whileTap={{ scale: 0.95 }}
-                  onClick={coins >= 10 ? () => useGameStore.getState().addTime(10) : handleWatchAdForTime}
-                  disabled={isPaused || showTutorialModal || showIntroModal || isWatchingHintAd}
-                  className="flex flex-col items-center justify-center p-2 rounded-xl bg-white border border-neutral-100 text-[9px] font-bold tracking-widest shadow-sm disabled:opacity-30 transition-all hover:bg-neutral-50"
-                >
-                  <span>{coins >= 10 ? t.btn_plus10 : t.btn_plus_ad}</span>
-                  <span className="text-[8px] bg-amber-50 text-amber-600 px-1.5 py-0.5 rounded-full mt-1">
-                    {coins >= 10 ? '10C' : t.ad_label}
-                  </span>
-                </motion.button>
+                  <motion.button
+                    whileTap={{ scale: 0.95 }}
+                    onClick={coins >= 10 ? () => useGameStore.getState().addTime(10) : handleWatchAdForTime}
+                    disabled={isPaused || showTutorialModal || showIntroModal || isWatchingHintAd}
+                    className="flex flex-col items-center justify-center p-2 rounded-xl bg-white border border-neutral-100 text-[9px] font-bold tracking-widest shadow-sm disabled:opacity-30 transition-all hover:bg-neutral-50"
+                  >
+                    <span>{coins >= 10 ? t.btn_plus10 : t.btn_plus_ad}</span>
+                    <span className="text-[8px] bg-amber-50 text-amber-600 px-1.5 py-0.5 rounded-full mt-1">
+                      {coins >= 10 ? '10C' : t.ad_label}
+                    </span>
+                  </motion.button>
 
-                <motion.button
-                  whileTap={{ scale: 0.95 }}
-                  onClick={coins >= 50 || isDevMode || hasPaidForSolution ? handleToggleSolution : handleWatchAdForSolution}
-                  disabled={isPaused || showTutorialModal || showIntroModal || isWatchingHintAd}
-                  className="flex flex-col items-center justify-center p-2 rounded-xl bg-white border border-neutral-100 text-[9px] font-bold tracking-widest shadow-sm disabled:opacity-30 transition-all hover:bg-neutral-50"
-                >
-                  <span>{showSolution ? t.btn_hide : (coins >= 50 || isDevMode || hasPaidForSolution ? t.btn_reveal : t.btn_reveal_ad)}</span>
-                  <span className="text-[8px] bg-amber-50 text-amber-600 px-1.5 py-0.5 rounded-full mt-1">
-                    {coins >= 50 || isDevMode || hasPaidForSolution ? '50C' : t.ad_label}
-                  </span>
-                </motion.button>
-              </div>
+                  <motion.button
+                    whileTap={{ scale: 0.95 }}
+                    onClick={coins >= 50 || isDevMode || hasPaidForSolution ? handleToggleSolution : handleWatchAdForSolution}
+                    disabled={isPaused || showTutorialModal || showIntroModal || isWatchingHintAd}
+                    className="flex flex-col items-center justify-center p-2 rounded-xl bg-white border border-neutral-100 text-[9px] font-bold tracking-widest shadow-sm disabled:opacity-30 transition-all hover:bg-neutral-50"
+                  >
+                    <span>{showSolution ? t.btn_hide : (coins >= 50 || isDevMode || hasPaidForSolution ? t.btn_reveal : t.btn_reveal_ad)}</span>
+                    <span className="text-[8px] bg-amber-50 text-amber-600 px-1.5 py-0.5 rounded-full mt-1">
+                      {coins >= 50 || isDevMode || hasPaidForSolution ? '50C' : t.ad_label}
+                    </span>
+                  </motion.button>
+                </div>
+              )}
             </footer>
           </>
         )}

@@ -293,16 +293,21 @@ export default {
           `).bind(myScore, body.emote || null, newStatus, winnerId, roomCode).run();
         }
 
+        // Fetch fresh state to guarantee latest opponent score
+        const updated = await env.DB.prepare(
+          'SELECT * FROM duel_rooms WHERE room_code = ?'
+        ).bind(roomCode).first<any>() || room;
+
         return json({
-          status: newStatus,
-          seed: room.seed,
+          status: updated.status,
+          seed: updated.seed,
           isHost,
-          host: { id: room.host_id, name: room.host_name, country: room.host_country, score: room.host_score, emote: room.host_emote },
-          guest: room.guest_id ? { id: room.guest_id, name: room.guest_name, country: room.guest_country, score: room.guest_score, emote: room.guest_emote } : null,
-          opponentScore: isHost ? room.guest_score : room.host_score,
-          opponentEmote: isHost ? room.guest_emote : room.host_emote,
-          opponentInfo: isHost ? (room.guest_id ? { id: room.guest_id, name: room.guest_name, country: room.guest_country } : null) : { id: room.host_id, name: room.host_name, country: room.host_country },
-          winnerId,
+          host: { id: updated.host_id, name: updated.host_name, country: updated.host_country, score: updated.host_score, emote: updated.host_emote },
+          guest: updated.guest_id ? { id: updated.guest_id, name: updated.guest_name, country: updated.guest_country, score: updated.guest_score, emote: updated.guest_emote } : null,
+          opponentScore: isHost ? updated.guest_score : updated.host_score,
+          opponentEmote: isHost ? updated.guest_emote : updated.host_emote,
+          opponentInfo: isHost ? (updated.guest_id ? { id: updated.guest_id, name: updated.guest_name, country: updated.guest_country } : null) : { id: updated.host_id, name: updated.host_name, country: updated.host_country },
+          winnerId: updated.winner_id,
         });
       }
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import * as Icons from './Icons';
 import { haptic } from '../lib/Haptics';
@@ -35,6 +35,7 @@ export const DuelModal: React.FC<DuelModalProps> = ({
   const [isJoining, setIsJoining] = useState(false);
   const [joinError, setJoinError] = useState('');
   const [searchTimer, setSearchTimer] = useState(0);
+  const matchStartedRef = useRef(false);
 
   // Generate clean room code when opened
   useEffect(() => {
@@ -42,15 +43,21 @@ export const DuelModal: React.FC<DuelModalProps> = ({
       const code = `ZK-${Math.floor(1000 + Math.random() * 9000)}`;
       setRoomCode(code);
     }
+    if (isOpen) {
+      matchStartedRef.current = false;
+    }
   }, [isOpen, roomCode]);
 
-  // Clean up socket connections when closed
+  // Clean up socket connections when closed without starting match
   useEffect(() => {
     if (!isOpen) {
-      DuelService.cleanup();
+      if (!matchStartedRef.current) {
+        DuelService.cleanup();
+      }
       setIsSearching(false);
       setIsJoining(false);
       setJoinError('');
+      matchStartedRef.current = false;
     }
   }, [isOpen]);
 
@@ -72,6 +79,7 @@ export const DuelModal: React.FC<DuelModalProps> = ({
     if (isOpen && tab === 'friend' && roomCode) {
       DuelService.createFriendRoom(roomCode, {
         onMatchStart: (opp, seed, isHost, rCode) => {
+          matchStartedRef.current = true;
           haptic.notification('success');
           playSound('success');
           onStartDuel({ opponent: opp, seed, isHost, roomCode: rCode });
@@ -83,7 +91,7 @@ export const DuelModal: React.FC<DuelModalProps> = ({
     }
 
     return () => {
-      if (tab === 'friend') {
+      if (!matchStartedRef.current && tab === 'friend') {
         DuelService.cleanup();
       }
     };
@@ -104,6 +112,7 @@ export const DuelModal: React.FC<DuelModalProps> = ({
 
     DuelService.startQuickMatch({
       onMatchStart: (opp, seed, isHost, rCode) => {
+        matchStartedRef.current = true;
         setIsSearching(false);
         haptic.notification('success');
         playSound('success');
@@ -134,6 +143,7 @@ export const DuelModal: React.FC<DuelModalProps> = ({
         formattedCode,
         {
           onMatchStart: (opp, seed, isHost, rCode) => {
+            matchStartedRef.current = true;
             setIsJoining(false);
             haptic.notification('success');
             playSound('success');

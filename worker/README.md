@@ -40,6 +40,6 @@ npx wrangler deploy
 #### 4. Ana Projeye Bağlayın
 Projenin kök dizinindeki `.env` dosyasına (veya Vercel/Netlify çevre değişkenlerine) şu satırı ekleyin:
 ```env
-VITE_CF_WORKER_URL=https://zeka-edge-api.kullanici-adi.workers.dev
+VITE_CF_WORKER_URL=https://zeka-edge-api.zekagame.workers.dev
 ```
 Artık tüm skorlar ve ülke tespitleri doğrudan Cloudflare Edge üzerinden ışık hızında çalışacaktır!
