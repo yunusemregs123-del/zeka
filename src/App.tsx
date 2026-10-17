@@ -842,6 +842,7 @@ function GameOverScreen({
   const [isWatchingAd, setIsWatchingAd] = useState(false);
 
   useEffect(() => {
+    haptic.cancel();
     Leaderboard.fetchAndCacheCountry();
     if (!isDevMode && gameMode === 'CLASSIC' && !isDuel) {
       const newBest = Leaderboard.updatePersonalBest(level, totalTimeSpent);
@@ -1290,6 +1291,7 @@ export default function App() {
   const duelSeedRef = useRef<number | null>(null);
   const duelRewardHandledRef = useRef(false);
   const duelCleanupTimerRef = useRef<any>(null);
+  const lastPulsedSecondRef = useRef<number | null>(null);
 
   const clearMemoryTimer = () => {
     if (memoryTimerRef.current) {
@@ -1470,11 +1472,32 @@ export default function App() {
   }, [gameState, isPaused, showTutorialModal, showIntroModal, isDevMode, isDuelActive, gameMode, duelCountdown]);
 
   useEffect(() => {
-    const isModalOpen = showTutorialModal || showIntroModal || showExitConfirm;
-    if (gameState === 'PLAYING' && !isPaused && !isModalOpen && !isDevMode && duelCountdown === null && timeLeft < 5 && timeLeft > 0 && Math.floor(timeLeft) === timeLeft) {
-      playSound('tick');
+    if (gameState !== 'PLAYING') {
+      lastPulsedSecondRef.current = null;
+      haptic.cancel();
+      return;
     }
-  }, [Math.floor(timeLeft), gameState, isPaused, showTutorialModal, showIntroModal, showExitConfirm, isDevMode, duelCountdown]);
+
+    const isModalOpen = showTutorialModal || showIntroModal || showExitConfirm;
+    if (isPaused || isModalOpen || isDevMode || duelCountdown !== null) return;
+
+    const currentSec = Math.floor(timeLeft);
+    if (currentSec <= 0) return;
+
+    if (currentSec !== lastPulsedSecondRef.current) {
+      lastPulsedSecondRef.current = currentSec;
+
+      // In Duel Mode: Pulse strictly in sync with each second countdown
+      if (isDuelActive || gameMode === 'DUEL') {
+        haptic.impact('light');
+      }
+
+      // Audio tick during final 5 seconds
+      if (currentSec <= 5) {
+        playSound('tick');
+      }
+    }
+  }, [Math.floor(timeLeft), gameState, isPaused, showTutorialModal, showIntroModal, showExitConfirm, isDevMode, duelCountdown, isDuelActive, gameMode]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -1524,23 +1547,19 @@ export default function App() {
     if ((isDuelActive || gameMode === 'DUEL') && gameState === 'PLAYING') {
       DuelService.reportForfeit();
     }
-    // Switch to menu first to prevent any GameOverScreen flicker
+    // Clean up duel immediately to stop any polling or background vibrations
+    if (duelCleanupTimerRef.current) {
+      clearTimeout(duelCleanupTimerRef.current);
+      duelCleanupTimerRef.current = null;
+    }
+    DuelService.cleanup();
     goToMenu();
     setIsDuelActive(false);
     setDuelWinner(null);
     setDuelRematchRequested(false);
     duelRewardHandledRef.current = false;
-
-    // Keep sync active for 25s so user can receive rematch invite on home screen
-    if (duelCleanupTimerRef.current) {
-      clearTimeout(duelCleanupTimerRef.current);
-    }
-    duelCleanupTimerRef.current = setTimeout(() => {
-      DuelService.cleanup();
-      setPendingRematchInvite(null);
-      setDuelOpponentRematchPending(false);
-      duelCleanupTimerRef.current = null;
-    }, 25000);
+    setPendingRematchInvite(null);
+    setDuelOpponentRematchPending(false);
   };
 
   const handleStartGame = (asDev = false, startLevel?: number, mode?: GameMode) => {
@@ -1737,6 +1756,7 @@ export default function App() {
 
   const handleGameOver = (isVictory = false) => {
     clearMemoryTimer();
+    haptic.cancel(); // Stop any pending continuous or interval vibrations immediately
     if (!isVictory) {
       haptic.notification('error');
       playSound('fail');

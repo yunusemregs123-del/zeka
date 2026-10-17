@@ -194,6 +194,13 @@ export const DuelModal: React.FC<DuelModalProps> = ({
       return;
     }
     const formattedCode = joinCode.trim().toUpperCase();
+    if (formattedCode === roomCode.trim().toUpperCase()) {
+      setJoinError(t.duel_cannot_join_own_room || 'Kendi oluşturduğun odaya katılamazsın!');
+      haptic.notification('error');
+      playSound('fail');
+      return;
+    }
+
     if (formattedCode.length >= 4) {
       haptic.impact('medium');
       playSound('click');
@@ -214,9 +221,9 @@ export const DuelModal: React.FC<DuelModalProps> = ({
           onOpponentEmote: () => {},
           onOpponentQuit: () => {},
         },
-        () => {
+        (serverErrMsg?: string) => {
           setIsJoining(false);
-          setJoinError(t.duel_room_error);
+          setJoinError(serverErrMsg || t.duel_room_error);
           haptic.notification('error');
           playSound('fail');
         }

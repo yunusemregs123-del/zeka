@@ -259,6 +259,10 @@ export default {
           return json({ error: 'Oda bulunamadı' }, 404);
         }
 
+        if (room.host_id === body.guest_id) {
+          return json({ error: 'Kendi oluşturduğunuz odaya katılamazsınız' }, 400);
+        }
+
         if (room.status === 'ACTIVE' && room.guest_id && room.guest_id !== body.guest_id) {
           return json({ error: 'Oda şu an dolu' }, 400);
         }

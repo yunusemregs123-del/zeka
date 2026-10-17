@@ -47,6 +47,7 @@ let matchmakingInterval: any = null;
 let simulatedBotInterval: any = null;
 let botScoreTracker = 0;
 let currentScore = 0;
+let lastReportedOpponentScore = -1;
 let pendingEmote: string | null = null;
 let lastSeenEmote: string | null = null;
 let activeGameCallbacks: GameCallbacks = {};
@@ -134,7 +135,7 @@ export const DuelService = {
   /**
    * GUEST: Join friend room on Cloudflare Worker & D1
    */
-  async joinFriendRoom(roomCode: string, callbacks: DuelCallbacks, onNotFound?: () => void) {
+  async joinFriendRoom(roomCode: string, callbacks: DuelCallbacks, onNotFound?: (errorMessage?: string) => void) {
     this.cleanup();
     activeRoomCode = roomCode;
     isHostPlayer = false;
@@ -159,16 +160,18 @@ export const DuelService = {
       });
 
       if (!res.ok) {
-        if (onNotFound) onNotFound();
+        const errData = await res.json().catch(() => ({}));
+        if (onNotFound) onNotFound(errData.error);
         return;
       }
 
       const data = await res.json();
       currentActiveSeed = data.seed;
       isMatchFinishedReported = false;
+      lastReportedOpponentScore = -1;
       callbacks.onMatchStart(data.host, data.seed, false, roomCode);
       this.startRoomSync(roomCode, myId, callbacks);
-    } catch (err) {
+    } catch {
       if (onNotFound) onNotFound();
     }
   },
@@ -303,6 +306,9 @@ export const DuelService = {
           // 2. Match Finished (immediate simultaneous screen transition)
           if ((data.status === 'FINISHED' || data.status === 'FORFEIT') && data.winnerId && !isMatchFinishedReported) {
             isMatchFinishedReported = true;
+            clearInterval(syncInterval);
+            syncInterval = null;
+            haptic.cancel();
             const isWinner = data.winnerId === myId;
             const finalOppScore = typeof data.opponentScore === 'number' ? data.opponentScore : 0;
             activeGameCallbacks.onMatchFinish?.(data.winnerId, isWinner, finalOppScore);
@@ -318,8 +324,9 @@ export const DuelService = {
             hasReportedRematchInvite = false;
           }
 
-          // 4. Opponent Score Update
-          if (typeof data.opponentScore === 'number') {
+          // 4. Opponent Score Update (ONLY notify if score actually increased!)
+          if (typeof data.opponentScore === 'number' && data.opponentScore > lastReportedOpponentScore) {
+            lastReportedOpponentScore = data.opponentScore;
             callbacks?.onOpponentScore(data.opponentScore);
             activeGameCallbacks.onOpponentScore?.(data.opponentScore);
           }
@@ -369,11 +376,15 @@ export const DuelService = {
       .then(async (res) => {
         if (res.ok) {
           const data = await res.json();
-          if (typeof data.opponentScore === 'number') {
+          if (typeof data.opponentScore === 'number' && data.opponentScore > lastReportedOpponentScore) {
+            lastReportedOpponentScore = data.opponentScore;
             activeGameCallbacks.onOpponentScore?.(data.opponentScore);
           }
           if ((data.status === 'FINISHED' || data.status === 'FORFEIT') && data.winnerId && !isMatchFinishedReported) {
             isMatchFinishedReported = true;
+            clearInterval(syncInterval);
+            syncInterval = null;
+            haptic.cancel();
             const isWinner = data.winnerId === myId;
             const finalOppScore = typeof data.opponentScore === 'number' ? data.opponentScore : 0;
             activeGameCallbacks.onMatchFinish?.(data.winnerId, isWinner, finalOppScore);
@@ -516,6 +527,7 @@ export const DuelService = {
     isBotMatch = false;
     activeBotOpponent = null;
     activeGameCallbacks = {};
+    lastReportedOpponentScore = -1;
     haptic.cancel();
 
     if (activeRoomCode) {
