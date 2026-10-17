@@ -830,7 +830,7 @@ function GameOverScreen({
   duelOpponentRematchPending?: boolean;
   duelOpponentLeft?: boolean;
 }) {
-  const { language } = useGameStore();
+  const { language, coins, addCoins } = useGameStore();
   const t = Translations[language];
   const hasSavedName = !!Leaderboard.getPlayerName();
   const [playerName, setPlayerName] = useState(Leaderboard.getPlayerName() || '');
@@ -839,6 +839,7 @@ function GameOverScreen({
   const [isChecking, setIsChecking] = useState(false);
   const [saved, setSaved] = useState(false);
   const [isNewBest, setIsNewBest] = useState(false);
+  const [isWatchingAd, setIsWatchingAd] = useState(false);
 
   useEffect(() => {
     Leaderboard.fetchAndCacheCountry();
@@ -851,12 +852,23 @@ function GameOverScreen({
   // DUEL GAME OVER VIEW
   if (isDuel || gameMode === 'DUEL') {
     const won = duelWinner === 'ME';
+    const hasEnoughCoins = coins >= 25;
+
     return (
       <div className="min-h-[100dvh] bg-[#F5F5F7] text-[#1D1D1F] flex flex-col items-center justify-center font-sans selection:bg-neutral-200 p-4">
         <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="text-center bg-white p-6 rounded-[2.5rem] shadow-2xl w-full max-w-[340px] border border-neutral-100 relative overflow-hidden">
           <div className={`absolute top-0 inset-x-0 h-2 ${won ? 'bg-emerald-500' : 'bg-rose-500'}`}></div>
 
-          <div className={`w-14 h-14 ${won ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-500'} rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-sm`}>
+          {/* Top Live Coin Balance */}
+          <div className="flex items-center justify-center gap-1.5 mb-3 bg-neutral-100/90 px-3 py-1 rounded-full text-xs font-black text-neutral-800 w-fit mx-auto border border-neutral-200/60 shadow-2xs">
+            <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0" />
+            <span className="text-[10px] uppercase font-bold text-neutral-500 tracking-wider">{t.coins_title || 'Bakiye'}:</span>
+            <span className="tabular-nums font-black text-xs text-neutral-900 flex items-center gap-1">
+              <RollingNumber value={coins} /> 🪙
+            </span>
+          </div>
+
+          <div className={`w-14 h-14 ${won ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-500'} rounded-2xl flex items-center justify-center mx-auto mb-2 shadow-sm`}>
             {won ? <Icons.Trophy className="w-7 h-7" /> : <Icons.Swords className="w-7 h-7" />}
           </div>
 
@@ -864,12 +876,16 @@ function GameOverScreen({
             {won ? t.duel_victory : t.duel_defeat}
           </h1>
 
-          <div className="flex items-center justify-center mb-4">
-            <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider ${
-              won ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/60' : 'bg-rose-50 text-rose-700 border border-rose-200/60'
+          {/* Clear Stake / Reward Breakdown */}
+          <div className="flex flex-col items-center justify-center mb-3">
+            <span className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-black uppercase tracking-wider ${
+              won ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/80 shadow-2xs' : 'bg-rose-50 text-rose-700 border border-rose-200/80 shadow-2xs'
             }`}>
               <span>🪙</span>
-              <span>{won ? '+50 COIN' : '-25 COIN'}</span>
+              <span>{won ? `+50 COIN (${t.duel_net || 'Net'} +25)` : '-25 COIN'}</span>
+            </span>
+            <span className="text-[10px] font-bold text-neutral-400 mt-1">
+              {won ? (t.duel_stake_win_breakdown || '25 Coin giriş iadesi + 25 Coin galibiyet ödülü') : (t.duel_stake_loss_breakdown || 'Düello giriş ücreti kesildi')}
             </span>
           </div>
 
@@ -887,7 +903,7 @@ function GameOverScreen({
           </div>
 
           {/* Short Reason Badge */}
-          <div className={`mb-4 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-1.5 border ${
+          <div className={`mb-3 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-1.5 border ${
             won ? 'bg-emerald-50/60 text-emerald-700 border-emerald-200/40' : 'bg-rose-50/60 text-rose-700 border-rose-200/40'
           }`}>
             <span>{won ? '🎯' : '⚠️'}</span>
@@ -901,7 +917,33 @@ function GameOverScreen({
             </div>
           )}
 
-          {/* Rematch Actions */}
+          {/* Insufficient Coins Notice on GameOver */}
+          {!hasEnoughCoins && !duelOpponentLeft && (
+            <div className="mb-3 p-3 rounded-2xl bg-rose-50 border border-rose-200/80 flex flex-col gap-2 text-center">
+              <span className="text-[10px] font-black text-rose-700 uppercase tracking-wide">
+                ⚠️ {t.duel_insufficient_coins}
+              </span>
+              <button
+                onClick={async () => {
+                  setIsWatchingAd(true);
+                  haptic.selection();
+                  const res = await Ads.showRewardedAd();
+                  setIsWatchingAd(false);
+                  if (res.success) {
+                    addCoins(50);
+                    haptic.notification('success');
+                    playSound('success');
+                  }
+                }}
+                disabled={isWatchingAd}
+                className="w-full py-2 bg-amber-400 hover:bg-amber-500 text-neutral-900 rounded-xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-2xs active:scale-95 transition-all disabled:opacity-50"
+              >
+                <span>📺</span>
+                <span>{isWatchingAd ? '...' : t.duel_watch_ad_coins}</span>
+              </button>
+            </div>
+          )}
+
           {/* Rematch Actions */}
           {!duelOpponentLeft && (
             <div className="w-full mb-2.5">
@@ -917,9 +959,14 @@ function GameOverScreen({
                     <span className="truncate">{t.duel_opponent_wants_rematch || 'Rakip Rövanş İstiyor!'}</span>
                   </div>
                   <motion.button
-                    whileTap={{ scale: 0.96 }}
-                    onClick={onPlayDuelAgain}
-                    className="w-full py-3.5 bg-neutral-900 hover:bg-black text-white rounded-2xl font-black text-xs uppercase tracking-wider shadow-lg hover:scale-[1.01] active:scale-95 transition-all flex items-center justify-center gap-2"
+                    whileTap={{ scale: hasEnoughCoins ? 0.96 : 1 }}
+                    onClick={hasEnoughCoins ? onPlayDuelAgain : undefined}
+                    disabled={!hasEnoughCoins}
+                    className={`w-full py-3.5 rounded-2xl font-black text-xs uppercase tracking-wider shadow-lg transition-all flex items-center justify-center gap-2 ${
+                      hasEnoughCoins
+                        ? 'bg-neutral-900 hover:bg-black text-white hover:scale-[1.01] active:scale-95'
+                        : 'bg-neutral-200 text-neutral-400 cursor-not-allowed shadow-none'
+                    }`}
                   >
                     <Icons.Swords className="w-4 h-4 text-amber-400 shrink-0" />
                     <span>{t.duel_accept || 'KABUL ET'}</span>
@@ -927,9 +974,14 @@ function GameOverScreen({
                 </div>
               ) : (
                 <motion.button
-                  whileTap={{ scale: 0.96 }}
-                  onClick={onPlayDuelAgain}
-                  className="w-full py-3.5 bg-neutral-900 hover:bg-black text-white rounded-2xl font-black tracking-wider text-xs shadow-lg hover:scale-[1.01] active:scale-95 transition-all flex items-center justify-center gap-2"
+                  whileTap={{ scale: hasEnoughCoins ? 0.96 : 1 }}
+                  onClick={hasEnoughCoins ? onPlayDuelAgain : undefined}
+                  disabled={!hasEnoughCoins}
+                  className={`w-full py-3.5 rounded-2xl font-black tracking-wider text-xs shadow-lg transition-all flex items-center justify-center gap-2 ${
+                    hasEnoughCoins
+                      ? 'bg-neutral-900 hover:bg-black text-white hover:scale-[1.01] active:scale-95'
+                      : 'bg-neutral-200 text-neutral-400 cursor-not-allowed shadow-none'
+                  }`}
                 >
                   <Icons.Swords className="w-4 h-4 text-amber-400 shrink-0" />
                   <span>{t.duel_rematch || 'RÖVANŞ OYNA'}</span>
@@ -1233,9 +1285,18 @@ export default function App() {
   const [showDuel, setShowDuel] = useState(false);
 
   // 1v1 Real-Time Duel State
+  const activeRematchSeedRef = useRef<number | null>(null);
+  const memoryTimerRef = useRef<any>(null);
   const duelSeedRef = useRef<number | null>(null);
   const duelRewardHandledRef = useRef(false);
   const duelCleanupTimerRef = useRef<any>(null);
+
+  const clearMemoryTimer = () => {
+    if (memoryTimerRef.current) {
+      clearTimeout(memoryTimerRef.current);
+      memoryTimerRef.current = null;
+    }
+  };
   const [isDuelActive, setIsDuelActive] = useState(false);
   const [duelCountdown, setDuelCountdown] = useState<number | null>(null);
   const [pendingRematchInvite, setPendingRematchInvite] = useState<{
@@ -1303,6 +1364,7 @@ export default function App() {
     return () => {
       window.removeEventListener('onZekaAdShow', handleAdStart);
       window.removeEventListener('onZekaAdClose', handleAdEnd);
+      clearMemoryTimer();
     };
   }, []);
 
@@ -1457,6 +1519,8 @@ export default function App() {
 
   const handleReturnToMenu = () => {
     haptic.cancel();
+    clearMemoryTimer();
+    activeRematchSeedRef.current = null;
     if ((isDuelActive || gameMode === 'DUEL') && gameState === 'PLAYING') {
       DuelService.reportForfeit();
     }
@@ -1481,6 +1545,8 @@ export default function App() {
 
   const handleStartGame = (asDev = false, startLevel?: number, mode?: GameMode) => {
     haptic.cancel();
+    clearMemoryTimer();
+    activeRematchSeedRef.current = null;
     if (duelCleanupTimerRef.current) {
       clearTimeout(duelCleanupTimerRef.current);
       duelCleanupTimerRef.current = null;
@@ -1500,6 +1566,17 @@ export default function App() {
   };
 
   const startRematchSession = (newSeed: number) => {
+    // Idempotency check: don't start or charge again if already active for this seed!
+    if (activeRematchSeedRef.current === newSeed) return;
+    activeRematchSeedRef.current = newSeed;
+
+    if (useGameStore.getState().coins < 25) {
+      haptic.notification('error');
+      playSound('fail');
+      return;
+    }
+
+    clearMemoryTimer();
     if (duelCleanupTimerRef.current) {
       clearTimeout(duelCleanupTimerRef.current);
       duelCleanupTimerRef.current = null;
@@ -1526,6 +1603,11 @@ export default function App() {
 
   const handleDuelRematchRequest = async () => {
     if (duelRematchRequested) return;
+    if (useGameStore.getState().coins < 25) {
+      haptic.notification('error');
+      playSound('fail');
+      return;
+    }
     setDuelRematchRequested(true);
     haptic.impact('medium');
     playSound('click');
@@ -1537,6 +1619,13 @@ export default function App() {
   };
 
   const handleStartDuel = (payload: StartDuelPayload) => {
+    if (useGameStore.getState().coins < 25) {
+      haptic.notification('error');
+      playSound('fail');
+      return;
+    }
+    clearMemoryTimer();
+    activeRematchSeedRef.current = null;
     if (duelCleanupTimerRef.current) {
       clearTimeout(duelCleanupTimerRef.current);
       duelCleanupTimerRef.current = null;
@@ -1575,13 +1664,10 @@ export default function App() {
         });
         if (isWinner) {
           awardDuelWin();
-          haptic.notification('success');
-          playSound('success');
+          handleGameOver(true);
         } else {
-          haptic.notification('error');
-          playSound('fail');
+          handleGameOver(false);
         }
-        handleGameOver();
       },
       onRematchInvite: () => {
         setDuelOpponentRematchPending(true);
@@ -1602,9 +1688,7 @@ export default function App() {
         if (useGameStore.getState().gameState === 'PLAYING') {
           setDuelWinner('ME');
           awardDuelWin();
-          haptic.notification('success');
-          playSound('success');
-          handleGameOver();
+          handleGameOver(true);
         }
       },
     });
@@ -1625,6 +1709,7 @@ export default function App() {
   }, []);
 
   const initLevel = () => {
+    clearMemoryTimer();
     let puzzle;
     const activeSeed = duelSeedRef.current ?? duelSeed;
     if (isDuelActive && activeSeed !== null) {
@@ -1641,17 +1726,24 @@ export default function App() {
     setIsMemoryMasked(false);
     startNewLevel();
 
-    // In Memory Mode, mask symbols after 2.5 seconds
+    // In Memory Mode, mask symbols after exactly 2.0 seconds
     if (gameMode === 'MEMORY') {
-      setTimeout(() => {
+      memoryTimerRef.current = setTimeout(() => {
         setIsMemoryMasked(true);
-      }, 2500);
+        memoryTimerRef.current = null;
+      }, 2000);
     }
   };
 
-  const handleGameOver = () => {
-    haptic.notification('error');
-    playSound('fail');
+  const handleGameOver = (isVictory = false) => {
+    clearMemoryTimer();
+    if (!isVictory) {
+      haptic.notification('error');
+      playSound('fail');
+    } else {
+      haptic.notification('success');
+      playSound('success');
+    }
     resetStreak();
     setShowSolution(false); // Reset solution when entering GameOver
     useGameStore.setState({ gameState: 'GAMEOVER' });
@@ -1660,6 +1752,7 @@ export default function App() {
   const timePercent = isDevMode ? 100 : (timeLeft / maxTime) * 100;
 
   const handleLevelComplete = () => {
+    clearMemoryTimer();
     playSound('success');
     setShowSolution(false); // Reset solution for the next level
     const timeSpent = Number((maxTime - timeLeft).toFixed(2));
@@ -1729,9 +1822,12 @@ export default function App() {
       }
     }
 
+    if (earnedThisLevel > 0) {
+      useGameStore.getState().addCoins(earnedThisLevel);
+    }
+
     useGameStore.setState(s => ({
       level: nextLevel,
-      coins: s.coins + earnedThisLevel,
       previousAnswers: [expected, s.previousAnswers[0]]
     }));
   };
@@ -2197,9 +2293,34 @@ export default function App() {
                 layout
                 animate={isErrorShake ? { x: [-8, 8, -6, 6, -3, 3, 0] } : {}}
                 transition={{ duration: 0.4 }}
-                className="flex-1 min-h-0 flex flex-wrap justify-center content-center items-center gap-[2px] md:gap-1.5 mb-2 md:mb-4 px-2 py-4 md:px-6 md:py-6 rounded-3xl bg-white shadow-sm border border-neutral-200/90 w-full relative overflow-y-auto"
+                className="flex-1 min-h-0 flex flex-wrap justify-center content-center items-center gap-[2px] md:gap-1.5 mb-2 md:mb-4 px-2 py-4 md:px-6 md:py-6 rounded-3xl bg-white shadow-sm border border-neutral-200/90 w-full relative overflow-hidden"
               >
                 <div className="absolute inset-0 bg-gradient-to-b from-transparent to-neutral-50/20 pointer-events-none"></div>
+
+                {/* MEMORY MODE 2.0s COUNTDOWN PROGRESS BAR */}
+                {gameMode === 'MEMORY' && !isMemoryMasked && (
+                  <>
+                    <div className="absolute top-0 inset-x-0 h-1.5 bg-sky-100 overflow-hidden z-20">
+                      <motion.div
+                        key={`mem-bar-${level}`}
+                        initial={{ width: '100%' }}
+                        animate={{ width: '0%' }}
+                        transition={{ duration: 2.0, ease: 'linear' }}
+                        className="h-full bg-sky-500 rounded-full"
+                      />
+                    </div>
+                    <motion.div
+                      key={`mem-badge-${level}`}
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="absolute top-2.5 right-3 px-2.5 py-0.5 rounded-full bg-sky-50 border border-sky-200/60 text-[10px] font-black uppercase text-sky-600 flex items-center gap-1 z-20 shadow-xs pointer-events-none"
+                    >
+                      <span className="w-1.5 h-1.5 rounded-full bg-sky-500 animate-pulse" />
+                      <span>{t.memory_time_remaining || '2.0s'}</span>
+                    </motion.div>
+                  </>
+                )}
 
                 <AnimatePresence mode="popLayout">
                   {sequence.map((sym, i) => {

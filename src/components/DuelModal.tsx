@@ -5,6 +5,7 @@ import { haptic } from '../lib/Haptics';
 import { useGameStore } from '../store/useGameStore';
 import { Translations } from '../lib/Translations';
 import { DuelService, type OpponentInfo } from '../lib/DuelService';
+import { Ads } from '../lib/Ads';
 
 export interface StartDuelPayload {
   opponent: OpponentInfo;
@@ -26,16 +27,19 @@ export const DuelModal: React.FC<DuelModalProps> = ({
   onStartDuel,
   playSound,
 }) => {
-  const { language } = useGameStore();
+  const { language, coins, addCoins } = useGameStore();
   const t = Translations[language];
   const [tab, setTab] = useState<'friend' | 'quick'>('quick');
   const [roomCode, setRoomCode] = useState('');
   const [joinCode, setJoinCode] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [isJoining, setIsJoining] = useState(false);
+  const [isWatchingAd, setIsWatchingAd] = useState(false);
   const [joinError, setJoinError] = useState('');
   const [searchTimer, setSearchTimer] = useState(0);
   const matchStartedRef = useRef(false);
+
+  const hasEnoughCoins = coins >= 25;
 
   // Generate clean room code when opened
   useEffect(() => {
@@ -105,7 +109,27 @@ export const DuelModal: React.FC<DuelModalProps> = ({
     }
   };
 
+  const handleWatchAdForCoins = async () => {
+    setIsWatchingAd(true);
+    haptic.selection();
+    const res = await Ads.showRewardedAd();
+    setIsWatchingAd(false);
+    if (res.success) {
+      addCoins(50);
+      haptic.notification('success');
+      playSound('success');
+    } else {
+      haptic.notification('error');
+      playSound('fail');
+    }
+  };
+
   const handleStartSearch = () => {
+    if (!hasEnoughCoins) {
+      haptic.notification('error');
+      playSound('fail');
+      return;
+    }
     haptic.impact('medium');
     playSound('click');
     setIsSearching(true);
@@ -132,6 +156,12 @@ export const DuelModal: React.FC<DuelModalProps> = ({
   };
 
   const handleJoinWithCode = () => {
+    if (!hasEnoughCoins) {
+      setJoinError(t.duel_insufficient_coins);
+      haptic.notification('error');
+      playSound('fail');
+      return;
+    }
     const formattedCode = joinCode.trim().toUpperCase();
     if (formattedCode.length >= 4) {
       haptic.impact('medium');
@@ -180,7 +210,7 @@ export const DuelModal: React.FC<DuelModalProps> = ({
             {/* Header */}
             <div className="flex justify-between items-center mb-4 shrink-0">
               <div className="flex items-center gap-2.5">
-                <div className="w-10 h-10 rounded-2xl bg-red-50 flex items-center justify-center text-red-500">
+                <div className="w-10 h-10 rounded-2xl bg-rose-50 flex items-center justify-center text-rose-500 shadow-xs">
                   <Icons.Swords className="w-5 h-5" />
                 </div>
                 <div>
@@ -188,16 +218,42 @@ export const DuelModal: React.FC<DuelModalProps> = ({
                   <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">{t.duel_subtitle}</span>
                 </div>
               </div>
-              <button
-                onClick={() => {
-                  DuelService.cleanup();
-                  onClose();
-                }}
-                className="w-8 h-8 flex items-center justify-center bg-neutral-100 rounded-full hover:bg-neutral-200 transition-colors text-neutral-400 font-bold text-xs"
-              >
-                ✕
-              </button>
+              <div className="flex items-center gap-2">
+                <div className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-black border tabular-nums shadow-xs ${
+                  hasEnoughCoins ? 'bg-amber-50 border-amber-200 text-amber-900' : 'bg-rose-50 border-rose-200 text-rose-700'
+                }`}>
+                  <span>🪙</span>
+                  <span>{coins}</span>
+                </div>
+                <button
+                  onClick={() => {
+                    DuelService.cleanup();
+                    onClose();
+                  }}
+                  className="w-8 h-8 flex items-center justify-center bg-neutral-100 rounded-full hover:bg-neutral-200 transition-colors text-neutral-400 font-bold text-xs"
+                >
+                  ✕
+                </button>
+              </div>
             </div>
+
+            {/* Insufficient coins warning & rewarded ad shortcut */}
+            {!hasEnoughCoins && (
+              <div className="mb-3 p-3 rounded-2xl bg-rose-50 border border-rose-200/80 flex flex-col gap-2 shrink-0">
+                <div className="flex items-center gap-1.5 text-rose-700 text-[11px] font-black uppercase tracking-wide">
+                  <span>⚠️</span>
+                  <span>{t.duel_insufficient_coins}</span>
+                </div>
+                <button
+                  onClick={handleWatchAdForCoins}
+                  disabled={isWatchingAd}
+                  className="w-full py-2 bg-amber-400 hover:bg-amber-500 text-neutral-900 rounded-xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-xs active:scale-95 transition-all disabled:opacity-50"
+                >
+                  <span>📺</span>
+                  <span>{isWatchingAd ? '...' : t.duel_watch_ad_coins}</span>
+                </button>
+              </div>
+            )}
 
             {/* Mode Switch Tabs */}
             <div className="flex p-1 bg-neutral-100 rounded-2xl mb-4 shrink-0">
@@ -230,8 +286,8 @@ export const DuelModal: React.FC<DuelModalProps> = ({
             {/* Tab 1: Quick Match */}
             {tab === 'quick' && (
               <div className="flex flex-col items-center justify-center py-4 text-center">
-                <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-red-500 to-amber-500 p-1 mb-4 flex items-center justify-center shadow-lg relative">
-                  <div className="w-full h-full bg-white rounded-full flex items-center justify-center text-red-500">
+                <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-rose-500 to-amber-500 p-1 mb-4 flex items-center justify-center shadow-lg relative">
+                  <div className="w-full h-full bg-white rounded-full flex items-center justify-center text-rose-500">
                     <Icons.Swords className={`w-8 h-8 ${isSearching ? 'animate-bounce' : ''}`} />
                   </div>
                   {isSearching && (
@@ -263,7 +319,12 @@ export const DuelModal: React.FC<DuelModalProps> = ({
                 ) : (
                   <button
                     onClick={handleStartSearch}
-                    className="w-full py-4 bg-[#1D1D1F] hover:bg-black text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all"
+                    disabled={!hasEnoughCoins}
+                    className={`w-full py-4 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg transition-all ${
+                      hasEnoughCoins
+                        ? 'bg-[#1D1D1F] hover:bg-black hover:scale-[1.02] active:scale-[0.98]'
+                        : 'bg-neutral-300 text-neutral-500 cursor-not-allowed'
+                    }`}
                   >
                     {t.duel_find_btn}
                   </button>
@@ -327,7 +388,7 @@ export const DuelModal: React.FC<DuelModalProps> = ({
                     />
                     <button
                       onClick={handleJoinWithCode}
-                      disabled={isJoining}
+                      disabled={isJoining || !hasEnoughCoins}
                       className="px-5 bg-amber-400 hover:bg-amber-500 text-neutral-900 rounded-2xl font-black text-xs uppercase tracking-wider shadow-sm transition-all disabled:opacity-50"
                     >
                       {isJoining ? (
