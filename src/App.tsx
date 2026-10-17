@@ -882,10 +882,10 @@ function GameOverScreen({
               won ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/80 shadow-2xs' : 'bg-rose-50 text-rose-700 border border-rose-200/80 shadow-2xs'
             }`}>
               <span>🪙</span>
-              <span>{won ? `+50 COIN (${t.duel_net || 'Net'} +25)` : '-25 COIN'}</span>
+              <span>{won ? `+100 COIN (${t.duel_net || 'Net'} +75)` : '-25 COIN'}</span>
             </span>
             <span className="text-[10px] font-bold text-neutral-400 mt-1">
-              {won ? (t.duel_stake_win_breakdown || '25 Coin giriş iadesi + 25 Coin galibiyet ödülü') : (t.duel_stake_loss_breakdown || 'Düello giriş ücreti kesildi')}
+              {won ? (t.duel_stake_win_breakdown || '25 Coin giriş iadesi + 75 Coin galibiyet ödülü') : (t.duel_stake_loss_breakdown || 'Düello giriş ücreti kesildi')}
             </span>
           </div>
 
@@ -1562,7 +1562,7 @@ export default function App() {
   const awardDuelWin = () => {
     if (duelRewardHandledRef.current) return;
     duelRewardHandledRef.current = true;
-    useGameStore.getState().addCoins(50);
+    useGameStore.getState().addCoins(100);
   };
 
   const startRematchSession = (newSeed: number) => {

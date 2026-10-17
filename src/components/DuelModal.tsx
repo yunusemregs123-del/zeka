@@ -101,12 +101,64 @@ export const DuelModal: React.FC<DuelModalProps> = ({
     };
   }, [isOpen, tab, roomCode]);
 
-  const handleCopyCode = () => {
-    haptic.impact('light');
-    playSound('click');
-    if (typeof navigator !== 'undefined' && navigator.clipboard) {
-      navigator.clipboard.writeText(`ZEKA'da bana meydan oku! Oda Kodum: ${roomCode} 👇\nhttps://zeka.arcn.games/duel/${roomCode}`);
+  const [codeCopied, setCodeCopied] = useState(false);
+
+  const copyToClipboard = (text: string): boolean => {
+    if (typeof navigator !== 'undefined' && navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).catch(() => {
+        fallbackCopy(text);
+      });
+      return true;
     }
+    return fallbackCopy(text);
+  };
+
+  const fallbackCopy = (text: string): boolean => {
+    try {
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      textarea.style.position = 'fixed';
+      textarea.style.left = '-9999px';
+      textarea.style.top = '-9999px';
+      textarea.setAttribute('readonly', '');
+      document.body.appendChild(textarea);
+      textarea.focus();
+      textarea.select();
+      const successful = document.execCommand('copy');
+      document.body.removeChild(textarea);
+      return successful;
+    } catch {
+      return false;
+    }
+  };
+
+  const handleCopyCode = () => {
+    haptic.notification('success');
+    playSound('click');
+    copyToClipboard(roomCode);
+    setCodeCopied(true);
+    setTimeout(() => setCodeCopied(false), 2500);
+  };
+
+  const handleShareInvite = async () => {
+    haptic.impact('medium');
+    playSound('click');
+    const inviteText = `ZEKA'da 1v1 Zeka Düellosuna davet edildin! 🧠⚔️\nOda Kodum: ${roomCode}\nKatılmak için tıkla: https://zeka.arcn.games`;
+    if (typeof navigator !== 'undefined' && navigator.share) {
+      try {
+        await navigator.share({
+          title: "ZEKA 1v1 Düello Daveti",
+          text: inviteText,
+          url: "https://zeka.arcn.games",
+        });
+        return;
+      } catch {
+        // User cancelled share dialog
+      }
+    }
+    copyToClipboard(inviteText);
+    setCodeCopied(true);
+    setTimeout(() => setCodeCopied(false), 2500);
   };
 
   const handleWatchAdForCoins = async () => {
@@ -306,7 +358,7 @@ export const DuelModal: React.FC<DuelModalProps> = ({
 
                 <div className="flex items-center gap-1.5 mb-5 px-3 py-1.5 bg-amber-50 rounded-xl border border-amber-200/60 text-[10px] font-black text-amber-700">
                   <span>🪙</span>
-                  <span>{t.duel_stake_info || 'Giriş: 25 Coin • Kazanan: +50 Coin'}</span>
+                  <span>{t.duel_stake_info || 'Giriş: 25 Coin • Kazanan: +100 Coin'}</span>
                 </div>
 
                 {isSearching ? (
@@ -337,7 +389,7 @@ export const DuelModal: React.FC<DuelModalProps> = ({
               <div className="flex flex-col gap-3 py-1">
                 <div className="flex items-center justify-center gap-1.5 py-1 px-3 bg-amber-50 rounded-xl border border-amber-200/60 text-[10px] font-black text-amber-700 text-center">
                   <span>🪙</span>
-                  <span>{t.duel_stake_info || 'Giriş: 25 Coin • Kazanan: +50 Coin'}</span>
+                  <span>{t.duel_stake_info || 'Giriş: 25 Coin • Kazanan: +100 Coin'}</span>
                 </div>
 
                 {/* Your Room Code Box */}
@@ -345,7 +397,7 @@ export const DuelModal: React.FC<DuelModalProps> = ({
                   <span className="text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-1">
                     {t.duel_your_code}
                   </span>
-                  <span className="text-2xl font-black tracking-widest text-neutral-900 font-mono mb-2">
+                  <span className="text-2xl font-black tracking-widest text-neutral-900 font-mono mb-2 select-all">
                     {roomCode}
                   </span>
 
@@ -354,12 +406,29 @@ export const DuelModal: React.FC<DuelModalProps> = ({
                     <span>{t.duel_waiting_friend}</span>
                   </div>
 
-                  <button
-                    onClick={handleCopyCode}
-                    className="px-4 py-2 bg-neutral-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-black transition-colors"
-                  >
-                    {t.duel_copy_btn}
-                  </button>
+                  <div className="flex gap-2 w-full">
+                    <motion.button
+                      whileTap={{ scale: 0.96 }}
+                      onClick={handleCopyCode}
+                      className={`flex-1 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-1.5 transition-colors ${
+                        codeCopied
+                          ? 'bg-emerald-600 text-white shadow-sm'
+                          : 'bg-neutral-900 hover:bg-black text-white'
+                      }`}
+                    >
+                      <span>{codeCopied ? '✓' : '📋'}</span>
+                      <span>{codeCopied ? (t.duel_code_copied || 'KOPYALANDI!') : (t.duel_copy_btn || 'KODU KOPYALA')}</span>
+                    </motion.button>
+
+                    <motion.button
+                      whileTap={{ scale: 0.96 }}
+                      onClick={handleShareInvite}
+                      className="px-3.5 py-2.5 bg-amber-400 hover:bg-amber-500 text-neutral-900 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-1 shadow-xs transition-colors shrink-0"
+                    >
+                      <span>🚀</span>
+                      <span>{t.duel_share_invite_btn || 'GÖNDER'}</span>
+                    </motion.button>
+                  </div>
                 </div>
 
                 <div className="flex items-center gap-2 px-2">
@@ -379,10 +448,20 @@ export const DuelModal: React.FC<DuelModalProps> = ({
                       placeholder="ZK-1234"
                       value={joinCode}
                       onChange={(e) => {
-                        setJoinCode(e.target.value.toUpperCase());
+                        let val = e.target.value.toUpperCase();
+                        // Smart regex: if user pastes full invitation text or URL
+                        const match = val.match(/ZK-?[0-9]{4}/i);
+                        if (match) {
+                          val = match[0].toUpperCase();
+                          if (!val.includes('-')) {
+                            val = `ZK-${val.slice(2)}`;
+                          }
+                        } else if (val.length > 7) {
+                          val = val.slice(0, 7);
+                        }
+                        setJoinCode(val);
                         setJoinError('');
                       }}
-                      maxLength={7}
                       disabled={isJoining}
                       className="flex-1 px-4 py-3 rounded-2xl border border-neutral-200 text-sm font-black font-mono tracking-wider uppercase focus:outline-none focus:border-neutral-900 text-center"
                     />
