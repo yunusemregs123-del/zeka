@@ -353,46 +353,89 @@ export const BrainStoryModal: React.FC<BrainStoryModalProps> = ({
     ctx.fillText('Minimal Mind Puzzle', 145, footerY + 98);
 
     // Right badges: Minimal App Store & Google Play pills
-    const badgeW = 200;
-    const badgeH = 56;
-    const appStoreX = 540;
-    const googlePlayX = 755;
-    const badgeY = footerY + 47;
+    const badgeW = 210;
+    const badgeH = 58;
+    const appStoreX = 525;
+    const googlePlayX = 750;
+    const badgeY = footerY + 46;
 
-    // App Store Badge
-    roundRect(appStoreX, badgeY, badgeW, badgeH, 16, 'rgba(255, 255, 255, 0.06)', 'rgba(255, 255, 255, 0.12)', 1.2);
-    // Apple icon
-    ctx.fillStyle = '#FFFFFF';
-    ctx.font = '900 22px system-ui, -apple-system, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('', appStoreX + 32, badgeY + 36);
+    // 1. App Store Badge
+    roundRect(appStoreX, badgeY, badgeW, badgeH, 16, 'rgba(255, 255, 255, 0.05)', 'rgba(255, 255, 255, 0.12)', 1.2);
+    
+    // Draw Authentic Vector Apple Logo (Works 100% across all OS & devices without font dependencies)
+    ctx.save();
+    ctx.translate(appStoreX + 16, badgeY + 14);
+    ctx.scale(0.17, 0.17);
+    if (typeof Path2D !== 'undefined') {
+      const applePath = new Path2D(
+        "M150.37 130.25c-2.45 5.66-5.35 10.87-8.71 15.66-4.58 6.53-8.33 11.05-11.22 13.56-4.48 4.12-9.28 6.23-14.42 6.35-3.69 0-8.14-1.05-13.32-3.18-5.19-2.12-9.97-3.17-14.34-3.17-4.58 0-9.49 1.05-14.75 3.17-5.26 2.13-9.5 3.24-12.74 3.35-4.35.13-9.16-1.9-14.42-6.08-3.69-3.04-7.59-7.71-11.71-14.01-6.73-10.32-11.83-21.78-15.3-34.37-3.47-12.59-5.21-24.58-5.21-35.97 0-14.44 3.73-26.49 11.2-36.14 7.46-9.66 16.73-14.59 27.79-14.81 5.32 0 11.2 1.34 17.65 4.02 6.45 2.68 10.74 4.08 12.87 4.2 2.01-.25 6.48-1.74 13.41-4.47 6.94-2.73 12.87-4.04 17.81-3.92 12.06.63 21.72 4.96 28.98 13.01-10.45 6.34-15.6 15.01-15.46 26.01.16 8.5 3.34 15.68 9.54 21.54 6.2 5.86 13.65 9.28 22.36 10.26-2.58 7.82-5.75 15.42-9.52 22.8zM119.22 31.05c0-6.84 2.47-13.25 7.42-19.23 4.94-5.99 11.13-9.66 18.57-11.02.16 1.05.25 2.1.25 3.14 0 6.64-2.54 13.1-7.62 19.38-5.08 6.28-11.3 9.87-18.62 10.78-.16-1.05-.25-2.07-.25-3.05z"
+      );
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fill(applePath);
+    }
+    ctx.restore();
 
     ctx.textAlign = 'left';
-    ctx.font = '600 10px system-ui, -apple-system, sans-serif';
+    ctx.font = '600 11px system-ui, -apple-system, sans-serif';
     ctx.fillStyle = '#9CA3AF';
-    ctx.fillText('Download on the', appStoreX + 54, badgeY + 23);
-    ctx.font = '800 16px system-ui, -apple-system, sans-serif';
+    ctx.fillText('Download on the', appStoreX + 54, badgeY + 24);
+    ctx.font = '800 17px system-ui, -apple-system, sans-serif';
     ctx.fillStyle = '#FFFFFF';
-    ctx.fillText('App Store', appStoreX + 54, badgeY + 43);
+    ctx.fillText('App Store', appStoreX + 54, badgeY + 45);
 
-    // Google Play Badge
-    roundRect(googlePlayX, badgeY, badgeW, badgeH, 16, 'rgba(255, 255, 255, 0.06)', 'rgba(255, 255, 255, 0.12)', 1.2);
-    // Play Triangle icon
+    // 2. Google Play Badge
+    roundRect(googlePlayX, badgeY, badgeW, badgeH, 16, 'rgba(255, 255, 255, 0.05)', 'rgba(255, 255, 255, 0.12)', 1.2);
+
+    // Draw Google Play Multi-Facet Vector Triangle
+    ctx.save();
+    ctx.translate(googlePlayX + 16, badgeY + 16);
+    const pW = 26;
+    const pH = 26;
+
+    // Green base
     ctx.beginPath();
-    ctx.moveTo(googlePlayX + 24, badgeY + 19);
-    ctx.lineTo(googlePlayX + 38, badgeY + 28);
-    ctx.lineTo(googlePlayX + 24, badgeY + 37);
+    ctx.moveTo(2, 2);
+    ctx.lineTo(pW, pH / 2);
+    ctx.lineTo(2, pH - 2);
     ctx.closePath();
-    ctx.fillStyle = '#34D399';
+    ctx.fillStyle = '#10B981';
     ctx.fill();
 
+    // Blue/Cyan top facet
+    ctx.beginPath();
+    ctx.moveTo(2, 2);
+    ctx.lineTo(pW * 0.65, pH * 0.6);
+    ctx.lineTo(pW, pH / 2);
+    ctx.closePath();
+    ctx.fillStyle = '#06B6D4';
+    ctx.fill();
+
+    // Red bottom facet
+    ctx.beginPath();
+    ctx.moveTo(2, pH - 2);
+    ctx.lineTo(pW * 0.65, pH * 0.4);
+    ctx.lineTo(pW, pH / 2);
+    ctx.closePath();
+    ctx.fillStyle = '#EF4444';
+    ctx.fill();
+
+    // Amber right facet
+    ctx.beginPath();
+    ctx.moveTo(pW * 0.65, pH * 0.4);
+    ctx.lineTo(pW, pH / 2);
+    ctx.lineTo(pW * 0.65, pH * 0.6);
+    ctx.closePath();
+    ctx.fillStyle = '#F59E0B';
+    ctx.fill();
+    ctx.restore();
+
     ctx.textAlign = 'left';
-    ctx.font = '600 10px system-ui, -apple-system, sans-serif';
+    ctx.font = '600 11px system-ui, -apple-system, sans-serif';
     ctx.fillStyle = '#9CA3AF';
-    ctx.fillText('GET IT ON', googlePlayX + 50, badgeY + 23);
-    ctx.font = '800 16px system-ui, -apple-system, sans-serif';
+    ctx.fillText('GET IT ON', googlePlayX + 52, badgeY + 24);
+    ctx.font = '800 17px system-ui, -apple-system, sans-serif';
     ctx.fillStyle = '#FFFFFF';
-    ctx.fillText('Google Play', googlePlayX + 50, badgeY + 43);
+    ctx.fillText('Google Play', googlePlayX + 52, badgeY + 45);
 
     // Convert to Blob & Data URL
     canvas.toBlob((blob) => {
