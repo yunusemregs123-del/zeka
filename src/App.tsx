@@ -922,7 +922,7 @@ function GameOverScreen({
             {won ? (t.duel_victory_coin || '🎉 +50 COIN KAZANDIN!') : (t.duel_defeat_coin || '💀 -25 COIN KAYBETTİN')}
           </p>
 
-          <div className="bg-neutral-50 p-4 rounded-2xl border border-neutral-100 mb-5 flex flex-col gap-2.5">
+          <div className="bg-neutral-50 p-4 rounded-2xl border border-neutral-100 mb-3 flex flex-col gap-2.5">
             <div className="flex justify-between items-center">
               <span className="text-xs font-black text-neutral-500 uppercase tracking-wider">{t.duel_you || 'SEN'}</span>
               <span className={`text-2xl font-black ${won ? 'text-emerald-600' : 'text-neutral-700'}`}>{duelMyScore}</span>
@@ -932,6 +932,14 @@ function GameOverScreen({
               <span className="text-xs font-black text-neutral-500 uppercase tracking-wider truncate max-w-[150px]">{duelOpponentName}</span>
               <span className={`text-2xl font-black ${!won ? 'text-rose-600' : 'text-neutral-700'}`}>{duelOpponentScore}</span>
             </div>
+          </div>
+
+          {/* Sudden Death Outcome Badge */}
+          <div className={`mb-5 px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-1.5 border ${
+            won ? 'bg-emerald-50 text-emerald-700 border-emerald-200/60' : 'bg-rose-50 text-rose-700 border-rose-200/60'
+          }`}>
+            <span>{won ? '🎯' : '⚠️'}</span>
+            <span>{won ? (t.duel_victory_reason || 'Rakip hata yaptı ve elendi!') : (t.duel_defeat_reason || 'Hata yaptın veya süren doldu!')}</span>
           </div>
 
           {/* Opponent Left Notice */}
@@ -1272,7 +1280,6 @@ export default function App() {
   const [duelMyScore, setDuelMyScore] = useState(0);
   const [duelOpponentScore, setDuelOpponentScore] = useState(0);
   const [duelWinner, setDuelWinner] = useState<'ME' | 'OPPONENT' | null>(null);
-  const [isDuelPenalty, setIsDuelPenalty] = useState(false);
   const [duelRematchRequested, setDuelRematchRequested] = useState(false);
   const [duelOpponentRematchPending, setDuelOpponentRematchPending] = useState(false);
   const [duelOpponentLeft, setDuelOpponentLeft] = useState(false);
@@ -1701,7 +1708,7 @@ export default function App() {
   };
 
   const handleSubmission = () => {
-    if (isSubmitting || isDuelPenalty) return;
+    if (isSubmitting) return;
     setIsSubmitting(true);
 
     if (currentValue === expected) {
@@ -1713,15 +1720,6 @@ export default function App() {
         const nextScore = duelMyScore + 1;
         setDuelMyScore(nextScore);
         DuelService.sendScore(nextScore);
-        if (nextScore >= 10) {
-          setDuelWinner('ME');
-          awardDuelWin();
-          haptic.notification('success');
-          playSound('success');
-          handleGameOver();
-          setTimeout(() => setIsSubmitting(false), 300);
-          return;
-        }
       }
 
       if (gameMode === 'TIME_ATTACK' || gameMode === 'MEMORY') {
@@ -1736,9 +1734,11 @@ export default function App() {
 
       if (isDuelActive) {
         playSound('fail');
-        setIsDuelPenalty(true);
-        setTimeout(() => setIsDuelPenalty(false), 1200);
-        setCurrentValue(0);
+        DuelService.reportForfeit();
+        setDuelWinner('OPPONENT');
+        handleGameOver();
+        setTimeout(() => setIsSubmitting(false), 300);
+        return;
       } else if (gameMode === 'TIME_ATTACK') {
         useGameStore.setState(s => ({ timeLeft: Math.max(0, s.timeLeft - 3) }));
         playSound('fail');
@@ -1757,7 +1757,6 @@ export default function App() {
   };
 
   const adjustValue = (dir: number) => {
-    if (isDuelPenalty) return;
     haptic.impact('light');
     playSound('click');
     setCurrentValue(currentValue + dir);
@@ -1892,13 +1891,16 @@ export default function App() {
                       </span>
                     </div>
 
-                    {/* Center: Target Badge */}
+                    {/* Center: Sudden Death Badge */}
                     <div className="flex flex-col items-center shrink-0 px-2">
-                      <span className="text-[9px] font-black tracking-widest text-white/50 uppercase">
-                        {t.duel_target || 'HEDEF'} 10
-                      </span>
+                      <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-rose-500/20 border border-rose-500/40 text-rose-400 shadow-[0_0_12px_rgba(244,63,94,0.35)]">
+                        <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-ping" />
+                        <span className="text-[9px] font-black tracking-widest uppercase">
+                          {t.duel_sudden_death || 'TEK HATA ELER'}
+                        </span>
+                      </div>
                       {duelRoomCode && (
-                        <span className="text-[8px] font-mono text-white/30 tracking-wider">
+                        <span className="text-[8px] font-mono text-white/30 tracking-wider mt-0.5">
                           {duelRoomCode}
                         </span>
                       )}

@@ -276,19 +276,21 @@ export const DuelService = {
 
           botScoreTracker = 0;
           simulatedBotInterval = setInterval(() => {
-            if (Math.random() < 0.72) {
+            const botErrorChance = botScoreTracker < 5 ? 0.08 : (botScoreTracker < 10 ? 0.16 : 0.25);
+            const isBotMistake = Math.random() < botErrorChance;
+
+            if (isBotMistake) {
+              clearInterval(simulatedBotInterval);
+              if (!isMatchFinishedReported) {
+                isMatchFinishedReported = true;
+                activeGameCallbacks.onMatchFinish?.(myId, true, botScoreTracker);
+              }
+            } else {
               botScoreTracker += 1;
               callbacks.onOpponentScore(botScoreTracker);
               activeGameCallbacks.onOpponentScore?.(botScoreTracker);
-              if (botScoreTracker >= 10) {
-                clearInterval(simulatedBotInterval);
-                if (!isMatchFinishedReported) {
-                  isMatchFinishedReported = true;
-                  activeGameCallbacks.onMatchFinish?.('bot', false, 10);
-                }
-              }
             }
-          }, 4200);
+          }, 3800);
 
           callbacks.onMatchStart(randomBot, botSeed, true, botRoom);
         }
@@ -375,11 +377,6 @@ export const DuelService = {
     const myId = getDuelPlayerId();
 
     if (isBotMatch) {
-      if (newScore >= 10 && !isMatchFinishedReported) {
-        isMatchFinishedReported = true;
-        clearInterval(simulatedBotInterval);
-        activeGameCallbacks.onMatchFinish?.(myId, true, botScoreTracker);
-      }
       return;
     }
 
@@ -446,18 +443,20 @@ export const DuelService = {
 
       clearInterval(simulatedBotInterval);
       simulatedBotInterval = setInterval(() => {
-        if (Math.random() < 0.72) {
+        const botErrorChance = botScoreTracker < 5 ? 0.08 : (botScoreTracker < 10 ? 0.16 : 0.25);
+        const isBotMistake = Math.random() < botErrorChance;
+
+        if (isBotMistake) {
+          clearInterval(simulatedBotInterval);
+          if (!isMatchFinishedReported) {
+            isMatchFinishedReported = true;
+            activeGameCallbacks.onMatchFinish?.(getDuelPlayerId(), true, botScoreTracker);
+          }
+        } else {
           botScoreTracker += 1;
           activeGameCallbacks.onOpponentScore?.(botScoreTracker);
-          if (botScoreTracker >= 10) {
-            clearInterval(simulatedBotInterval);
-            if (!isMatchFinishedReported) {
-              isMatchFinishedReported = true;
-              activeGameCallbacks.onMatchFinish?.('bot', false, 10);
-            }
-          }
         }
-      }, 4200);
+      }, 3800);
 
       setTimeout(() => {
         activeGameCallbacks.onRematchStart?.(newSeed);
