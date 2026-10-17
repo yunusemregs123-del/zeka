@@ -231,4 +231,40 @@ export const X = (props: IconProps) => (
 
 export const Close = X;
 
+export const Volume = (props: IconProps) => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+    <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+    <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+  </svg>
+);
+
+export const VolumeMute = (props: IconProps) => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+    <line x1="22" y1="9" x2="16" y2="15" />
+    <line x1="16" y1="9" x2="22" y2="15" />
+  </svg>
+);
+
+export const Vibrate = (props: IconProps) => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <path d="M2 8v8" />
+    <path d="M22 8v8" />
+    <path d="M5 5v14" />
+    <path d="M19 5v14" />
+    <rect width="8" height="16" x="8" y="4" rx="2" />
+  </svg>
+);
+
+export const VibrateOff = (props: IconProps) => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <path d="M2 8v8" />
+    <path d="M22 8v8" />
+    <rect width="8" height="16" x="8" y="4" rx="2" />
+    <line x1="2" y1="2" x2="22" y2="22" strokeWidth="2.5" />
+  </svg>
+);
+
+
 

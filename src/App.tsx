@@ -179,7 +179,7 @@ function MenuScreen({
 }) {
   const {
     language, setLanguage, medals, claimedMedals, claimMedalReward,
-    checkpointLevel, streak, timeAttackBest, memoryBest, isDevMode, toggleDevMode
+    checkpointLevel, streak
   } = useGameStore();
   const t = Translations[language];
   const [tab, setTab] = useState<'daily' | 'weekly' | 'alltime'>('daily');
@@ -307,7 +307,6 @@ function MenuScreen({
   }, [muteAudio]);
 
   const [isHapticsOn, setIsHapticsOn] = useState(haptic.getStatus());
-  const [selectedMode, setSelectedMode] = useState<GameMode | 'DUEL'>('CLASSIC');
 
   const toggleHaptics = () => {
     const next = !isHapticsOn;
@@ -331,7 +330,7 @@ function MenuScreen({
           <span className="text-[10px] font-black uppercase tracking-wider">{t.daily_reward}</span>
         </button>
 
-        {/* Coins & Streak */}
+        {/* Coins, Streak & Language Selector */}
         <div className="flex items-center gap-2">
           {streak > 0 && (
             <div className="flex items-center gap-1 bg-white border border-amber-200/80 px-2.5 py-1.5 rounded-full shadow-sm">
@@ -343,6 +342,38 @@ function MenuScreen({
           <div className="flex items-center gap-1.5 bg-white border border-neutral-200/80 px-3 py-1.5 rounded-full shadow-sm">
             <div className="w-2.5 h-2.5 rounded-full bg-amber-400"></div>
             <span className="font-black text-xs tabular-nums text-neutral-900 leading-none">{coins}</span>
+          </div>
+
+          {/* LANGUAGE SELECTOR IN TOP-RIGHT */}
+          <div className="relative">
+            <button
+              onClick={() => { haptic.impact('light'); setShowLangMenu(!showLangMenu); }}
+              className="flex items-center gap-1 px-2.5 py-1.5 bg-white border border-neutral-200/80 rounded-full shadow-sm text-[10px] font-black tracking-wider uppercase hover:bg-neutral-50 active:scale-95 transition-all text-neutral-700"
+            >
+              <span>{language}</span>
+              <Icons.ChevronDown className={`w-2.5 h-2.5 transition-transform ${showLangMenu ? 'rotate-180' : ''}`} />
+            </button>
+
+            <AnimatePresence>
+              {showLangMenu && (
+                <motion.div
+                  initial={{ opacity: 0, y: -5, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -5, scale: 0.95 }}
+                  className="absolute right-0 top-9 bg-white border border-neutral-200 rounded-2xl shadow-xl overflow-hidden flex flex-col items-stretch z-30 min-w-[70px]"
+                >
+                  {(['en', 'tr', 'de', 'ja', 'pt'] as LanguageCode[]).map(lang => (
+                    <button
+                      key={lang}
+                      onClick={() => { haptic.impact('light'); setLanguage(lang); setShowLangMenu(false); }}
+                      className={`py-2 px-3 text-[10px] font-black tracking-widest uppercase transition-colors text-center ${language === lang ? 'bg-neutral-100 text-amber-500' : 'text-neutral-500 hover:bg-neutral-50'}`}
+                    >
+                      {lang}
+                    </button>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </div>
       </header>
@@ -365,134 +396,57 @@ function MenuScreen({
         <h1 className="text-5xl sm:text-6xl font-black tracking-tighter text-[#1D1D1F] mb-1">
           ZEKA
         </h1>
-        <p className="text-sm font-bold text-neutral-400 tracking-[0.25em] uppercase mb-5">
+        <p className="text-sm font-bold text-neutral-400 tracking-[0.25em] uppercase mb-8">
           {t.menu_subtitle}
         </p>
 
-        {/* LANGUAGE SWITCHER */}
-        <div className="relative w-fit mx-auto mb-6 z-20">
-          <button
-            onClick={() => setShowLangMenu(!showLangMenu)}
-            className="flex items-center justify-between gap-2 px-3 py-1.5 bg-white border border-neutral-200/80 rounded-full shadow-sm text-[10px] font-black tracking-widest uppercase hover:bg-neutral-50 transition-all text-neutral-700"
-          >
-            <span>{language}</span>
-            <Icons.ChevronDown className={`w-2.5 h-2.5 transition-transform ${showLangMenu ? 'rotate-180' : ''}`} />
-          </button>
-
-          <AnimatePresence>
-            {showLangMenu && (
-              <motion.div
-                initial={{ opacity: 0, y: -5, scale: 0.95 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: -5, scale: 0.95 }}
-                className="absolute top-9 left-1/2 -translate-x-1/2 bg-white border border-neutral-200 rounded-2xl shadow-xl overflow-hidden flex flex-col items-stretch z-30 min-w-[80px]"
-              >
-                {(['en', 'tr', 'de', 'ja', 'pt'] as LanguageCode[]).map(lang => (
-                  <button
-                    key={lang}
-                    onClick={() => { setLanguage(lang); setShowLangMenu(false); }}
-                    className={`py-2 text-[10px] font-black tracking-widest uppercase transition-colors ${language === lang ? 'bg-neutral-100 text-amber-500' : 'text-neutral-500 hover:bg-neutral-50'}`}
-                  >
-                    {lang}
-                  </button>
-                ))}
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-
-        {/* MINIMAL GAME MODE SELECTOR PILLS */}
-        <div className="w-full flex items-center justify-center gap-1 p-1 bg-white border border-neutral-200/80 rounded-2xl shadow-sm mb-5">
-          <button
-            onClick={() => { haptic.impact('light'); setSelectedMode('CLASSIC'); }}
-            className={`flex-1 py-2 rounded-xl text-[10px] sm:text-xs font-black tracking-wider transition-all flex items-center justify-center gap-1 ${
-              selectedMode === 'CLASSIC' ? 'bg-[#1D1D1F] text-white shadow-sm' : 'text-neutral-500 hover:text-black'
-            }`}
-          >
-            <span>🌟</span>
-            <span className="truncate">{t.mode_classic}</span>
-          </button>
-          <button
-            onClick={() => { haptic.impact('light'); setSelectedMode('TIME_ATTACK'); }}
-            className={`flex-1 py-2 rounded-xl text-[10px] sm:text-xs font-black tracking-wider transition-all flex items-center justify-center gap-1 ${
-              selectedMode === 'TIME_ATTACK' ? 'bg-amber-500 text-white shadow-sm' : 'text-neutral-500 hover:text-black'
-            }`}
-          >
-            <span>⚡</span>
-            <span className="truncate">{t.mode_time_attack}</span>
-          </button>
-          <button
-            onClick={() => { haptic.impact('light'); setSelectedMode('MEMORY'); }}
-            className={`flex-1 py-2 rounded-xl text-[10px] sm:text-xs font-black tracking-wider transition-all flex items-center justify-center gap-1 ${
-              selectedMode === 'MEMORY' ? 'bg-blue-600 text-white shadow-sm' : 'text-neutral-500 hover:text-black'
-            }`}
-          >
-            <span>👁️</span>
-            <span className="truncate">{t.mode_memory}</span>
-          </button>
-          <button
-            onClick={() => { haptic.impact('light'); setSelectedMode('DUEL'); }}
-            className={`flex-1 py-2 rounded-xl text-[10px] sm:text-xs font-black tracking-wider transition-all flex items-center justify-center gap-1 ${
-              selectedMode === 'DUEL' ? 'bg-rose-500 text-white shadow-sm' : 'text-neutral-500 hover:text-black'
-            }`}
-          >
-            <span>⚔️</span>
-            <span className="truncate">{t.mode_duel}</span>
-          </button>
-        </div>
-
-        {/* GIANT ICONIC PLAY BUTTON */}
+        {/* GIANT ICONIC PLAY BUTTON (CLASSIC MODE) */}
         <motion.button
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.95 }}
           onClick={() => {
             haptic.impact('heavy');
-            if (selectedMode === 'DUEL') {
-              openDuel();
-            } else if (selectedMode === 'TIME_ATTACK') {
-              startGame(false, 1, 'TIME_ATTACK');
-            } else if (selectedMode === 'MEMORY') {
-              startGame(false, 1, 'MEMORY');
-            } else {
-              startGame(false, undefined, 'CLASSIC');
-            }
+            startGame(false, undefined, 'CLASSIC');
           }}
-          className={`w-full py-5 rounded-full font-black tracking-[0.2em] text-lg sm:text-xl shadow-[0_15px_35px_rgba(0,0,0,0.18)] transition-all flex items-center justify-center gap-2 ${
-            selectedMode === 'TIME_ATTACK'
-              ? 'bg-amber-500 text-white'
-              : selectedMode === 'MEMORY'
-              ? 'bg-blue-600 text-white'
-              : selectedMode === 'DUEL'
-              ? 'bg-gradient-to-r from-rose-500 to-amber-500 text-white'
-              : 'bg-[#1D1D1F] text-white'
-          }`}
+          className="w-full py-5 rounded-full font-black tracking-[0.2em] text-lg sm:text-xl shadow-[0_15px_35px_rgba(0,0,0,0.18)] bg-[#1D1D1F] hover:bg-black text-white transition-all flex items-center justify-center gap-2"
         >
-          <span>
-            {selectedMode === 'DUEL'
-              ? `${t.mode_duel}`
-              : selectedMode === 'TIME_ATTACK'
-              ? `${t.play_start} ⚡`
-              : selectedMode === 'MEMORY'
-              ? `${t.play_start} 👁️`
-              : (checkpointLevel > 1 ? t.play_continue : t.play_start)}
-          </span>
+          <span>{checkpointLevel > 1 ? t.play_continue : t.play_start}</span>
           <Icons.Play className="w-5 h-5 fill-current ml-0.5" />
         </motion.button>
 
-        {/* SUBTLE MODE METADATA */}
-        <div className="mt-3 text-[11px] font-black tracking-widest uppercase text-neutral-400">
-          {selectedMode === 'CLASSIC' && (
-            <span>{t.checkpoint_label} {checkpointLevel}</span>
-          )}
-          {selectedMode === 'TIME_ATTACK' && (
-            <span className="text-amber-600">🏆 {t.time_attack_best}: {timeAttackBest} • 30s</span>
-          )}
-          {selectedMode === 'MEMORY' && (
-            <span className="text-blue-600">🏆 {t.memory_best}: {memoryBest} • 2.5s</span>
-          )}
-          {selectedMode === 'DUEL' && (
-            <span className="text-rose-600">⚔️ {t.mode_duel_desc}</span>
-          )}
+        {/* 2 SIDE-BY-SIDE BUTTONS MATCHING PLAY BUTTON WIDTH & HEIGHT */}
+        <div className="w-full grid grid-cols-2 gap-3 mt-3">
+          {/* MEMORY MODE BUTTON (NO EYE ICON, SUBTLE SLEEK TINT) */}
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => {
+              haptic.impact('medium');
+              startGame(false, 1, 'MEMORY');
+            }}
+            className="w-full py-4 sm:py-5 min-h-[58px] sm:min-h-[64px] bg-sky-50/90 hover:bg-sky-100 text-sky-800 border border-sky-200/80 rounded-2xl sm:rounded-3xl font-black text-xs sm:text-sm tracking-wider uppercase shadow-sm flex items-center justify-center transition-all active:scale-95"
+          >
+            <span>{t.mode_memory}</span>
+          </motion.button>
+
+          {/* 1vs1 DUEL MODE BUTTON (SUBTLE SLEEK TINT + SWORDS ICON) */}
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => {
+              haptic.impact('medium');
+              openDuel();
+            }}
+            className="w-full py-4 sm:py-5 min-h-[58px] sm:min-h-[64px] bg-rose-50/90 hover:bg-rose-100 text-rose-800 border border-rose-200/80 rounded-2xl sm:rounded-3xl font-black text-xs sm:text-sm tracking-wider uppercase shadow-sm flex items-center justify-center gap-1.5 transition-all active:scale-95"
+          >
+            <Icons.Swords className="w-4 h-4 text-rose-500 shrink-0" />
+            <span>{t.mode_duel}</span>
+          </motion.button>
+        </div>
+
+        {/* SUBTLE CHECKPOINT LABEL */}
+        <div className="mt-4 text-[11px] font-black tracking-widest uppercase text-neutral-400">
+          <span>{t.checkpoint_label} {checkpointLevel}</span>
         </div>
       </motion.div>
 
@@ -675,43 +629,34 @@ function MenuScreen({
               </p>
 
               {/* Settings Toggles */}
-              <div className="flex flex-col gap-2 mb-4">
-                <div className="flex items-center justify-between p-2.5 bg-neutral-50 rounded-2xl border border-neutral-100">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm">{muteAudio ? '🔇' : '🔊'}</span>
-                    <span className="text-xs font-bold text-neutral-800">Ses Efektleri</span>
+              <div className="flex flex-col gap-2.5 mb-5">
+                <div className="flex items-center justify-between p-3 bg-neutral-50 rounded-2xl border border-neutral-100 shadow-sm">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-8 h-8 rounded-xl flex items-center justify-center transition-colors ${!muteAudio ? 'bg-amber-100 text-amber-700' : 'bg-neutral-200 text-neutral-400'}`}>
+                      {!muteAudio ? <Icons.Volume className="w-4 h-4" /> : <Icons.VolumeMute className="w-4 h-4" />}
+                    </div>
+                    <span className="text-xs font-bold text-neutral-800 tracking-wide uppercase">{t.sound_toggle}</span>
                   </div>
                   <button
                     onClick={toggleMute}
-                    className={`w-10 h-6 rounded-full p-0.5 transition-colors flex items-center ${!muteAudio ? 'bg-[#1D1D1F]' : 'bg-neutral-300'}`}
+                    className={`w-11 h-6 rounded-full p-0.5 transition-colors flex items-center ${!muteAudio ? 'bg-[#1D1D1F]' : 'bg-neutral-300'}`}
                   >
-                    <div className={`w-5 h-5 rounded-full bg-white shadow-sm transition-transform ${!muteAudio ? 'translate-x-4' : 'translate-x-0'}`} />
+                    <div className={`w-5 h-5 rounded-full bg-white shadow-sm transition-transform ${!muteAudio ? 'translate-x-5' : 'translate-x-0'}`} />
                   </button>
                 </div>
 
-                <div className="flex items-center justify-between p-2.5 bg-neutral-50 rounded-2xl border border-neutral-100">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm">📳</span>
-                    <span className="text-xs font-bold text-neutral-800">Haptik Titreşim</span>
+                <div className="flex items-center justify-between p-3 bg-neutral-50 rounded-2xl border border-neutral-100 shadow-sm">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-8 h-8 rounded-xl flex items-center justify-center transition-colors ${isHapticsOn ? 'bg-blue-100 text-blue-700' : 'bg-neutral-200 text-neutral-400'}`}>
+                      {isHapticsOn ? <Icons.Vibrate className="w-4 h-4" /> : <Icons.VibrateOff className="w-4 h-4" />}
+                    </div>
+                    <span className="text-xs font-bold text-neutral-800 tracking-wide uppercase">{t.haptics_toggle}</span>
                   </div>
                   <button
                     onClick={toggleHaptics}
-                    className={`w-10 h-6 rounded-full p-0.5 transition-colors flex items-center ${isHapticsOn ? 'bg-[#1D1D1F]' : 'bg-neutral-300'}`}
+                    className={`w-11 h-6 rounded-full p-0.5 transition-colors flex items-center ${isHapticsOn ? 'bg-[#1D1D1F]' : 'bg-neutral-300'}`}
                   >
-                    <div className={`w-5 h-5 rounded-full bg-white shadow-sm transition-transform ${isHapticsOn ? 'translate-x-4' : 'translate-x-0'}`} />
-                  </button>
-                </div>
-
-                <div className="flex items-center justify-between p-2.5 bg-neutral-50 rounded-2xl border border-neutral-100">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm">🛠️</span>
-                    <span className="text-xs font-bold text-neutral-800">Geliştirici Modu</span>
-                  </div>
-                  <button
-                    onClick={toggleDevMode}
-                    className={`w-10 h-6 rounded-full p-0.5 transition-colors flex items-center ${isDevMode ? 'bg-amber-500' : 'bg-neutral-300'}`}
-                  >
-                    <div className={`w-5 h-5 rounded-full bg-white shadow-sm transition-transform ${isDevMode ? 'translate-x-4' : 'translate-x-0'}`} />
+                    <div className={`w-5 h-5 rounded-full bg-white shadow-sm transition-transform ${isHapticsOn ? 'translate-x-5' : 'translate-x-0'}`} />
                   </button>
                 </div>
               </div>
@@ -1511,6 +1456,7 @@ export default function App() {
   }, [level, coins, streak, helpCount, langsUsed.length, totalTimeSpent]);
 
   const handleReturnToMenu = () => {
+    haptic.cancel();
     if ((isDuelActive || gameMode === 'DUEL') && gameState === 'PLAYING') {
       DuelService.reportForfeit();
     }
@@ -1534,6 +1480,7 @@ export default function App() {
   };
 
   const handleStartGame = (asDev = false, startLevel?: number, mode?: GameMode) => {
+    haptic.cancel();
     if (duelCleanupTimerRef.current) {
       clearTimeout(duelCleanupTimerRef.current);
       duelCleanupTimerRef.current = null;
@@ -1643,7 +1590,7 @@ export default function App() {
         if (useGameStore.getState().gameState === 'MENU') {
           setPendingRematchInvite({
             roomCode: payload.roomCode,
-            opponentName: payload.opponent.name || 'Rakip',
+            opponentName: payload.opponent.name || t.duel_opponent || 'Opponent',
           });
         }
       },
@@ -2044,7 +1991,7 @@ export default function App() {
             isDuel={isDuelActive}
             duelWinner={duelWinner}
             duelMyScore={duelMyScore}
-            duelOpponentName={duelOpponent?.name || 'Rakip'}
+            duelOpponentName={duelOpponent?.name || t.duel_opponent || 'OPPONENT'}
             duelOpponentScore={duelOpponentScore}
             duelRematchRequested={duelRematchRequested}
             duelOpponentRematchPending={duelOpponentRematchPending}

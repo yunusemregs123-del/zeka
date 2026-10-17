@@ -70,6 +70,16 @@ class HapticsService {
       // Ignore vibration errors silently
     }
   }
+
+  public cancel() {
+    try {
+      if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+        navigator.vibrate(0);
+      }
+    } catch {
+      // Ignore vibration errors silently
+    }
+  }
 }
 
 export const haptic = new HapticsService();

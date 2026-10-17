@@ -4,6 +4,7 @@
  */
 
 import { getDuelPlayerId, getPlayerName, getCachedCountry } from './Leaderboard';
+import { haptic } from './Haptics';
 
 const CF_WORKER_URL = (import.meta.env.VITE_CF_WORKER_URL || 'https://zeka-edge-api.zekagame.workers.dev').replace(/\/$/, '');
 
@@ -38,6 +39,7 @@ let activeRoomCode = '';
 let isHostPlayer = false;
 let currentActiveSeed = 0;
 let isMatchFinishedReported = false;
+let hasReportedRematchInvite = false;
 let isBotMatch = false;
 let activeBotOpponent: OpponentInfo | null = null;
 let syncInterval: any = null;
@@ -294,6 +296,7 @@ export const DuelService = {
             currentActiveSeed = data.seed;
             currentScore = 0;
             isMatchFinishedReported = false;
+            hasReportedRematchInvite = false;
             activeGameCallbacks.onRematchStart?.(data.seed);
           }
 
@@ -305,9 +308,14 @@ export const DuelService = {
             activeGameCallbacks.onMatchFinish?.(data.winnerId, isWinner, finalOppScore);
           }
 
-          // 3. Rematch Requested by Opponent
+          // 3. Rematch Requested by Opponent (single-fire latch)
           if (data.opponentWantsRematch) {
-            activeGameCallbacks.onRematchInvite?.();
+            if (!hasReportedRematchInvite) {
+              hasReportedRematchInvite = true;
+              activeGameCallbacks.onRematchInvite?.();
+            }
+          } else {
+            hasReportedRematchInvite = false;
           }
 
           // 4. Opponent Score Update
@@ -447,6 +455,7 @@ export const DuelService = {
           currentActiveSeed = data.seed;
           currentScore = 0;
           isMatchFinishedReported = false;
+          hasReportedRematchInvite = false;
           activeGameCallbacks.onRematchStart?.(data.seed);
           return { success: true, started: true, seed: data.seed };
         }
@@ -503,8 +512,11 @@ export const DuelService = {
     simulatedBotInterval = null;
     currentActiveSeed = 0;
     isMatchFinishedReported = false;
+    hasReportedRematchInvite = false;
     isBotMatch = false;
     activeBotOpponent = null;
+    activeGameCallbacks = {};
+    haptic.cancel();
 
     if (activeRoomCode) {
       const myId = getDuelPlayerId();
