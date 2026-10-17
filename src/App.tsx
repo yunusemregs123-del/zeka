@@ -904,42 +904,49 @@ function GameOverScreen({
   }, [level, totalTimeSpent, isDevMode, gameMode, isDuel]);
 
   // DUEL GAME OVER VIEW
-  if (isDuel) {
+  if (isDuel || gameMode === 'DUEL') {
     const won = duelWinner === 'ME';
     return (
       <div className="min-h-[100dvh] bg-[#F5F5F7] text-[#1D1D1F] flex flex-col items-center justify-center font-sans selection:bg-neutral-200 p-4">
-        <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="text-center bg-white p-6 rounded-[2.5rem] shadow-2xl w-full max-w-[340px] border border-neutral-100 relative overflow-hidden">
-          <div className={`absolute top-0 inset-x-0 h-2.5 ${won ? 'bg-amber-400' : 'bg-rose-500'}`}></div>
+        <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="text-center bg-white p-6 rounded-[2.5rem] shadow-2xl w-full max-w-[340px] border border-neutral-100 relative overflow-hidden">
+          <div className={`absolute top-0 inset-x-0 h-2 ${won ? 'bg-emerald-500' : 'bg-rose-500'}`}></div>
 
-          <div className={`w-16 h-16 ${won ? 'bg-amber-100 text-amber-500' : 'bg-rose-100 text-rose-500'} rounded-3xl flex items-center justify-center mx-auto mb-3 shadow-md`}>
-            {won ? <Icons.Trophy className="w-8 h-8" /> : <Icons.Swords className="w-8 h-8" />}
+          <div className={`w-14 h-14 ${won ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-500'} rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-sm`}>
+            {won ? <Icons.Trophy className="w-7 h-7" /> : <Icons.Swords className="w-7 h-7" />}
           </div>
 
-          <h1 className="text-3xl font-black tracking-tight text-neutral-900 mb-1">
+          <h1 className="text-2xl font-black tracking-tight text-neutral-900 mb-1">
             {won ? t.duel_victory : t.duel_defeat}
           </h1>
-          <p className={`text-xs font-black uppercase tracking-widest mb-5 ${won ? 'text-amber-500' : 'text-rose-500'}`}>
-            {won ? (t.duel_victory_coin || '🎉 +50 COIN KAZANDIN!') : (t.duel_defeat_coin || '💀 -25 COIN KAYBETTİN')}
-          </p>
 
-          <div className="bg-neutral-50 p-4 rounded-2xl border border-neutral-100 mb-3 flex flex-col gap-2.5">
+          <div className="flex items-center justify-center mb-4">
+            <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider ${
+              won ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/60' : 'bg-rose-50 text-rose-700 border border-rose-200/60'
+            }`}>
+              <span>🪙</span>
+              <span>{won ? '+50 COIN' : '-25 COIN'}</span>
+            </span>
+          </div>
+
+          {/* Scores comparison */}
+          <div className="bg-neutral-50 p-3.5 rounded-2xl border border-neutral-100 mb-3 flex flex-col gap-2">
             <div className="flex justify-between items-center">
               <span className="text-xs font-black text-neutral-500 uppercase tracking-wider">{t.duel_you || 'SEN'}</span>
-              <span className={`text-2xl font-black ${won ? 'text-emerald-600' : 'text-neutral-700'}`}>{duelMyScore}</span>
+              <span className={`text-xl font-black ${won ? 'text-emerald-600' : 'text-neutral-800'}`}>{duelMyScore}</span>
             </div>
             <div className="border-t border-neutral-200/60" />
             <div className="flex justify-between items-center">
               <span className="text-xs font-black text-neutral-500 uppercase tracking-wider truncate max-w-[150px]">{duelOpponentName}</span>
-              <span className={`text-2xl font-black ${!won ? 'text-rose-600' : 'text-neutral-700'}`}>{duelOpponentScore}</span>
+              <span className={`text-xl font-black ${!won ? 'text-rose-600' : 'text-neutral-800'}`}>{duelOpponentScore}</span>
             </div>
           </div>
 
-          {/* Sudden Death Outcome Badge */}
-          <div className={`mb-5 px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-1.5 border ${
-            won ? 'bg-emerald-50 text-emerald-700 border-emerald-200/60' : 'bg-rose-50 text-rose-700 border-rose-200/60'
+          {/* Short Reason Badge */}
+          <div className={`mb-4 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-1.5 border ${
+            won ? 'bg-emerald-50/60 text-emerald-700 border-emerald-200/40' : 'bg-rose-50/60 text-rose-700 border-rose-200/40'
           }`}>
             <span>{won ? '🎯' : '⚠️'}</span>
-            <span>{won ? (t.duel_victory_reason || 'Rakip hata yaptı ve elendi!') : (t.duel_defeat_reason || 'Hata yaptın veya süren doldu!')}</span>
+            <span>{won ? (t.duel_reason_opponent_out || 'Rakip elendi') : (t.duel_reason_you_out || 'Hata yaptın')}</span>
           </div>
 
           {/* Opponent Left Notice */}
@@ -950,39 +957,49 @@ function GameOverScreen({
           )}
 
           {/* Rematch Actions */}
+          {/* Rematch Actions */}
           {!duelOpponentLeft && (
-            <>
+            <div className="w-full mb-2.5">
               {duelRematchRequested ? (
-                <div className="w-full py-4 bg-amber-50 border border-amber-200 text-amber-800 rounded-2xl font-black tracking-widest text-xs flex items-center justify-center gap-2 mb-2.5 animate-pulse">
-                  <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping"></span>
-                  <span>{t.duel_rematch_requested}</span>
+                <div className="w-full py-3 bg-neutral-100 border border-neutral-200 text-neutral-600 rounded-2xl font-black tracking-wider text-xs flex items-center justify-center gap-2">
+                  <div className="w-3.5 h-3.5 border-2 border-neutral-400 border-t-neutral-800 rounded-full animate-spin shrink-0" />
+                  <span>{t.duel_rematch_requested || 'İstek Gönderildi...'}</span>
                 </div>
               ) : duelOpponentRematchPending ? (
-                <button
-                  onClick={onPlayDuelAgain}
-                  className="w-full py-4 bg-gradient-to-r from-amber-500 via-rose-500 to-amber-500 text-white rounded-2xl font-black tracking-widest text-xs shadow-xl hover:scale-[1.02] active:scale-95 transition-all mb-2.5 flex items-center justify-center gap-2 animate-bounce"
-                >
-                  <Icons.Swords className="w-4 h-4 fill-current" />
-                  <span>{t.duel_rematch_invite}</span>
-                </button>
+                <div className="w-full flex flex-col gap-2">
+                  <div className="py-2 px-3 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center gap-2 text-[11px] font-black text-amber-800 uppercase tracking-wide">
+                    <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping shrink-0" />
+                    <span className="truncate">{t.duel_opponent_wants_rematch || 'Rakip Rövanş İstiyor!'}</span>
+                  </div>
+                  <motion.button
+                    whileTap={{ scale: 0.96 }}
+                    onClick={onPlayDuelAgain}
+                    className="w-full py-3.5 bg-neutral-900 hover:bg-black text-white rounded-2xl font-black text-xs uppercase tracking-wider shadow-lg hover:scale-[1.01] active:scale-95 transition-all flex items-center justify-center gap-2"
+                  >
+                    <Icons.Swords className="w-4 h-4 text-amber-400 shrink-0" />
+                    <span>{t.duel_accept || 'KABUL ET'}</span>
+                  </motion.button>
+                </div>
               ) : (
-                <button
+                <motion.button
+                  whileTap={{ scale: 0.96 }}
                   onClick={onPlayDuelAgain}
-                  className="w-full py-4 bg-[#1D1D1F] hover:bg-black text-white rounded-2xl font-black tracking-widest text-xs shadow-xl hover:scale-[1.02] active:scale-95 transition-all mb-2.5 flex items-center justify-center gap-2"
+                  className="w-full py-3.5 bg-neutral-900 hover:bg-black text-white rounded-2xl font-black tracking-wider text-xs shadow-lg hover:scale-[1.01] active:scale-95 transition-all flex items-center justify-center gap-2"
                 >
-                  <Icons.Swords className="w-4 h-4 fill-current" />
-                  <span>{t.duel_rematch}</span>
-                </button>
+                  <Icons.Swords className="w-4 h-4 text-amber-400 shrink-0" />
+                  <span>{t.duel_rematch || 'RÖVANŞ OYNA'}</span>
+                </motion.button>
               )}
-            </>
+            </div>
           )}
 
-          <button
+          <motion.button
+            whileTap={{ scale: 0.96 }}
             onClick={goToMenu}
-            className="w-full py-3 bg-neutral-100 text-neutral-500 rounded-2xl font-black tracking-widest text-xs hover:bg-neutral-200 transition-colors"
+            className="w-full py-3 bg-neutral-100 hover:bg-neutral-200 text-neutral-600 rounded-2xl font-black tracking-wider text-xs transition-colors"
           >
             {t.gameover_menu}
-          </button>
+          </motion.button>
         </motion.div>
       </div>
     );
@@ -1273,7 +1290,13 @@ export default function App() {
   // 1v1 Real-Time Duel State
   const duelSeedRef = useRef<number | null>(null);
   const duelRewardHandledRef = useRef(false);
+  const duelCleanupTimerRef = useRef<any>(null);
   const [isDuelActive, setIsDuelActive] = useState(false);
+  const [duelCountdown, setDuelCountdown] = useState<number | null>(null);
+  const [pendingRematchInvite, setPendingRematchInvite] = useState<{
+    roomCode: string;
+    opponentName: string;
+  } | null>(null);
   const [duelOpponent, setDuelOpponent] = useState<OpponentInfo | null>(null);
   const [duelSeed, setDuelSeed] = useState<number | null>(null);
   const [duelRoomCode, setDuelRoomCode] = useState<string>('');
@@ -1283,6 +1306,25 @@ export default function App() {
   const [duelRematchRequested, setDuelRematchRequested] = useState(false);
   const [duelOpponentRematchPending, setDuelOpponentRematchPending] = useState(false);
   const [duelOpponentLeft, setDuelOpponentLeft] = useState(false);
+
+  const startDuelCountdown = () => {
+    setDuelCountdown(3);
+    playSound('tick');
+    haptic.impact('medium');
+    const cdInterval = setInterval(() => {
+      setDuelCountdown((prev) => {
+        if (prev === null || prev <= 1) {
+          clearInterval(cdInterval);
+          playSound('success');
+          haptic.notification('success');
+          return null;
+        }
+        playSound('tick');
+        haptic.impact('light');
+        return prev - 1;
+      });
+    }, 1000);
+  };
 
   // Visual Feedback & Juiciness
   const [isSuccessFlash, setIsSuccessFlash] = useState(false);
@@ -1402,12 +1444,12 @@ export default function App() {
   useEffect(() => {
     let interval: number;
     const isModalOpen = showTutorialModal || showIntroModal; // Intentionally excluding showExitConfirm so timer keeps running
-    if (gameState === 'PLAYING' && !isPaused && !isModalOpen && !isDevMode) {
+    if (gameState === 'PLAYING' && !isPaused && !isModalOpen && !isDevMode && duelCountdown === null) {
       interval = setInterval(() => {
         tickTimer(0.1);
         if (useGameStore.getState().timeLeft <= 0) {
           setShowExitConfirm(false); // Close modal if time runs out
-          if (isDuelActive) {
+          if (isDuelActive || gameMode === 'DUEL') {
             DuelService.reportForfeit();
             setDuelWinner('OPPONENT');
           }
@@ -1416,19 +1458,19 @@ export default function App() {
       }, 100);
     }
     return () => clearInterval(interval);
-  }, [gameState, isPaused, showTutorialModal, showIntroModal, isDevMode, isDuelActive]);
+  }, [gameState, isPaused, showTutorialModal, showIntroModal, isDevMode, isDuelActive, gameMode, duelCountdown]);
 
   useEffect(() => {
     const isModalOpen = showTutorialModal || showIntroModal || showExitConfirm;
-    if (gameState === 'PLAYING' && !isPaused && !isModalOpen && !isDevMode && timeLeft < 5 && timeLeft > 0 && Math.floor(timeLeft) === timeLeft) {
+    if (gameState === 'PLAYING' && !isPaused && !isModalOpen && !isDevMode && duelCountdown === null && timeLeft < 5 && timeLeft > 0 && Math.floor(timeLeft) === timeLeft) {
       playSound('tick');
     }
-  }, [Math.floor(timeLeft), gameState, isPaused, showTutorialModal, showIntroModal, showExitConfirm, isDevMode]);
+  }, [Math.floor(timeLeft), gameState, isPaused, showTutorialModal, showIntroModal, showExitConfirm, isDevMode, duelCountdown]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const isModalOpen = showTutorialModal || showIntroModal || showExitConfirm;
-      if (gameState !== 'PLAYING' || isPaused || isModalOpen) return;
+      if (gameState !== 'PLAYING' || isPaused || isModalOpen || duelCountdown !== null) return;
 
       if (e.key === 'ArrowUp' || e.key === 'ArrowRight') {
         e.preventDefault();
@@ -1467,22 +1509,36 @@ export default function App() {
   }, [level, coins, streak, helpCount, langsUsed.length, totalTimeSpent]);
 
   const handleReturnToMenu = () => {
-    if (isDuelActive) {
+    if ((isDuelActive || gameMode === 'DUEL') && gameState === 'PLAYING') {
       DuelService.reportForfeit();
     }
-    DuelService.cleanup();
+    // Switch to menu first to prevent any GameOverScreen flicker
+    goToMenu();
     setIsDuelActive(false);
     setDuelWinner(null);
     setDuelRematchRequested(false);
-    setDuelOpponentRematchPending(false);
-    setDuelOpponentLeft(false);
     duelRewardHandledRef.current = false;
-    goToMenu();
+
+    // Keep sync active for 25s so user can receive rematch invite on home screen
+    if (duelCleanupTimerRef.current) {
+      clearTimeout(duelCleanupTimerRef.current);
+    }
+    duelCleanupTimerRef.current = setTimeout(() => {
+      DuelService.cleanup();
+      setPendingRematchInvite(null);
+      setDuelOpponentRematchPending(false);
+      duelCleanupTimerRef.current = null;
+    }, 25000);
   };
 
   const handleStartGame = (asDev = false, startLevel?: number, mode?: GameMode) => {
+    if (duelCleanupTimerRef.current) {
+      clearTimeout(duelCleanupTimerRef.current);
+      duelCleanupTimerRef.current = null;
+    }
     DuelService.cleanup();
     setIsDuelActive(false);
+    setPendingRematchInvite(null);
     setShowSolution(false);
     setHasPaidForSolution(false);
     startGame(asDev, startLevel, mode);
@@ -1495,7 +1551,13 @@ export default function App() {
   };
 
   const startRematchSession = (newSeed: number) => {
+    if (duelCleanupTimerRef.current) {
+      clearTimeout(duelCleanupTimerRef.current);
+      duelCleanupTimerRef.current = null;
+    }
+    setPendingRematchInvite(null);
     useGameStore.getState().spendCoins(25);
+    setIsDuelActive(true);
     duelSeedRef.current = newSeed;
     setDuelSeed(newSeed);
     setDuelMyScore(0);
@@ -1509,7 +1571,8 @@ export default function App() {
     setHasPaidForSolution(false);
     haptic.notification('success');
     playSound('success');
-    startGame(false, 1, 'CLASSIC');
+    startGame(false, 1, 'DUEL');
+    startDuelCountdown();
   };
 
   const handleDuelRematchRequest = async () => {
@@ -1525,6 +1588,11 @@ export default function App() {
   };
 
   const handleStartDuel = (payload: StartDuelPayload) => {
+    if (duelCleanupTimerRef.current) {
+      clearTimeout(duelCleanupTimerRef.current);
+      duelCleanupTimerRef.current = null;
+    }
+    setPendingRematchInvite(null);
     setIsDuelActive(true);
     setDuelOpponent(payload.opponent);
     duelSeedRef.current = payload.seed;
@@ -1567,6 +1635,12 @@ export default function App() {
         setDuelOpponentRematchPending(true);
         haptic.notification('warning');
         playSound('click');
+        if (useGameStore.getState().gameState === 'MENU') {
+          setPendingRematchInvite({
+            roomCode: payload.roomCode,
+            opponentName: payload.opponent.name || 'Rakip',
+          });
+        }
       },
       onRematchStart: (newSeed) => {
         startRematchSession(newSeed);
@@ -1583,7 +1657,8 @@ export default function App() {
       },
     });
 
-    startGame(false, 1, 'CLASSIC');
+    startGame(false, 1, 'DUEL');
+    startDuelCountdown();
   };
 
   // AUTO-SHOW TRACKING MODAL FOR NEW PLAYERS
@@ -1677,8 +1752,8 @@ export default function App() {
     const currentCP = getCheckpointForLevel(level);
     const nextLevelCP = getCheckpointForLevel(nextLevel);
 
-    // If we just reached a NEW checkpoint, save it (Only in non-dev mode)
-    if ((nextLevelCP > currentCP || nextLevel === 25) && !useGameStore.getState().isDevMode) {
+    // If we just reached a NEW checkpoint, save it (Only in non-dev mode and non-duel mode)
+    if ((nextLevelCP > currentCP || nextLevel === 25) && !useGameStore.getState().isDevMode && !isDuelActive && gameMode !== 'DUEL') {
       const finalCP = nextLevelCP;
       const finalTime = totalTimeSpent + timeSpent;
       useGameStore.setState({ 
@@ -1689,15 +1764,17 @@ export default function App() {
       localStorage.setItem('zeka_checkpoint_time', String(finalTime));
     }
 
-    // ANTI-FARMING: Reward Logic
+    // ANTI-FARMING: Reward Logic (Only for single-player)
     let earnedThisLevel = 0;
 
-    if (isNewLevel) {
-      earnedThisLevel = 5 + localCoinBonus;
-      useGameStore.setState({ maxLevelCompleted: level });
-      localStorage.setItem('zeka_max_level', String(level));
-    } else {
-      earnedThisLevel = localCoinBonus; // Only combo coins on played levels
+    if (!isDuelActive && gameMode !== 'DUEL') {
+      if (isNewLevel) {
+        earnedThisLevel = 5 + localCoinBonus;
+        useGameStore.setState({ maxLevelCompleted: level });
+        localStorage.setItem('zeka_max_level', String(level));
+      } else {
+        earnedThisLevel = localCoinBonus; // Only combo coins on played levels
+      }
     }
 
     useGameStore.setState(s => ({
@@ -1708,7 +1785,7 @@ export default function App() {
   };
 
   const handleSubmission = () => {
-    if (isSubmitting) return;
+    if (isSubmitting || duelCountdown !== null) return;
     setIsSubmitting(true);
 
     if (currentValue === expected) {
@@ -1716,7 +1793,7 @@ export default function App() {
       setIsSuccessFlash(true);
       setTimeout(() => setIsSuccessFlash(false), 450);
 
-      if (isDuelActive) {
+      if (isDuelActive || gameMode === 'DUEL') {
         const nextScore = duelMyScore + 1;
         setDuelMyScore(nextScore);
         DuelService.sendScore(nextScore);
@@ -1732,7 +1809,7 @@ export default function App() {
       setIsErrorShake(true);
       setTimeout(() => setIsErrorShake(false), 450);
 
-      if (isDuelActive) {
+      if (isDuelActive || gameMode === 'DUEL') {
         playSound('fail');
         DuelService.reportForfeit();
         setDuelWinner('OPPONENT');
@@ -1757,6 +1834,7 @@ export default function App() {
   };
 
   const adjustValue = (dir: number) => {
+    if (duelCountdown !== null) return;
     haptic.impact('light');
     playSound('click');
     setCurrentValue(currentValue + dir);
@@ -1825,6 +1903,108 @@ export default function App() {
       }`}
       style={{ display: 'block' }}
     >
+      {/* FLOATING REMATCH NOTIFICATION TOAST (when returned to menu) */}
+      <AnimatePresence>
+        {gameState === 'MENU' && pendingRematchInvite && (
+          <motion.div
+            initial={{ y: -80, opacity: 0, scale: 0.95 }}
+            animate={{ y: 0, opacity: 1, scale: 1 }}
+            exit={{ y: -80, opacity: 0, scale: 0.95 }}
+            transition={{ type: "spring", stiffness: 400, damping: 25 }}
+            className="fixed top-4 inset-x-4 max-w-sm mx-auto z-50 bg-[#1D1D1F] text-white p-3.5 rounded-2xl shadow-2xl border border-white/10 flex items-center justify-between gap-3"
+          >
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-9 h-9 rounded-xl bg-amber-400/20 text-amber-400 flex items-center justify-center shrink-0">
+                <Icons.Swords className="w-5 h-5" />
+              </div>
+              <div className="flex flex-col min-w-0">
+                <span className="text-xs font-black truncate text-white">
+                  {pendingRematchInvite.opponentName}
+                </span>
+                <span className="text-[10px] text-amber-400 font-bold uppercase tracking-wider">
+                  {t.duel_opponent_wants_rematch || 'Rövanş İstiyor!'}
+                </span>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <motion.button
+                whileTap={{ scale: 0.94 }}
+                onClick={handleDuelRematchRequest}
+                className="px-3.5 py-2 bg-amber-400 hover:bg-amber-300 text-black font-black text-xs uppercase tracking-wider rounded-xl shadow-md transition-all flex items-center gap-1.5"
+              >
+                <Icons.Swords className="w-3.5 h-3.5" />
+                <span>{t.duel_accept || 'KABUL'}</span>
+              </motion.button>
+              <button
+                onClick={() => {
+                  setPendingRematchInvite(null);
+                  DuelService.cleanup();
+                }}
+                className="p-2 text-neutral-400 hover:text-white rounded-lg transition-colors"
+              >
+                <Icons.X className="w-4 h-4" />
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* 3-2-1 SYNCHRONIZED DUEL START COUNTDOWN OVERLAY */}
+      <AnimatePresence>
+        {(isDuelActive || gameMode === 'DUEL') && duelCountdown !== null && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex flex-col items-center justify-center p-6 text-white select-none"
+          >
+            <div className="flex items-center gap-4 sm:gap-6 mb-8">
+              {/* Player 1 (You) */}
+              <div className="flex flex-col items-center">
+                <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-emerald-500/20 border-2 border-emerald-400 flex items-center justify-center text-xl sm:text-2xl font-black text-emerald-400 shadow-[0_0_20px_rgba(52,211,153,0.3)]">
+                  {Leaderboard.getPlayerName()?.charAt(0).toUpperCase() || 'S'}
+                </div>
+                <span className="text-xs font-black text-emerald-400 uppercase tracking-wider mt-2 truncate max-w-[90px]">
+                  {t.duel_you || 'SEN'}
+                </span>
+              </div>
+
+              {/* VS Badge */}
+              <div className="px-3 py-1 rounded-full bg-white/10 border border-white/20 text-neutral-300 font-black text-xs tracking-widest uppercase">
+                VS
+              </div>
+
+              {/* Player 2 (Opponent) */}
+              <div className="flex flex-col items-center">
+                <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-rose-500/20 border-2 border-rose-400 flex items-center justify-center text-xl sm:text-2xl font-black text-rose-400 shadow-[0_0_20px_rgba(251,113,133,0.3)]">
+                  {duelOpponent?.name?.charAt(0).toUpperCase() || 'R'}
+                </div>
+                <span className="text-xs font-black text-rose-400 uppercase tracking-wider mt-2 truncate max-w-[90px]">
+                  {duelOpponent?.name || t.duel_opponent || 'RAKİP'}
+                </span>
+              </div>
+            </div>
+
+            {/* Animated Big Countdown Number */}
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={duelCountdown}
+                initial={{ scale: 0.3, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 1.6, opacity: 0 }}
+                transition={{ duration: 0.35, ease: "easeOut" }}
+                className="text-7xl sm:text-8xl font-black tabular-nums tracking-tighter text-white drop-shadow-2xl mb-4"
+              >
+                {duelCountdown}
+              </motion.div>
+            </AnimatePresence>
+
+            <span className="text-xs sm:text-sm font-bold tracking-widest text-neutral-400 uppercase">
+              {t.duel_sudden_death_sub || 'HAYATTA KALMA'} • {t.duel_sudden_death || 'TEK HATA ELER'}
+            </span>
+          </motion.div>
+        )}
+      </AnimatePresence>
       
       {/* MAIN SCREEN CONTENT */}
       <div className="absolute inset-0 flex flex-col overflow-hidden">
@@ -1867,22 +2047,18 @@ export default function App() {
         ) : (
           <>
             {/* LIVE 1V1 DUEL BANNER */}
-            {/* LIVE 1V1 DUEL TUG-OF-WAR BANNER */}
-            {isDuelActive && (() => {
+            {(isDuelActive || gameMode === 'DUEL') && (() => {
               const duelTotal = duelMyScore + duelOpponentScore;
               const myPercent = duelTotal === 0 ? 50 : Math.round((duelMyScore / duelTotal) * 100);
               const oppPercent = 100 - myPercent;
 
               return (
-                <div className="w-full bg-[#161618] border-b border-white/10 text-white py-2 px-3 sm:px-4 z-30 shadow-xl relative overflow-hidden select-none">
-                  {/* Background subtle neon glow */}
-                  <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/10 via-transparent to-rose-500/10 pointer-events-none" />
-
+                <div className="w-full bg-[#18181B] border-b border-neutral-800 text-white py-2 px-3 sm:px-4 z-30 shadow-md relative overflow-hidden select-none">
                   {/* Top: Players & Live Numerical Scores */}
                   <div className="flex items-center justify-between text-xs font-black uppercase tracking-wider relative z-10">
                     {/* Left: You */}
                     <div className="flex items-center gap-2 min-w-0">
-                      <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shrink-0 shadow-[0_0_8px_#34d399]" />
+                      <div className="w-2 h-2 rounded-full bg-emerald-400 shrink-0 shadow-[0_0_8px_#34d399]" />
                       <span className="text-xs font-black text-emerald-400 truncate max-w-[85px] sm:max-w-[130px]">
                         {t.duel_you || 'SEN'}
                       </span>
@@ -1891,16 +2067,16 @@ export default function App() {
                       </span>
                     </div>
 
-                    {/* Center: Sudden Death Badge */}
+                    {/* Center: Minimalist Sudden Death Badge */}
                     <div className="flex flex-col items-center shrink-0 px-2">
-                      <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-rose-500/20 border border-rose-500/40 text-rose-400 shadow-[0_0_12px_rgba(244,63,94,0.35)]">
-                        <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-ping" />
-                        <span className="text-[9px] font-black tracking-widest uppercase">
+                      <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/5 border border-white/10 text-neutral-300">
+                        <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" />
+                        <span className="text-[9px] font-bold tracking-widest uppercase">
                           {t.duel_sudden_death || 'TEK HATA ELER'}
                         </span>
                       </div>
                       {duelRoomCode && (
-                        <span className="text-[8px] font-mono text-white/30 tracking-wider mt-0.5">
+                        <span className="text-[8px] font-mono text-neutral-500 tracking-wider mt-0.5">
                           {duelRoomCode}
                         </span>
                       )}
@@ -1914,40 +2090,23 @@ export default function App() {
                       <span className="text-xs font-black text-rose-400 truncate max-w-[85px] sm:max-w-[130px]">
                         {duelOpponent?.name || t.duel_opponent || 'RAKİP'}
                       </span>
-                      <div className="w-2.5 h-2.5 rounded-full bg-rose-400 animate-pulse shrink-0 shadow-[0_0_8px_#fb7185]" />
+                      <div className="w-2 h-2 rounded-full bg-rose-400 shrink-0 shadow-[0_0_8px_#fb7185]" />
                     </div>
                   </div>
 
-                  {/* Dynamic Tug-of-War Momentum Progress Line */}
+                  {/* Minimalist Momentum Progress Line */}
                   <div className="w-full mt-1.5 relative z-10">
-                    <div className="w-full h-2.5 sm:h-3 bg-black/60 rounded-full overflow-hidden flex relative border border-white/10 shadow-inner">
-                      {/* My progress side (Emerald) */}
+                    <div className="w-full h-2 bg-neutral-900 rounded-full overflow-hidden flex relative border border-white/5 shadow-inner">
                       <div
-                        className="h-full bg-gradient-to-r from-emerald-600 via-teal-500 to-emerald-400 transition-all duration-500 ease-out flex items-center justify-start pl-1.5 sm:pl-2"
+                        className="h-full bg-gradient-to-r from-emerald-600 to-emerald-400 transition-all duration-500 ease-out"
                         style={{ width: `${myPercent}%` }}
-                      >
-                        {myPercent >= 22 && (
-                          <span className="text-[8px] sm:text-[9px] font-black text-emerald-950 tabular-nums">
-                            %{myPercent}
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Opponent progress side (Rose) */}
+                      />
                       <div
-                        className="h-full bg-gradient-to-l from-rose-600 via-red-500 to-amber-500 transition-all duration-500 ease-out flex items-center justify-end pr-1.5 sm:pr-2"
+                        className="h-full bg-gradient-to-l from-rose-600 to-amber-500 transition-all duration-500 ease-out"
                         style={{ width: `${oppPercent}%` }}
-                      >
-                        {oppPercent >= 22 && (
-                          <span className="text-[8px] sm:text-[9px] font-black text-rose-950 tabular-nums">
-                            %{oppPercent}
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Tug-of-War Sliding Divider Needle */}
+                      />
                       <div
-                        className="absolute top-0 bottom-0 w-1 bg-white shadow-[0_0_8px_#ffffff] transition-all duration-500 ease-out z-20"
+                        className="absolute top-0 bottom-0 w-1 bg-white shadow-[0_0_6px_#ffffff] transition-all duration-500 ease-out z-20"
                         style={{ left: `calc(${myPercent}% - 2px)` }}
                       />
                     </div>
@@ -1970,7 +2129,12 @@ export default function App() {
 
                 <div className="flex flex-col min-w-0">
                   <span className="text-base sm:text-2xl font-black tracking-tight text-[#1D1D1F] flex items-center gap-1.5 leading-tight truncate">
-                    {gameMode === 'TIME_ATTACK' ? (
+                    {isDuelActive || gameMode === 'DUEL' ? (
+                      <span className="text-neutral-900 flex items-center gap-1.5 font-black text-sm sm:text-lg">
+                        <Icons.Swords className="w-4 h-4 sm:w-5 sm:h-5 text-neutral-900 shrink-0" />
+                        <span>DÜELLO <span className="font-mono text-neutral-600">#{level}</span></span>
+                      </span>
+                    ) : gameMode === 'TIME_ATTACK' ? (
                       <span className="text-amber-500 flex items-center gap-1 font-black">
                         <Icons.Zap className="w-4 h-4 sm:w-5 sm:h-5 fill-amber-500 shrink-0" />
                         <span>{t.mode_time_attack}</span>
@@ -1981,14 +2145,16 @@ export default function App() {
                         <span>{t.mode_memory}</span>
                       </span>
                     ) : (
-                      <>
+                      <span className="text-neutral-900 flex items-center gap-1">
                         {t.header_level} <RollingNumber value={level} />
-                      </>
+                      </span>
                     )}
                     {isDevMode && <span className="text-[9px] bg-amber-500 text-white px-1.5 py-0.5 rounded-full font-bold uppercase shrink-0">{t.dev_test}</span>}
                   </span>
-                  <span className="text-[10px] sm:text-xs font-bold tracking-wider text-neutral-400 uppercase leading-none mt-0.5 truncate">
-                    {gameMode === 'TIME_ATTACK' ? (
+                  <span className="text-[10px] sm:text-xs font-bold tracking-wider text-neutral-500 uppercase leading-none mt-0.5 truncate">
+                    {isDuelActive || gameMode === 'DUEL' ? (
+                      <span>{t.duel_sudden_death_sub || 'HAYATTA KALMA'} • <strong className="text-neutral-900">{duelMyScore} {t.gameover_solved || 'ÇÖZÜLDÜ'}</strong></span>
+                    ) : gameMode === 'TIME_ATTACK' ? (
                       <span>{t.score_label}: <strong className="text-neutral-900"><RollingNumber value={timeAttackScore} /></strong> • {t.time_attack_best}: <strong className="text-amber-600">{timeAttackBest}</strong></span>
                     ) : gameMode === 'MEMORY' ? (
                       <span>{t.score_label}: <strong className="text-neutral-900"><RollingNumber value={memoryScore} /></strong> • {t.memory_best}: <strong className="text-blue-600">{memoryBest}</strong></span>
@@ -2001,13 +2167,15 @@ export default function App() {
 
               {/* RIGHT: Timer Pill + Coins Pill */}
               <div className="flex items-center gap-2 shrink-0">
-                {gameMode === 'TIME_ATTACK' && (
+                {(gameMode === 'TIME_ATTACK' || isDuelActive || gameMode === 'DUEL') && (
                   <motion.div
-                    animate={timeLeft <= 8 ? { scale: [1, 1.05, 1] } : {}}
+                    animate={timeLeft <= 5 ? { scale: [1, 1.05, 1] } : {}}
                     transition={{ repeat: Infinity, duration: 0.6 }}
                     className={`px-3 py-1.5 rounded-full flex items-center gap-1 shadow-sm border font-black text-xs sm:text-sm tabular-nums transition-colors ${
-                      timeLeft <= 8
-                        ? 'bg-red-500 border-red-600 text-white animate-pulse'
+                      timeLeft <= 5
+                        ? 'bg-rose-500 border-rose-600 text-white animate-pulse'
+                        : isDuelActive || gameMode === 'DUEL'
+                        ? 'bg-white border-neutral-200 text-neutral-900'
                         : 'bg-amber-100 border-amber-300 text-amber-900'
                     }`}
                   >
