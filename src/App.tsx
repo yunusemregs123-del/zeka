@@ -190,9 +190,9 @@ function MenuScreen({
   const logoControls = useAnimation();
 
   const tabLabels: Record<'daily' | 'weekly' | 'alltime', string> = {
-    daily: t.lb_tab_daily || (language === 'tr' ? 'BUGÜN' : 'DAILY'),
-    weekly: t.lb_tab_weekly || (language === 'tr' ? 'BU HAFTA' : 'WEEKLY'),
-    alltime: t.lb_tab_alltime || (language === 'tr' ? 'TÜMÜ' : 'ALL TIME'),
+    daily: t.lb_tab_daily || 'DAILY',
+    weekly: t.lb_tab_weekly || 'WEEKLY',
+    alltime: t.lb_tab_alltime || 'ALL TIME',
   };
 
   const toggleMute = () => {

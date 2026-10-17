@@ -276,6 +276,7 @@ export const DuelService = {
   startRoomSync(roomCode: string, myId: string, callbacks?: DuelCallbacks) {
     currentScore = 0;
     isMatchFinishedReported = false;
+    lastReportedOpponentScore = -1;
     clearInterval(syncInterval);
     syncInterval = setInterval(async () => {
       try {

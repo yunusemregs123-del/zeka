@@ -282,7 +282,7 @@ export function formatTime(seconds: number): string {
   if (seconds < 60) return `${seconds.toFixed(2)}s`;
   const mins = Math.floor(seconds / 60);
   const secs = (seconds % 60).toFixed(1);
-  return `${mins}dk ${secs}s`;
+  return `${mins}m ${secs}s`;
 }
 
 export function formatDate(isoDate: string): string {

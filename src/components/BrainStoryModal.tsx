@@ -156,7 +156,7 @@ export const BrainStoryModal: React.FC<BrainStoryModalProps> = ({
     ctx.fillStyle = '#E5E7EB';
     ctx.font = '800 13px system-ui, -apple-system, sans-serif';
     ctx.letterSpacing = '2.5px';
-    ctx.fillText('COGNITIVE PERFORMANCE REPORT', 540, 417);
+    ctx.fillText(t.brain_cognitive_report || 'COGNITIVE PERFORMANCE REPORT', 540, 417);
 
     // 5. HERO BRAIN AGE CARD (Mathematical & Clean)
     const heroY = 465;
@@ -350,7 +350,7 @@ export const BrainStoryModal: React.FC<BrainStoryModalProps> = ({
     ctx.fillStyle = '#9CA3AF';
     ctx.font = '600 17px system-ui, -apple-system, sans-serif';
     ctx.letterSpacing = '0.5px';
-    ctx.fillText('Minimal Mind Puzzle', 145, footerY + 98);
+    ctx.fillText(t.menu_subtitle ? `Minimal ${t.menu_subtitle}` : 'Minimal Mind Puzzle', 145, footerY + 98);
 
     // Right badges: Minimal App Store & Google Play pills
     const badgeW = 210;
@@ -548,7 +548,7 @@ export const BrainStoryModal: React.FC<BrainStoryModalProps> = ({
               ) : (
                 <div className="flex flex-col items-center justify-center gap-2 text-neutral-500">
                   <div className="w-6 h-6 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
-                  <span className="text-xs font-bold">Kart hazırlanıyor...</span>
+                  <span className="text-xs font-bold">{t.brain_story_loading || 'Kart hazırlanıyor...'}</span>
                 </div>
               )}
             </div>

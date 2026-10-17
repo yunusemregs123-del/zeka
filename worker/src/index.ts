@@ -154,7 +154,7 @@ export default {
 
       // 5. SUBMIT SCORE (Anti-cheat & Auto Geo-Country)
       if (request.method === 'POST' && path === '/api/score') {
-        const body = (await request.json()) as {
+        const body = (await request.json().catch(() => ({}))) as {
           player_name: string;
           device_id?: string;
           level: number;
@@ -208,12 +208,16 @@ export default {
 
       // 6. CREATE DUEL ROOM (Host)
       if (request.method === 'POST' && path === '/api/duel/room/create') {
-        const body = await request.json() as {
+        const body = (await request.json().catch(() => ({}))) as {
           room_code: string;
           host_id: string;
           host_name: string;
           host_country?: string;
         };
+
+        if (!body.room_code || !body.host_id) {
+          return json({ error: 'Eksik oda bilgileri' }, 400);
+        }
 
         const roomCode = body.room_code.trim().toUpperCase();
         const seed = Math.floor(Math.random() * 900000) + 100000;
@@ -241,12 +245,16 @@ export default {
 
       // 7. JOIN DUEL ROOM (Guest)
       if (request.method === 'POST' && path === '/api/duel/room/join') {
-        const body = await request.json() as {
+        const body = (await request.json().catch(() => ({}))) as {
           room_code: string;
           guest_id: string;
           guest_name: string;
           guest_country?: string;
         };
+
+        if (!body.room_code || !body.guest_id) {
+          return json({ error: 'Eksik oda bilgileri' }, 400);
+        }
 
         const roomCode = body.room_code.trim().toUpperCase();
         const country = body.guest_country || detectedCountry;
@@ -261,6 +269,10 @@ export default {
 
         if (room.host_id === body.guest_id) {
           return json({ error: 'Kendi oluşturduğunuz odaya katılamazsınız' }, 400);
+        }
+
+        if (room.status === 'FINISHED' || room.status === 'FORFEIT') {
+          return json({ error: 'Bu oda kapanmış veya oyun bitmiş' }, 400);
         }
 
         if (room.status === 'ACTIVE' && room.guest_id && room.guest_id !== body.guest_id) {
@@ -282,13 +294,17 @@ export default {
 
       // 8. DUEL ROOM SYNC (Poll & Update Scores / Emotes / Rematch)
       if (request.method === 'POST' && path === '/api/duel/room/sync') {
-        const body = await request.json() as {
+        const body = (await request.json().catch(() => ({}))) as {
           room_code: string;
           player_id: string;
           score?: number;
           emote?: string;
           forfeit?: boolean;
         };
+
+        if (!body.room_code || !body.player_id) {
+          return json({ error: 'Eksik senkronizasyon bilgisi' }, 400);
+        }
 
         const roomCode = body.room_code.trim().toUpperCase();
         const room = await env.DB.prepare(
@@ -321,7 +337,7 @@ export default {
 
         // 2. ATOMIC FORFEIT: If player failed timer or gave up, award win to opponent atomically
         if (body.forfeit) {
-          const winnerId = isHost ? room.guest_id : room.host_id;
+          const winnerId = isHost ? (room.guest_id || null) : room.host_id;
           await env.DB.prepare(`
             UPDATE duel_rooms
             SET status = 'FINISHED', winner_id = ?, updated_at = CURRENT_TIMESTAMP
@@ -329,19 +345,20 @@ export default {
           `).bind(winnerId, roomCode).run();
         } else {
           // 3. REGULAR LIVE SCORE SYNC: Only update score/emote, NEVER touch status or winner_id!
-          const myScore = typeof body.score === 'number' ? body.score : (isHost ? room.host_score : room.guest_score);
+          const rawScore = Number(body.score);
+          const validScore = !isNaN(rawScore) && rawScore >= 0 ? rawScore : (isHost ? room.host_score : room.guest_score);
           if (isHost) {
             await env.DB.prepare(`
               UPDATE duel_rooms
               SET host_score = ?, host_emote = COALESCE(?, host_emote), updated_at = CURRENT_TIMESTAMP
               WHERE room_code = ? AND status = 'ACTIVE'
-            `).bind(myScore, body.emote || null, roomCode).run();
+            `).bind(validScore, body.emote || null, roomCode).run();
           } else {
             await env.DB.prepare(`
               UPDATE duel_rooms
               SET guest_score = ?, guest_emote = COALESCE(?, guest_emote), updated_at = CURRENT_TIMESTAMP
               WHERE room_code = ? AND status = 'ACTIVE'
-            `).bind(myScore, body.emote || null, roomCode).run();
+            `).bind(validScore, body.emote || null, roomCode).run();
           }
         }
 
@@ -370,7 +387,8 @@ export default {
 
       // 9. DUEL ROOM LEAVE / FORFEIT
       if (request.method === 'POST' && path === '/api/duel/room/leave') {
-        const body = await request.json() as { room_code: string; player_id: string };
+        const body = (await request.json().catch(() => ({}))) as { room_code: string; player_id: string };
+        if (!body.room_code || !body.player_id) return json({ error: 'Eksik parametre' }, 400);
         const roomCode = body.room_code.trim().toUpperCase();
 
         const room = await env.DB.prepare('SELECT * FROM duel_rooms WHERE room_code = ?').bind(roomCode).first<any>();
@@ -390,7 +408,8 @@ export default {
 
       // 10. DUEL ROOM REMATCH (Request & Accept)
       if (request.method === 'POST' && path === '/api/duel/room/rematch') {
-        const body = await request.json() as { room_code: string; player_id: string };
+        const body = (await request.json().catch(() => ({}))) as { room_code: string; player_id: string };
+        if (!body.room_code || !body.player_id) return json({ error: 'Eksik parametre' }, 400);
         const roomCode = body.room_code.trim().toUpperCase();
 
         const room = await env.DB.prepare('SELECT * FROM duel_rooms WHERE room_code = ?').bind(roomCode).first<any>();
@@ -432,7 +451,8 @@ export default {
 
       // 10. GLOBAL MATCHMAKING: JOIN QUEUE
       if (request.method === 'POST' && path === '/api/duel/matchmaking/join') {
-        const body = await request.json() as { player_id: string; player_name: string };
+        const body = (await request.json().catch(() => ({}))) as { player_id: string; player_name: string };
+        if (!body.player_id) return json({ error: 'Geçersiz oyuncu' }, 400);
         const myId = body.player_id;
         const myName = body.player_name || 'Oyuncu';
         const country = detectedCountry;
@@ -467,18 +487,20 @@ export default {
             sharedSeed
           ).run();
 
-          // Mark opponent as matched
-          await env.DB.prepare(`
-            UPDATE duel_queue SET status = 'MATCHED', matched_room_code = ? WHERE player_id = ?
+          // Mark opponent as matched atomically
+          const matchResult = await env.DB.prepare(`
+            UPDATE duel_queue SET status = 'MATCHED', matched_room_code = ? WHERE player_id = ? AND status = 'SEARCHING'
           `).bind(sharedRoom, waitingOpponent.player_id).run();
 
-          return json({
-            status: 'MATCHED',
-            room_code: sharedRoom,
-            seed: sharedSeed,
-            isHost: false,
-            opponent: { id: waitingOpponent.player_id, name: waitingOpponent.player_name, country: waitingOpponent.player_country },
-          });
+          if (matchResult.success) {
+            return json({
+              status: 'MATCHED',
+              room_code: sharedRoom,
+              seed: sharedSeed,
+              isHost: false,
+              opponent: { id: waitingOpponent.player_id, name: waitingOpponent.player_name, country: waitingOpponent.player_country },
+            });
+          }
         }
 
         // Otherwise put self in queue
