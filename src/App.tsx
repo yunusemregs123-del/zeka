@@ -1,5 +1,5 @@
 import { createPortal } from 'react-dom';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { StatusBar } from '@capacitor/status-bar';
 import { App as CapApp } from '@capacitor/app';
 import { useGameStore, type GameMode } from './store/useGameStore';
@@ -866,7 +866,8 @@ function MenuScreen({
 function GameOverScreen({
   level, totalTimeSpent, expected, isDevMode, hasRevivedInCurrentGame, goToMenu, onAdError,
   gameMode, timeAttackScore, memoryScore, onPlayAgain,
-  isDuel, duelWinner, duelMyScore, duelOpponentName, duelOpponentScore, onPlayDuelAgain
+  isDuel, duelWinner, duelMyScore, duelOpponentName, duelOpponentScore, onPlayDuelAgain,
+  duelRematchRequested, duelOpponentRematchPending, duelOpponentLeft
 }: {
   level: number; totalTimeSpent: number; expected: number; isDevMode: boolean; hasRevivedInCurrentGame: boolean; goToMenu: () => void;
   onAdError?: () => void;
@@ -880,6 +881,9 @@ function GameOverScreen({
   duelOpponentName?: string;
   duelOpponentScore?: number;
   onPlayDuelAgain?: () => void;
+  duelRematchRequested?: boolean;
+  duelOpponentRematchPending?: boolean;
+  duelOpponentLeft?: boolean;
 }) {
   const { language } = useGameStore();
   const t = Translations[language];
@@ -914,11 +918,11 @@ function GameOverScreen({
           <h1 className="text-3xl font-black tracking-tight text-neutral-900 mb-1">
             {won ? t.duel_victory : t.duel_defeat}
           </h1>
-          <p className="text-xs font-semibold text-neutral-400 uppercase tracking-widest mb-5">
-            {won ? '🎉 +50 COIN' : t.mode_duel}
+          <p className={`text-xs font-black uppercase tracking-widest mb-5 ${won ? 'text-amber-500' : 'text-rose-500'}`}>
+            {won ? (t.duel_victory_coin || '🎉 +50 COIN KAZANDIN!') : (t.duel_defeat_coin || '💀 -25 COIN KAYBETTİN')}
           </p>
 
-          <div className="bg-neutral-50 p-4 rounded-2xl border border-neutral-100 mb-6 flex flex-col gap-2.5">
+          <div className="bg-neutral-50 p-4 rounded-2xl border border-neutral-100 mb-5 flex flex-col gap-2.5">
             <div className="flex justify-between items-center">
               <span className="text-xs font-black text-neutral-500 uppercase tracking-wider">{t.duel_you || 'SEN'}</span>
               <span className={`text-2xl font-black ${won ? 'text-emerald-600' : 'text-neutral-700'}`}>{duelMyScore}</span>
@@ -930,13 +934,40 @@ function GameOverScreen({
             </div>
           </div>
 
-          <button
-            onClick={onPlayDuelAgain}
-            className="w-full py-4 bg-[#1D1D1F] hover:bg-black text-white rounded-2xl font-black tracking-widest text-xs shadow-xl hover:scale-[1.02] active:scale-95 transition-all mb-2.5 flex items-center justify-center gap-2"
-          >
-            <Icons.Swords className="w-4 h-4 fill-current" />
-            <span>{t.duel_play_again}</span>
-          </button>
+          {/* Opponent Left Notice */}
+          {duelOpponentLeft && (
+            <div className="mb-3 px-3 py-2 bg-rose-50 border border-rose-100 rounded-xl text-[10px] font-black text-rose-600 uppercase tracking-wider">
+              {t.duel_opponent_left || 'Rakip odadan ayrıldı.'}
+            </div>
+          )}
+
+          {/* Rematch Actions */}
+          {!duelOpponentLeft && (
+            <>
+              {duelRematchRequested ? (
+                <div className="w-full py-4 bg-amber-50 border border-amber-200 text-amber-800 rounded-2xl font-black tracking-widest text-xs flex items-center justify-center gap-2 mb-2.5 animate-pulse">
+                  <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping"></span>
+                  <span>{t.duel_rematch_requested}</span>
+                </div>
+              ) : duelOpponentRematchPending ? (
+                <button
+                  onClick={onPlayDuelAgain}
+                  className="w-full py-4 bg-gradient-to-r from-amber-500 via-rose-500 to-amber-500 text-white rounded-2xl font-black tracking-widest text-xs shadow-xl hover:scale-[1.02] active:scale-95 transition-all mb-2.5 flex items-center justify-center gap-2 animate-bounce"
+                >
+                  <Icons.Swords className="w-4 h-4 fill-current" />
+                  <span>{t.duel_rematch_invite}</span>
+                </button>
+              ) : (
+                <button
+                  onClick={onPlayDuelAgain}
+                  className="w-full py-4 bg-[#1D1D1F] hover:bg-black text-white rounded-2xl font-black tracking-widest text-xs shadow-xl hover:scale-[1.02] active:scale-95 transition-all mb-2.5 flex items-center justify-center gap-2"
+                >
+                  <Icons.Swords className="w-4 h-4 fill-current" />
+                  <span>{t.duel_rematch}</span>
+                </button>
+              )}
+            </>
+          )}
 
           <button
             onClick={goToMenu}
@@ -1232,6 +1263,8 @@ export default function App() {
   const [showDuel, setShowDuel] = useState(false);
 
   // 1v1 Real-Time Duel State
+  const duelSeedRef = useRef<number | null>(null);
+  const duelRewardHandledRef = useRef(false);
   const [isDuelActive, setIsDuelActive] = useState(false);
   const [duelOpponent, setDuelOpponent] = useState<OpponentInfo | null>(null);
   const [duelSeed, setDuelSeed] = useState<number | null>(null);
@@ -1240,6 +1273,9 @@ export default function App() {
   const [duelOpponentScore, setDuelOpponentScore] = useState(0);
   const [duelWinner, setDuelWinner] = useState<'ME' | 'OPPONENT' | null>(null);
   const [isDuelPenalty, setIsDuelPenalty] = useState(false);
+  const [duelRematchRequested, setDuelRematchRequested] = useState(false);
+  const [duelOpponentRematchPending, setDuelOpponentRematchPending] = useState(false);
+  const [duelOpponentLeft, setDuelOpponentLeft] = useState(false);
 
   // Visual Feedback & Juiciness
   const [isSuccessFlash, setIsSuccessFlash] = useState(false);
@@ -1364,12 +1400,16 @@ export default function App() {
         tickTimer(0.1);
         if (useGameStore.getState().timeLeft <= 0) {
           setShowExitConfirm(false); // Close modal if time runs out
+          if (isDuelActive) {
+            DuelService.reportForfeit();
+            setDuelWinner('OPPONENT');
+          }
           handleGameOver();
         }
       }, 100);
     }
     return () => clearInterval(interval);
-  }, [gameState, isPaused, showTutorialModal, showIntroModal, isDevMode]);
+  }, [gameState, isPaused, showTutorialModal, showIntroModal, isDevMode, isDuelActive]);
 
   useEffect(() => {
     const isModalOpen = showTutorialModal || showIntroModal || showExitConfirm;
@@ -1420,9 +1460,16 @@ export default function App() {
   }, [level, coins, streak, helpCount, langsUsed.length, totalTimeSpent]);
 
   const handleReturnToMenu = () => {
+    if (isDuelActive) {
+      DuelService.reportForfeit();
+    }
     DuelService.cleanup();
     setIsDuelActive(false);
     setDuelWinner(null);
+    setDuelRematchRequested(false);
+    setDuelOpponentRematchPending(false);
+    setDuelOpponentLeft(false);
+    duelRewardHandledRef.current = false;
     goToMenu();
   };
 
@@ -1434,33 +1481,98 @@ export default function App() {
     startGame(asDev, startLevel, mode);
   };
 
+  const awardDuelWin = () => {
+    if (duelRewardHandledRef.current) return;
+    duelRewardHandledRef.current = true;
+    useGameStore.getState().addCoins(50);
+  };
+
+  const startRematchSession = (newSeed: number) => {
+    useGameStore.getState().spendCoins(25);
+    duelSeedRef.current = newSeed;
+    setDuelSeed(newSeed);
+    setDuelMyScore(0);
+    setDuelOpponentScore(0);
+    setDuelWinner(null);
+    setDuelRematchRequested(false);
+    setDuelOpponentRematchPending(false);
+    setDuelOpponentLeft(false);
+    duelRewardHandledRef.current = false;
+    setShowSolution(false);
+    setHasPaidForSolution(false);
+    haptic.notification('success');
+    playSound('success');
+    startGame(false, 1, 'CLASSIC');
+  };
+
+  const handleDuelRematchRequest = async () => {
+    if (duelRematchRequested) return;
+    setDuelRematchRequested(true);
+    haptic.impact('medium');
+    playSound('click');
+
+    const res = await DuelService.requestRematch();
+    if (res.started && typeof res.seed === 'number') {
+      startRematchSession(res.seed);
+    }
+  };
+
   const handleStartDuel = (payload: StartDuelPayload) => {
     setIsDuelActive(true);
     setDuelOpponent(payload.opponent);
+    duelSeedRef.current = payload.seed;
     setDuelSeed(payload.seed);
     setDuelRoomCode(payload.roomCode);
     setDuelMyScore(0);
     setDuelOpponentScore(0);
     setDuelWinner(null);
+    setDuelRematchRequested(false);
+    setDuelOpponentRematchPending(false);
+    setDuelOpponentLeft(false);
+    duelRewardHandledRef.current = false;
     setShowDuel(false);
     setShowSolution(false);
     setHasPaidForSolution(false);
+
+    // Stake 25 coins entry fee
+    useGameStore.getState().spendCoins(25);
 
     DuelService.setGameCallbacks({
       onOpponentScore: (score) => {
         setDuelOpponentScore(score);
         haptic.impact('light');
         playSound('tick');
-        if (score >= 10) {
-          setDuelWinner('OPPONENT');
-          handleGameOver();
+      },
+      onMatchFinish: (_winnerId, isWinner, finalOppScore) => {
+        setDuelOpponentScore(finalOppScore);
+        setDuelWinner(isWinner ? 'ME' : 'OPPONENT');
+        if (isWinner) {
+          awardDuelWin();
+          haptic.notification('success');
+          playSound('success');
+        } else {
+          haptic.notification('error');
+          playSound('fail');
         }
+        handleGameOver();
+      },
+      onRematchInvite: () => {
+        setDuelOpponentRematchPending(true);
+        haptic.notification('warning');
+        playSound('click');
+      },
+      onRematchStart: (newSeed) => {
+        startRematchSession(newSeed);
       },
       onOpponentQuit: () => {
-        setDuelWinner('ME');
-        useGameStore.getState().addCoins(50);
-        haptic.notification('success');
-        handleGameOver();
+        setDuelOpponentLeft(true);
+        if (useGameStore.getState().gameState === 'PLAYING') {
+          setDuelWinner('ME');
+          awardDuelWin();
+          haptic.notification('success');
+          playSound('success');
+          handleGameOver();
+        }
       },
     });
 
@@ -1480,9 +1592,10 @@ export default function App() {
 
   const initLevel = () => {
     let puzzle;
-    if (isDuelActive && duelSeed) {
-      const rng = createPRNG(duelSeed + level);
-      puzzle = generatePuzzle(level, previousAnswers, rng);
+    const activeSeed = duelSeedRef.current ?? duelSeed;
+    if (isDuelActive && activeSeed !== null) {
+      const rng = createPRNG(activeSeed + level);
+      puzzle = generatePuzzle(level, [0, 0], rng);
     } else {
       puzzle = generatePuzzle(level, previousAnswers);
     }
@@ -1602,7 +1715,7 @@ export default function App() {
         DuelService.sendScore(nextScore);
         if (nextScore >= 10) {
           setDuelWinner('ME');
-          useGameStore.getState().addCoins(50);
+          awardDuelWin();
           haptic.notification('success');
           playSound('success');
           handleGameOver();
@@ -1747,11 +1860,10 @@ export default function App() {
             duelMyScore={duelMyScore}
             duelOpponentName={duelOpponent?.name || 'Rakip'}
             duelOpponentScore={duelOpponentScore}
-            onPlayDuelAgain={() => {
-              setIsDuelActive(false);
-              setDuelWinner(null);
-              setShowDuel(true);
-            }}
+            duelRematchRequested={duelRematchRequested}
+            duelOpponentRematchPending={duelOpponentRematchPending}
+            duelOpponentLeft={duelOpponentLeft}
+            onPlayDuelAgain={handleDuelRematchRequest}
           />
         ) : (
           <>
@@ -2285,7 +2397,7 @@ export default function App() {
 
                   <div className="flex flex-col gap-2.5">
                     <button onClick={() => setShowExitConfirm(false)} className="w-full py-4 bg-neutral-900 text-white rounded-xl font-black text-xs tracking-widest uppercase shadow-lg active:scale-95 transition-all">{t.exit_confirm_no}</button>
-                    <button onClick={() => { setShowExitConfirm(false); goToMenu(); }} className="w-full py-4 bg-neutral-100 text-neutral-400 rounded-xl font-black text-xs tracking-widest uppercase hover:bg-neutral-200 transition-colors">{t.exit_confirm_yes}</button>
+                    <button onClick={() => { setShowExitConfirm(false); handleReturnToMenu(); }} className="w-full py-4 bg-neutral-100 text-neutral-400 rounded-xl font-black text-xs tracking-widest uppercase hover:bg-neutral-200 transition-colors">{t.exit_confirm_yes}</button>
                   </div>
                 </motion.div>
               </div>

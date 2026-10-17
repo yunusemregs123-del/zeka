@@ -253,13 +253,14 @@ export default {
         });
       }
 
-      // 8. DUEL ROOM SYNC (Poll & Update Scores / Emotes)
+      // 8. DUEL ROOM SYNC (Poll & Update Scores / Emotes / Rematch)
       if (request.method === 'POST' && path === '/api/duel/room/sync') {
         const body = await request.json() as {
           room_code: string;
           player_id: string;
           score?: number;
           emote?: string;
+          forfeit?: boolean;
         };
 
         const roomCode = body.room_code.trim().toUpperCase();
@@ -274,6 +275,13 @@ export default {
         let winnerId = room.winner_id;
         let newStatus = room.status;
 
+        // If player failed timer or gave up
+        if (body.forfeit && !winnerId) {
+          winnerId = isHost ? room.guest_id : room.host_id;
+          newStatus = 'FINISHED';
+        }
+
+        // If player reached 10
         if (myScore >= 10 && !winnerId) {
           winnerId = body.player_id;
           newStatus = 'FINISHED';
@@ -293,10 +301,13 @@ export default {
           `).bind(myScore, body.emote || null, newStatus, winnerId, roomCode).run();
         }
 
-        // Fetch fresh state to guarantee latest opponent score
+        // Fetch fresh state to guarantee latest opponent score and rematch state
         const updated = await env.DB.prepare(
           'SELECT * FROM duel_rooms WHERE room_code = ?'
         ).bind(roomCode).first<any>() || room;
+
+        const opponentWantsRematch = isHost ? (updated.rematch_guest === 1) : (updated.rematch_host === 1);
+        const myRematchRequested = isHost ? (updated.rematch_host === 1) : (updated.rematch_guest === 1);
 
         return json({
           status: updated.status,
@@ -308,6 +319,8 @@ export default {
           opponentEmote: isHost ? updated.guest_emote : updated.host_emote,
           opponentInfo: isHost ? (updated.guest_id ? { id: updated.guest_id, name: updated.guest_name, country: updated.guest_country } : null) : { id: updated.host_id, name: updated.host_name, country: updated.host_country },
           winnerId: updated.winner_id,
+          opponentWantsRematch,
+          myRematchRequested,
         });
       }
 
@@ -329,6 +342,48 @@ export default {
         }
 
         return json({ success: true });
+      }
+
+      // 10. DUEL ROOM REMATCH (Request & Accept)
+      if (request.method === 'POST' && path === '/api/duel/room/rematch') {
+        const body = await request.json() as { room_code: string; player_id: string };
+        const roomCode = body.room_code.trim().toUpperCase();
+
+        const room = await env.DB.prepare('SELECT * FROM duel_rooms WHERE room_code = ?').bind(roomCode).first<any>();
+        if (!room) return json({ error: 'Oda bulunamadı' }, 404);
+
+        const isHost = room.host_id === body.player_id;
+        const newHostRematch = isHost ? 1 : room.rematch_host;
+        const newGuestRematch = !isHost ? 1 : room.rematch_guest;
+
+        // If both players have now requested/accepted rematch:
+        if (newHostRematch === 1 && newGuestRematch === 1) {
+          const newSeed = Math.floor(Math.random() * 900000) + 100000;
+          await env.DB.prepare(`
+            UPDATE duel_rooms
+            SET host_score = 0, guest_score = 0, host_emote = NULL, guest_emote = NULL,
+                status = 'ACTIVE', winner_id = NULL, seed = ?, rematch_host = 0, rematch_guest = 0, updated_at = CURRENT_TIMESTAMP
+            WHERE room_code = ?
+          `).bind(newSeed, roomCode).run();
+
+          return json({
+            success: true,
+            status: 'REMATCH_START',
+            seed: newSeed,
+          });
+        } else {
+          // Waiting for other player to accept
+          await env.DB.prepare(`
+            UPDATE duel_rooms
+            SET rematch_host = ?, rematch_guest = ?, updated_at = CURRENT_TIMESTAMP
+            WHERE room_code = ?
+          `).bind(newHostRematch, newGuestRematch, roomCode).run();
+
+          return json({
+            success: true,
+            status: 'WAITING_OPPONENT',
+          });
+        }
       }
 
       // 10. GLOBAL MATCHMAKING: JOIN QUEUE

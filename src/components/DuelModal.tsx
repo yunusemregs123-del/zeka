@@ -242,11 +242,16 @@ export const DuelModal: React.FC<DuelModalProps> = ({
                 <h3 className="text-sm font-black text-neutral-900 uppercase tracking-tight mb-1">
                   {isSearching ? t.duel_searching : t.mode_duel}
                 </h3>
-                <p className="text-[11px] text-neutral-500 font-medium px-4 mb-6 leading-relaxed">
+                <p className="text-[11px] text-neutral-500 font-medium px-4 mb-3 leading-relaxed">
                   {isSearching
                     ? `${t.duel_search_desc} (${searchTimer}s)`
                     : t.duel_global_desc}
                 </p>
+
+                <div className="flex items-center gap-1.5 mb-5 px-3 py-1.5 bg-amber-50 rounded-xl border border-amber-200/60 text-[10px] font-black text-amber-700">
+                  <span>🪙</span>
+                  <span>{t.duel_stake_info || 'Giriş: 25 Coin • Kazanan: +50 Coin'}</span>
+                </div>
 
                 {isSearching ? (
                   <button
@@ -268,7 +273,12 @@ export const DuelModal: React.FC<DuelModalProps> = ({
 
             {/* Tab 2: Friend Code */}
             {tab === 'friend' && (
-              <div className="flex flex-col gap-4 py-1">
+              <div className="flex flex-col gap-3 py-1">
+                <div className="flex items-center justify-center gap-1.5 py-1 px-3 bg-amber-50 rounded-xl border border-amber-200/60 text-[10px] font-black text-amber-700 text-center">
+                  <span>🪙</span>
+                  <span>{t.duel_stake_info || 'Giriş: 25 Coin • Kazanan: +50 Coin'}</span>
+                </div>
+
                 {/* Your Room Code Box */}
                 <div className="p-4 rounded-2xl border border-neutral-200 bg-neutral-50 flex flex-col items-center text-center">
                   <span className="text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-1">

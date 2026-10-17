@@ -56,6 +56,7 @@ interface GameState {
   pauseGame: () => void;
   addTime: (amount: number) => void;
   addCoins: (amount: number) => void;
+  spendCoins: (amount: number) => void;
   reviveGame: () => void;
   showSolution: () => void;
   setHideIntro: (hide: boolean) => void;
@@ -231,6 +232,12 @@ export const useGameStore = create<GameState>((set, get) => ({
 
   addCoins: (amount) => set((state) => {
     const newCoins = state.coins + amount;
+    localStorage.setItem('zeka_coins', String(newCoins));
+    return { coins: newCoins };
+  }),
+
+  spendCoins: (amount) => set((state) => {
+    const newCoins = Math.max(0, state.coins - amount);
     localStorage.setItem('zeka_coins', String(newCoins));
     return { coins: newCoins };
   }),

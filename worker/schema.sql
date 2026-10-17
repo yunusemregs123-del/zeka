@@ -33,6 +33,8 @@ CREATE TABLE IF NOT EXISTS duel_rooms (
   guest_emote TEXT,
   status TEXT NOT NULL DEFAULT 'WAITING', -- 'WAITING', 'ACTIVE', 'FINISHED', 'FORFEIT'
   winner_id TEXT,
+  rematch_host INTEGER NOT NULL DEFAULT 0,
+  rematch_guest INTEGER NOT NULL DEFAULT 0,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
