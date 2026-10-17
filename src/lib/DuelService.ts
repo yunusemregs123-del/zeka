@@ -286,7 +286,6 @@ export const DuelService = {
           body: JSON.stringify({
             room_code: roomCode,
             player_id: myId,
-            score: currentScore,
             emote: pendingEmote,
           }),
         });
@@ -346,10 +345,10 @@ export const DuelService = {
             activeGameCallbacks.onOpponentQuit?.();
           }
         }
-      } catch (e) {
+      } catch {
         // ignore
       }
-    }, 600);
+    }, 850);
   },
 
   setGameCallbacks(callbacks: GameCallbacks) {

@@ -38,7 +38,7 @@ CREATE TABLE IF NOT EXISTS duel_rooms (
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX IF NOT EXISTS idx_duel_status ON duel_rooms (status, updated_at DESC);
+CREATE INDEX IF NOT EXISTS idx_duel_status ON duel_rooms (status);
 
 -- 3. GLOBAL MATCHMAKING QUEUE TABLE
 CREATE TABLE IF NOT EXISTS duel_queue (

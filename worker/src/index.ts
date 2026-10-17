@@ -335,6 +335,9 @@ export default {
           });
         }
 
+        let hasChanges = false;
+        let updated = room;
+
         // 2. ATOMIC FORFEIT: If player failed timer or gave up, award win to opponent atomically
         if (body.forfeit) {
           const winnerId = isHost ? (room.guest_id || null) : room.host_id;
@@ -343,29 +346,41 @@ export default {
             SET status = 'FINISHED', winner_id = ?, updated_at = CURRENT_TIMESTAMP
             WHERE room_code = ? AND status = 'ACTIVE'
           `).bind(winnerId, roomCode).run();
+          hasChanges = true;
         } else {
-          // 3. REGULAR LIVE SCORE SYNC: Only update score/emote, NEVER touch status or winner_id!
+          // 3. ZERO-WRITE OPTIMIZATION: Only update score/emote if they ACTUALLY changed!
+          const currentMyScore = isHost ? room.host_score : room.guest_score;
+          const currentMyEmote = isHost ? room.host_emote : room.guest_emote;
           const rawScore = Number(body.score);
-          const validScore = !isNaN(rawScore) && rawScore >= 0 ? rawScore : (isHost ? room.host_score : room.guest_score);
-          if (isHost) {
-            await env.DB.prepare(`
-              UPDATE duel_rooms
-              SET host_score = ?, host_emote = COALESCE(?, host_emote), updated_at = CURRENT_TIMESTAMP
-              WHERE room_code = ? AND status = 'ACTIVE'
-            `).bind(validScore, body.emote || null, roomCode).run();
-          } else {
-            await env.DB.prepare(`
-              UPDATE duel_rooms
-              SET guest_score = ?, guest_emote = COALESCE(?, guest_emote), updated_at = CURRENT_TIMESTAMP
-              WHERE room_code = ? AND status = 'ACTIVE'
-            `).bind(validScore, body.emote || null, roomCode).run();
+          const hasScoreIncrease = !isNaN(rawScore) && rawScore > currentMyScore;
+          const hasNewEmote = !!body.emote && body.emote !== currentMyEmote;
+
+          if (hasScoreIncrease || hasNewEmote) {
+            const nextScore = hasScoreIncrease ? rawScore : currentMyScore;
+            const nextEmote = hasNewEmote ? body.emote : currentMyEmote;
+            if (isHost) {
+              await env.DB.prepare(`
+                UPDATE duel_rooms
+                SET host_score = ?, host_emote = ?, updated_at = CURRENT_TIMESTAMP
+                WHERE room_code = ? AND status = 'ACTIVE'
+              `).bind(nextScore, nextEmote || null, roomCode).run();
+            } else {
+              await env.DB.prepare(`
+                UPDATE duel_rooms
+                SET guest_score = ?, guest_emote = ?, updated_at = CURRENT_TIMESTAMP
+                WHERE room_code = ? AND status = 'ACTIVE'
+              `).bind(nextScore, nextEmote || null, roomCode).run();
+            }
+            hasChanges = true;
           }
         }
 
-        // Fetch fresh committed state
-        const updated = await env.DB.prepare(
-          'SELECT * FROM duel_rooms WHERE room_code = ?'
-        ).bind(roomCode).first<any>() || room;
+        // Fetch fresh committed state ONLY if we made changes; otherwise reuse in-memory room!
+        if (hasChanges) {
+          updated = await env.DB.prepare(
+            'SELECT * FROM duel_rooms WHERE room_code = ?'
+          ).bind(roomCode).first<any>() || room;
+        }
 
         const opponentWantsRematch = isHost ? (updated.rematch_guest === 1) : (updated.rematch_host === 1);
         const myRematchRequested = isHost ? (updated.rematch_host === 1) : (updated.rematch_guest === 1);
@@ -457,8 +472,10 @@ export default {
         const myName = body.player_name || 'Oyuncu';
         const country = detectedCountry;
 
-        // Clean stale queue entries older than 20 seconds
-        await env.DB.prepare("DELETE FROM duel_queue WHERE created_at < datetime('now', '-20 seconds')").run();
+        // Clean stale queue entries older than 30s only on 10% of requests to eliminate redundant writes
+        if (Math.random() < 0.10) {
+          await env.DB.prepare("DELETE FROM duel_queue WHERE created_at < datetime('now', '-30 seconds')").run();
+        }
 
         // Check if there is already another waiting player in the queue
         const waitingOpponent = await env.DB.prepare(`
