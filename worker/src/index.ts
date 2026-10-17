@@ -294,32 +294,54 @@ export default {
         if (!room) return json({ error: 'Oda bulunamadı' }, 404);
 
         const isHost = room.host_id === body.player_id;
-        const myScore = typeof body.score === 'number' ? body.score : (isHost ? room.host_score : room.guest_score);
-        let winnerId = room.winner_id;
-        let newStatus = room.status;
 
-        // If player failed timer or gave up
-        if (body.forfeit && !winnerId) {
-          winnerId = isHost ? room.guest_id : room.host_id;
-          newStatus = 'FINISHED';
+        // 1. IMMUTABILITY: If match is ALREADY FINISHED or FORFEITED, never overwrite winner or status!
+        if (room.status === 'FINISHED' || room.status === 'FORFEIT') {
+          const opponentWantsRematch = isHost ? (room.rematch_guest === 1) : (room.rematch_host === 1);
+          const myRematchRequested = isHost ? (room.rematch_host === 1) : (room.rematch_guest === 1);
+
+          return json({
+            status: room.status,
+            seed: room.seed,
+            isHost,
+            host: { id: room.host_id, name: room.host_name, country: room.host_country, score: room.host_score, emote: room.host_emote },
+            guest: room.guest_id ? { id: room.guest_id, name: room.guest_name, country: room.guest_country, score: room.guest_score, emote: room.guest_emote } : null,
+            opponentScore: isHost ? room.guest_score : room.host_score,
+            opponentEmote: isHost ? room.guest_emote : room.host_emote,
+            opponentInfo: isHost ? (room.guest_id ? { id: room.guest_id, name: room.guest_name, country: room.guest_country } : null) : { id: room.host_id, name: room.host_name, country: room.host_country },
+            winnerId: room.winner_id,
+            opponentWantsRematch,
+            myRematchRequested,
+          });
         }
 
-
-        if (isHost) {
+        // 2. ATOMIC FORFEIT: If player failed timer or gave up, award win to opponent atomically
+        if (body.forfeit) {
+          const winnerId = isHost ? room.guest_id : room.host_id;
           await env.DB.prepare(`
             UPDATE duel_rooms
-            SET host_score = ?, host_emote = COALESCE(?, host_emote), status = ?, winner_id = ?, updated_at = CURRENT_TIMESTAMP
-            WHERE room_code = ?
-          `).bind(myScore, body.emote || null, newStatus, winnerId, roomCode).run();
+            SET status = 'FINISHED', winner_id = ?, updated_at = CURRENT_TIMESTAMP
+            WHERE room_code = ? AND status = 'ACTIVE'
+          `).bind(winnerId, roomCode).run();
         } else {
-          await env.DB.prepare(`
-            UPDATE duel_rooms
-            SET guest_score = ?, guest_emote = COALESCE(?, guest_emote), status = ?, winner_id = ?, updated_at = CURRENT_TIMESTAMP
-            WHERE room_code = ?
-          `).bind(myScore, body.emote || null, newStatus, winnerId, roomCode).run();
+          // 3. REGULAR LIVE SCORE SYNC: Only update score/emote, NEVER touch status or winner_id!
+          const myScore = typeof body.score === 'number' ? body.score : (isHost ? room.host_score : room.guest_score);
+          if (isHost) {
+            await env.DB.prepare(`
+              UPDATE duel_rooms
+              SET host_score = ?, host_emote = COALESCE(?, host_emote), updated_at = CURRENT_TIMESTAMP
+              WHERE room_code = ? AND status = 'ACTIVE'
+            `).bind(myScore, body.emote || null, roomCode).run();
+          } else {
+            await env.DB.prepare(`
+              UPDATE duel_rooms
+              SET guest_score = ?, guest_emote = COALESCE(?, guest_emote), updated_at = CURRENT_TIMESTAMP
+              WHERE room_code = ? AND status = 'ACTIVE'
+            `).bind(myScore, body.emote || null, roomCode).run();
+          }
         }
 
-        // Fetch fresh state to guarantee latest opponent score and rematch state
+        // Fetch fresh committed state
         const updated = await env.DB.prepare(
           'SELECT * FROM duel_rooms WHERE room_code = ?'
         ).bind(roomCode).first<any>() || room;
@@ -355,7 +377,7 @@ export default {
           await env.DB.prepare(`
             UPDATE duel_rooms
             SET status = 'FORFEIT', winner_id = ?, updated_at = CURRENT_TIMESTAMP
-            WHERE room_code = ?
+            WHERE room_code = ? AND status = 'ACTIVE'
           `).bind(otherPlayerId, roomCode).run();
         }
 

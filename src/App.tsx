@@ -1450,8 +1450,10 @@ export default function App() {
         if (useGameStore.getState().timeLeft <= 0) {
           setShowExitConfirm(false); // Close modal if time runs out
           if (isDuelActive || gameMode === 'DUEL') {
-            DuelService.reportForfeit();
-            setDuelWinner('OPPONENT');
+            if (!DuelService.isFinished()) {
+              DuelService.reportForfeit();
+              setDuelWinner('OPPONENT');
+            }
           }
           handleGameOver();
         }
@@ -1620,7 +1622,10 @@ export default function App() {
       },
       onMatchFinish: (_winnerId, isWinner, finalOppScore) => {
         setDuelOpponentScore(finalOppScore);
-        setDuelWinner(isWinner ? 'ME' : 'OPPONENT');
+        setDuelWinner((prev) => {
+          if (prev === 'ME') return 'ME';
+          return isWinner ? 'ME' : 'OPPONENT';
+        });
         if (isWinner) {
           awardDuelWin();
           haptic.notification('success');
@@ -1811,8 +1816,10 @@ export default function App() {
 
       if (isDuelActive || gameMode === 'DUEL') {
         playSound('fail');
-        DuelService.reportForfeit();
-        setDuelWinner('OPPONENT');
+        if (!DuelService.isFinished()) {
+          DuelService.reportForfeit();
+          setDuelWinner('OPPONENT');
+        }
         handleGameOver();
         setTimeout(() => setIsSubmitting(false), 300);
         return;
@@ -2127,41 +2134,45 @@ export default function App() {
                   <Icons.Home className="w-5 h-5" />
                 </motion.button>
 
-                <div className="flex flex-col min-w-0">
-                  <span className="text-base sm:text-2xl font-black tracking-tight text-[#1D1D1F] flex items-center gap-1.5 leading-tight truncate">
-                    {isDuelActive || gameMode === 'DUEL' ? (
-                      <span className="text-neutral-900 flex items-center gap-1.5 font-black text-sm sm:text-lg">
-                        <Icons.Swords className="w-4 h-4 sm:w-5 sm:h-5 text-neutral-900 shrink-0" />
-                        <span>DÜELLO <span className="font-mono text-neutral-600">#{level}</span></span>
+                <div className="flex flex-col min-w-0 justify-center">
+                  {isDuelActive || gameMode === 'DUEL' ? (
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <Icons.Swords className="w-4 h-4 text-neutral-900 shrink-0" />
+                      <span className="text-base sm:text-lg font-black tracking-tight text-neutral-900 truncate">
+                        DÜELLO
                       </span>
-                    ) : gameMode === 'TIME_ATTACK' ? (
-                      <span className="text-amber-500 flex items-center gap-1 font-black">
-                        <Icons.Zap className="w-4 h-4 sm:w-5 sm:h-5 fill-amber-500 shrink-0" />
-                        <span>{t.mode_time_attack}</span>
+                    </div>
+                  ) : (
+                    <>
+                      <span className="text-base sm:text-2xl font-black tracking-tight text-[#1D1D1F] flex items-center gap-1.5 leading-tight truncate">
+                        {gameMode === 'TIME_ATTACK' ? (
+                          <span className="text-amber-500 flex items-center gap-1 font-black">
+                            <Icons.Zap className="w-4 h-4 sm:w-5 sm:h-5 fill-amber-500 shrink-0" />
+                            <span>{t.mode_time_attack}</span>
+                          </span>
+                        ) : gameMode === 'MEMORY' ? (
+                          <span className="text-blue-500 flex items-center gap-1 font-black">
+                            <Icons.EyeOff className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
+                            <span>{t.mode_memory}</span>
+                          </span>
+                        ) : (
+                          <span className="text-neutral-900 flex items-center gap-1">
+                            {t.header_level} <RollingNumber value={level} />
+                          </span>
+                        )}
+                        {isDevMode && <span className="text-[9px] bg-amber-500 text-white px-1.5 py-0.5 rounded-full font-bold uppercase shrink-0">{t.dev_test}</span>}
                       </span>
-                    ) : gameMode === 'MEMORY' ? (
-                      <span className="text-blue-500 flex items-center gap-1 font-black">
-                        <Icons.EyeOff className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
-                        <span>{t.mode_memory}</span>
+                      <span className="text-[10px] sm:text-xs font-bold tracking-wider text-neutral-500 uppercase leading-none mt-0.5 truncate">
+                        {gameMode === 'TIME_ATTACK' ? (
+                          <span>{t.score_label}: <strong className="text-neutral-900"><RollingNumber value={timeAttackScore} /></strong> • {t.time_attack_best}: <strong className="text-amber-600">{timeAttackBest}</strong></span>
+                        ) : gameMode === 'MEMORY' ? (
+                          <span>{t.score_label}: <strong className="text-neutral-900"><RollingNumber value={memoryScore} /></strong> • {t.memory_best}: <strong className="text-blue-600">{memoryBest}</strong></span>
+                        ) : (
+                          <span>{t.header_time} <span className="text-neutral-900">{isDevMode ? '∞' : `${totalTimeSpent.toFixed(1)}s`}</span></span>
+                        )}
                       </span>
-                    ) : (
-                      <span className="text-neutral-900 flex items-center gap-1">
-                        {t.header_level} <RollingNumber value={level} />
-                      </span>
-                    )}
-                    {isDevMode && <span className="text-[9px] bg-amber-500 text-white px-1.5 py-0.5 rounded-full font-bold uppercase shrink-0">{t.dev_test}</span>}
-                  </span>
-                  <span className="text-[10px] sm:text-xs font-bold tracking-wider text-neutral-500 uppercase leading-none mt-0.5 truncate">
-                    {isDuelActive || gameMode === 'DUEL' ? (
-                      <span>{t.duel_sudden_death_sub || 'HAYATTA KALMA'} • <strong className="text-neutral-900">{duelMyScore} {t.gameover_solved || 'ÇÖZÜLDÜ'}</strong></span>
-                    ) : gameMode === 'TIME_ATTACK' ? (
-                      <span>{t.score_label}: <strong className="text-neutral-900"><RollingNumber value={timeAttackScore} /></strong> • {t.time_attack_best}: <strong className="text-amber-600">{timeAttackBest}</strong></span>
-                    ) : gameMode === 'MEMORY' ? (
-                      <span>{t.score_label}: <strong className="text-neutral-900"><RollingNumber value={memoryScore} /></strong> • {t.memory_best}: <strong className="text-blue-600">{memoryBest}</strong></span>
-                    ) : (
-                      <span>{t.header_time} <span className="text-neutral-900">{isDevMode ? '∞' : `${totalTimeSpent.toFixed(1)}s`}</span></span>
-                    )}
-                  </span>
+                    </>
+                  )}
                 </div>
               </div>
 

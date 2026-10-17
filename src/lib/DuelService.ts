@@ -116,40 +116,8 @@ export const DuelService = {
               currentActiveSeed = data.seed;
               isMatchFinishedReported = false;
               callbacks.onMatchStart(data.guest, data.seed, true, roomCode);
-            }
-
-            // Rematch started
-            if (data.status === 'ACTIVE' && typeof data.seed === 'number' && currentActiveSeed !== 0 && data.seed !== currentActiveSeed) {
-              currentActiveSeed = data.seed;
-              currentScore = 0;
-              isMatchFinishedReported = false;
-              activeGameCallbacks.onRematchStart?.(data.seed);
-            }
-
-            // Match finished simultaneously
-            if (data.status === 'FINISHED' && data.winnerId && !isMatchFinishedReported) {
-              isMatchFinishedReported = true;
-              const isWinner = data.winnerId === myId;
-              const finalOppScore = typeof data.opponentScore === 'number' ? data.opponentScore : 0;
-              activeGameCallbacks.onMatchFinish?.(data.winnerId, isWinner, finalOppScore);
-            }
-
-            // Opponent wants rematch
-            if (data.opponentWantsRematch) {
-              activeGameCallbacks.onRematchInvite?.();
-            }
-
-            // Sync opponent score
-            if (typeof data.opponentScore === 'number') {
-              callbacks.onOpponentScore(data.opponentScore);
-              activeGameCallbacks.onOpponentScore?.(data.opponentScore);
-            }
-
-            // Opponent quit / forfeit
-            if (data.status === 'FORFEIT' && data.winnerId === myId && !isMatchFinishedReported) {
-              isMatchFinishedReported = true;
-              callbacks.onOpponentQuit();
-              activeGameCallbacks.onOpponentQuit?.();
+              this.startRoomSync(roomCode, myId, callbacks);
+              return;
             }
           }
         } catch (e) {
@@ -330,7 +298,7 @@ export const DuelService = {
           }
 
           // 2. Match Finished (immediate simultaneous screen transition)
-          if (data.status === 'FINISHED' && data.winnerId && !isMatchFinishedReported) {
+          if ((data.status === 'FINISHED' || data.status === 'FORFEIT') && data.winnerId && !isMatchFinishedReported) {
             isMatchFinishedReported = true;
             const isWinner = data.winnerId === myId;
             const finalOppScore = typeof data.opponentScore === 'number' ? data.opponentScore : 0;
@@ -373,6 +341,7 @@ export const DuelService = {
   },
 
   sendScore(newScore: number) {
+    if (isMatchFinishedReported || !activeRoomCode) return;
     currentScore = newScore;
     const myId = getDuelPlayerId();
 
@@ -380,43 +349,39 @@ export const DuelService = {
       return;
     }
 
-    if (activeRoomCode) {
-      fetch(`${CF_WORKER_URL}/api/duel/room/sync`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          room_code: activeRoomCode,
-          player_id: myId,
-          score: newScore,
-        }),
-      })
-        .then(async (res) => {
-          if (res.ok) {
-            const data = await res.json();
-            if (typeof data.opponentScore === 'number') {
-              activeGameCallbacks.onOpponentScore?.(data.opponentScore);
-            }
-            if (data.status === 'FINISHED' && data.winnerId && !isMatchFinishedReported) {
-              isMatchFinishedReported = true;
-              const isWinner = data.winnerId === myId;
-              const finalOppScore = typeof data.opponentScore === 'number' ? data.opponentScore : 0;
-              activeGameCallbacks.onMatchFinish?.(data.winnerId, isWinner, finalOppScore);
-            }
+    fetch(`${CF_WORKER_URL}/api/duel/room/sync`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        room_code: activeRoomCode,
+        player_id: myId,
+        score: newScore,
+      }),
+    })
+      .then(async (res) => {
+        if (res.ok) {
+          const data = await res.json();
+          if (typeof data.opponentScore === 'number') {
+            activeGameCallbacks.onOpponentScore?.(data.opponentScore);
           }
-        })
-        .catch(() => {});
-    }
+          if ((data.status === 'FINISHED' || data.status === 'FORFEIT') && data.winnerId && !isMatchFinishedReported) {
+            isMatchFinishedReported = true;
+            const isWinner = data.winnerId === myId;
+            const finalOppScore = typeof data.opponentScore === 'number' ? data.opponentScore : 0;
+            activeGameCallbacks.onMatchFinish?.(data.winnerId, isWinner, finalOppScore);
+          }
+        }
+      })
+      .catch(() => {});
   },
 
   reportForfeit() {
-    if (!activeRoomCode) return;
+    if (!activeRoomCode || isMatchFinishedReported) return;
+    isMatchFinishedReported = true;
     const myId = getDuelPlayerId();
     if (isBotMatch) {
-      if (!isMatchFinishedReported) {
-        isMatchFinishedReported = true;
-        clearInterval(simulatedBotInterval);
-        activeGameCallbacks.onMatchFinish?.('bot', false, botScoreTracker);
-      }
+      clearInterval(simulatedBotInterval);
+      activeGameCallbacks.onMatchFinish?.('bot', false, botScoreTracker);
       return;
     }
     fetch(`${CF_WORKER_URL}/api/duel/room/sync`, {
@@ -428,6 +393,10 @@ export const DuelService = {
         forfeit: true,
       }),
     }).catch(() => {});
+  },
+
+  isFinished(): boolean {
+    return isMatchFinishedReported;
   },
 
   async requestRematch(): Promise<{ success: boolean; started: boolean; seed?: number }> {
