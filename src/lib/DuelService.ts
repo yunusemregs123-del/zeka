@@ -7,7 +7,7 @@
  * - Atomic two-phase rematch handshake
  */
 
-import { getDuelPlayerId, getPlayerName, getCachedCountry } from './Leaderboard';
+import { getDuelPlayerId, getPlayerName, getCachedCountry, generateGuestName } from './Leaderboard';
 import { haptic } from './Haptics';
 
 import { AppConfig } from '../config/AppConfig';
@@ -53,6 +53,8 @@ let syncInterval: any = null;
 let matchmakingInterval: any = null;
 let gameOverInactivityTimeout: any = null;
 let simulatedBotTimeout: any = null;
+let botRematchTimeout: any = null;
+let botWantsRematch = false;
 let botTargetDeathScore = 0;
 let botScoreTracker = 0;
 let currentScore = 0;
@@ -62,40 +64,117 @@ let lastSeenEmoteSeq = 0;
 let activeGameCallbacks: GameCallbacks = {};
 
 const BOT_ROSTER: OpponentInfo[] = [
+  // Turkish realistic usernames
   { id: 'bot-1', name: 'alperen_06', country: 'TR', isBot: true },
   { id: 'bot-2', name: 'berkay.k', country: 'TR', isBot: true },
   { id: 'bot-3', name: 'selin_d', country: 'TR', isBot: true },
-  { id: 'bot-4', name: 'mert_yılmaz', country: 'TR', isBot: true },
+  { id: 'bot-4', name: 'mert_yilmaz', country: 'TR', isBot: true },
   { id: 'bot-5', name: 'kaan_arslan', country: 'TR', isBot: true },
-  { id: 'bot-6', name: 'zeynep_t', country: 'TR', isBot: true },
+  { id: 'bot-6', name: 'zeynep.t', country: 'TR', isBot: true },
   { id: 'bot-7', name: 'caner_k', country: 'TR', isBot: true },
-  { id: 'bot-8', name: 'aylin_x', country: 'TR', isBot: true },
+  { id: 'bot-8', name: 'aylin.x', country: 'TR', isBot: true },
   { id: 'bot-9', name: 'yigit_34', country: 'TR', isBot: true },
   { id: 'bot-10', name: 'deniz_g', country: 'TR', isBot: true },
   { id: 'bot-11', name: 'tolga_b', country: 'TR', isBot: true },
   { id: 'bot-12', name: 'melis_a', country: 'TR', isBot: true },
-  { id: 'bot-13', name: 'eren_k', country: 'TR', isBot: true },
+  { id: 'bot-13', name: 'eren.k', country: 'TR', isBot: true },
   { id: 'bot-14', name: 'furkan.d', country: 'TR', isBot: true },
   { id: 'bot-15', name: 'cemre_s', country: 'TR', isBot: true },
   { id: 'bot-16', name: 'baris_y', country: 'TR', isBot: true },
   { id: 'bot-17', name: 'oguzhan_k', country: 'TR', isBot: true },
-  { id: 'bot-18', name: 'ece_n', country: 'TR', isBot: true },
+  { id: 'bot-18', name: 'ece.n', country: 'TR', isBot: true },
   { id: 'bot-19', name: 'umut_c', country: 'TR', isBot: true },
-  { id: 'bot-20', name: 'burak_o', country: 'TR', isBot: true },
-  { id: 'bot-21', name: 'damla_k', country: 'TR', isBot: true },
+  { id: 'bot-20', name: 'burak_oz', country: 'TR', isBot: true },
+  { id: 'bot-21', name: 'damla.k', country: 'TR', isBot: true },
   { id: 'bot-22', name: 'kerem_v', country: 'TR', isBot: true },
-  { id: 'bot-23', name: 'alex_m', country: 'DE', isBot: true },
-  { id: 'bot-24', name: 'lucas_br', country: 'BR', isBot: true },
-  { id: 'bot-25', name: 'elena_s', country: 'ES', isBot: true },
-  { id: 'bot-26', name: 'sora_k', country: 'JP', isBot: true },
-  { id: 'bot-27', name: 'emily_w', country: 'GB', isBot: true },
-  { id: 'bot-28', name: 'noah_d', country: 'NL', isBot: true },
+  { id: 'bot-23', name: 'buse_99', country: 'TR', isBot: true },
+  { id: 'bot-24', name: 'arda.bjk', country: 'TR', isBot: true },
+  { id: 'bot-25', name: 'emre_fb', country: 'TR', isBot: true },
+  { id: 'bot-26', name: 'defne_kaya', country: 'TR', isBot: true },
+  { id: 'bot-27', name: 'batuhan_y', country: 'TR', isBot: true },
+  { id: 'bot-28', name: 'idil_su', country: 'TR', isBot: true },
+  { id: 'bot-29', name: 'koray.t', country: 'TR', isBot: true },
+  { id: 'bot-30', name: 'selim.aydin', country: 'TR', isBot: true },
+  { id: 'bot-31', name: 'kadir_35', country: 'TR', isBot: true },
+  { id: 'bot-32', name: 'yagmur_k', country: 'TR', isBot: true },
+  { id: 'bot-33', name: 'onur.kaya', country: 'TR', isBot: true },
+  { id: 'bot-34', name: 'sinem_a', country: 'TR', isBot: true },
+  // Competitive / Gamer handles
+  { id: 'bot-35', name: 'ShadowMind', country: 'TR', isBot: true },
+  { id: 'bot-36', name: 'BrainMaster', country: 'US', isBot: true },
+  { id: 'bot-37', name: 'Vortex_TR', country: 'TR', isBot: true },
+  { id: 'bot-38', name: 'Atlas.01', country: 'TR', isBot: true },
+  { id: 'bot-39', name: 'EchoPilot', country: 'GB', isBot: true },
+  { id: 'bot-40', name: 'Matematikci', country: 'TR', isBot: true },
+  { id: 'bot-41', name: 'Zenith_99', country: 'DE', isBot: true },
+  { id: 'bot-42', name: 'Kuzey_Bey', country: 'TR', isBot: true },
+  { id: 'bot-43', name: 'NovaMath', country: 'US', isBot: true },
+  // International handles
+  { id: 'bot-44', name: 'alex_m92', country: 'DE', isBot: true },
+  { id: 'bot-45', name: 'lukas_s', country: 'DE', isBot: true },
+  { id: 'bot-46', name: 'sophie_b', country: 'FR', isBot: true },
+  { id: 'bot-47', name: 'lucas_br', country: 'BR', isBot: true },
+  { id: 'bot-48', name: 'mateo_r', country: 'ES', isBot: true },
+  { id: 'bot-49', name: 'elena_s', country: 'ES', isBot: true },
+  { id: 'bot-50', name: 'sora_k', country: 'JP', isBot: true },
+  { id: 'bot-51', name: 'kenji_sato', country: 'JP', isBot: true },
+  { id: 'bot-52', name: 'emily_w', country: 'GB', isBot: true },
+  { id: 'bot-53', name: 'oliver_ox', country: 'GB', isBot: true },
+  { id: 'bot-54', name: 'noah_d', country: 'NL', isBot: true },
+  { id: 'bot-55', name: 'samir_az', country: 'AZ', isBot: true },
+  { id: 'bot-56', name: 'farhad_baku', country: 'AZ', isBot: true },
+  { id: 'bot-57', name: 'liam_k', country: 'US', isBot: true },
+  { id: 'bot-58', name: 'jessica.m', country: 'US', isBot: true },
 ];
+
+export function getRealisticBotOpponent(): OpponentInfo {
+  // ~38% chance: Authentic Guest player (e.g. Zeka_XXXXXX)
+  if (Math.random() < 0.38) {
+    const guestCountries = ['TR', 'TR', 'TR', 'TR', 'DE', 'AZ', 'US', 'GB', 'NL', 'FR'];
+    const country = guestCountries[Math.floor(Math.random() * guestCountries.length)];
+    const guestName = generateGuestName();
+    return {
+      id: `bot-${guestName.toLowerCase()}-${Math.random().toString(36).substring(2, 6)}`,
+      name: guestName,
+      country,
+      isBot: true,
+    };
+  }
+
+  // 62% chance: Registered / gamer handles
+  const bot = BOT_ROSTER[Math.floor(Math.random() * BOT_ROSTER.length)];
+  return {
+    ...bot,
+    id: `${bot.id}-${Math.random().toString(36).substring(2, 6)}`,
+  };
+}
 
 function clearBotSimulation() {
   if (simulatedBotTimeout) {
     clearTimeout(simulatedBotTimeout);
     simulatedBotTimeout = null;
+  }
+  if (botRematchTimeout) {
+    clearTimeout(botRematchTimeout);
+    botRematchTimeout = null;
+  }
+  botWantsRematch = false;
+}
+
+function scheduleBotRematchInvite() {
+  if (botRematchTimeout) {
+    clearTimeout(botRematchTimeout);
+    botRematchTimeout = null;
+  }
+  // ~35% chance the bot proactively asks for rematch after 2.8s - 4.8s
+  if (Math.random() < 0.35) {
+    botRematchTimeout = setTimeout(() => {
+      if (isBotMatch && !hasReportedRematchInvite) {
+        botWantsRematch = true;
+        hasReportedRematchInvite = true;
+        activeGameCallbacks.onRematchInvite?.();
+      }
+    }, Math.floor(2800 + Math.random() * 2000));
   }
 }
 
@@ -164,6 +243,7 @@ function startBotSimulation(myId: string, initialCallback?: (score: number) => v
         if (Math.random() < blunderChance) {
           isMatchFinishedReported = true;
           activeGameCallbacks.onMatchFinish?.(myId, true, botScoreTracker);
+          scheduleBotRematchInvite();
           return;
         }
       }
@@ -172,6 +252,7 @@ function startBotSimulation(myId: string, initialCallback?: (score: number) => v
       if (botScoreTracker >= botTargetDeathScore) {
         isMatchFinishedReported = true;
         activeGameCallbacks.onMatchFinish?.(myId, true, botScoreTracker);
+        scheduleBotRematchInvite();
         return;
       }
 
@@ -392,7 +473,7 @@ export const DuelService = {
           clearInterval(matchmakingInterval);
           this.cancelMatchmaking(myId);
 
-          const randomBot = BOT_ROSTER[Math.floor(Math.random() * BOT_ROSTER.length)];
+          const randomBot = getRealisticBotOpponent();
           const botRoom = `ZK-${Math.floor(10000 + Math.random() * 90000)}`;
           const botSeed = Math.floor(Math.random() * 900000) + 100000;
           activeRoomCode = botRoom;
@@ -585,6 +666,7 @@ export const DuelService = {
     if (isBotMatch) {
       clearBotSimulation();
       activeGameCallbacks.onMatchFinish?.('bot', false, botScoreTracker);
+      scheduleBotRematchInvite();
       return;
     }
     fetch(`${CF_WORKER_URL}/api/duel/room/sync`, {
@@ -609,6 +691,45 @@ export const DuelService = {
 
     // Bot rematch simulation
     if (isBotMatch) {
+      if (botRematchTimeout) {
+        clearTimeout(botRematchTimeout);
+        botRematchTimeout = null;
+      }
+
+      // If bot had already proactively invited user to rematch, accept smoothly (~800ms)
+      if (botWantsRematch) {
+        botWantsRematch = false;
+        hasReportedRematchInvite = false;
+        const newSeed = Math.floor(Math.random() * 900000) + 100000;
+        currentActiveSeed = newSeed;
+        currentScore = 0;
+        currentRoomRound += 1;
+        isMatchFinishedReported = false;
+        lastReportedOpponentScore = -1;
+        lastSeenEmoteSeq = 0;
+
+        botRematchTimeout = setTimeout(() => {
+          startBotSimulation(getDuelPlayerId());
+          activeGameCallbacks.onRematchStart?.(newSeed);
+        }, 800);
+
+        return { success: true, started: false };
+      }
+
+      // Small chance (~18%) that the bot declines / quits the room!
+      const doesDecline = Math.random() < 0.18;
+      if (doesDecline) {
+        // Natural hesitation before leaving (1.8s - 3.2s)
+        const leaveDelay = 1800 + Math.random() * 1400;
+        botRematchTimeout = setTimeout(() => {
+          activeGameCallbacks.onOpponentQuit?.();
+        }, Math.round(leaveDelay));
+
+        return { success: true, started: false };
+      }
+
+      // Bot accepts! Simulate realistic human reaction time (2.2s - 3.8s)
+      const acceptDelay = 2200 + Math.random() * 1600;
       const newSeed = Math.floor(Math.random() * 900000) + 100000;
       currentActiveSeed = newSeed;
       currentScore = 0;
@@ -616,14 +737,14 @@ export const DuelService = {
       isMatchFinishedReported = false;
       hasReportedRematchInvite = false;
       lastReportedOpponentScore = -1;
+      lastSeenEmoteSeq = 0;
 
-      startBotSimulation(getDuelPlayerId());
-
-      setTimeout(() => {
+      botRematchTimeout = setTimeout(() => {
+        startBotSimulation(getDuelPlayerId());
         activeGameCallbacks.onRematchStart?.(newSeed);
-      }, 900);
+      }, Math.round(acceptDelay));
 
-      return { success: true, started: true, seed: newSeed };
+      return { success: true, started: false };
     }
 
     const myId = getDuelPlayerId();

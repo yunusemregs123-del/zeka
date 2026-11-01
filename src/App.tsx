@@ -1927,6 +1927,9 @@ export default function App() {
           setDuelWinner('ME');
           awardDuelWin();
           handleGameOver(true);
+        } else {
+          haptic.notification('warning');
+          playSound('fail');
         }
       },
     });
