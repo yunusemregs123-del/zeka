@@ -18,6 +18,7 @@ import { DuelModal, type StartDuelPayload } from './components/DuelModal';
 import { DuelService, type OpponentInfo } from './lib/DuelService';
 import { JourneyMap } from './components/JourneyMap';
 import { RollingNumber } from './components/RollingNumber';
+import { AuthService } from './lib/AuthService';
 
 let audioCtx: AudioContext | null = null;
 let ambientMusic: AmbientMusic | null = null;
@@ -201,6 +202,20 @@ function MenuScreen({
     localStorage.setItem('zeka_mute', String(newMute));
   };
 
+  const [cloudRecoveryCode, setCloudRecoveryCode] = useState(AuthService.getRecoveryCode());
+  const [restoreCodeInput, setRestoreCodeInput] = useState('');
+  const [restoreStatus, setRestoreStatus] = useState<{ text: string; error: boolean } | null>(null);
+  const [isRestoring, setIsRestoring] = useState(false);
+  const [codeCopied, setCodeCopied] = useState(false);
+
+  useEffect(() => {
+    if (showInfo) {
+      AuthService.syncNow().then(acc => {
+        if (acc?.recovery_code) setCloudRecoveryCode(acc.recovery_code);
+      });
+    }
+  }, [showInfo]);
+
   useEffect(() => {
     const hideStatusBar = async () => {
       try { await StatusBar.hide(); } catch (e) { }
@@ -305,6 +320,11 @@ function MenuScreen({
       if (appStateListener) appStateListener.remove();
     };
   }, [muteAudio]);
+
+  // Initial Cloud Save Sync
+  useEffect(() => {
+    AuthService.scheduleSync(3000);
+  }, []);
 
   const [isHapticsOn, setIsHapticsOn] = useState(haptic.getStatus());
 
@@ -659,6 +679,88 @@ function MenuScreen({
                     <div className={`w-5 h-5 rounded-full bg-white shadow-sm transition-transform ${isHapticsOn ? 'translate-x-5' : 'translate-x-0'}`} />
                   </button>
                 </div>
+              </div>
+
+              {/* CLOUD SAVE & ACCOUNT RECOVERY CARD */}
+              <div className="bg-neutral-50 rounded-2xl p-3.5 border border-neutral-100 shadow-sm mb-5">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm">☁️</span>
+                    <span className="text-xs font-black text-neutral-800 tracking-wide uppercase">
+                      {t.cloud_save_title}
+                    </span>
+                  </div>
+                  <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full">
+                    {t.cloud_save_active}
+                  </span>
+                </div>
+
+                <div className="bg-white rounded-xl p-2.5 border border-neutral-200/80 flex items-center justify-between mb-2">
+                  <div className="flex flex-col">
+                    <span className="text-[9px] font-bold text-neutral-400 uppercase tracking-widest">
+                      {t.cloud_recovery_label}
+                    </span>
+                    <span className="text-sm font-black text-amber-600 font-mono tracking-wider">
+                      {cloudRecoveryCode || 'ZK-SYNC...'}
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => {
+                      if (cloudRecoveryCode) {
+                        navigator.clipboard?.writeText(cloudRecoveryCode);
+                        setCodeCopied(true);
+                        haptic.notification('success');
+                        setTimeout(() => setCodeCopied(false), 2000);
+                      }
+                    }}
+                    className="px-3 py-1.5 bg-neutral-100 hover:bg-neutral-200 active:scale-95 transition-all text-[10px] font-black text-neutral-700 rounded-lg"
+                  >
+                    {codeCopied ? t.cloud_copied_btn : t.cloud_copy_btn}
+                  </button>
+                </div>
+
+                <p className="text-[10px] text-neutral-500 leading-tight mb-3">
+                  {t.cloud_save_desc}
+                </p>
+
+                {/* Restore input */}
+                <div className="flex gap-1.5 mb-2">
+                  <input
+                    type="text"
+                    placeholder={t.cloud_restore_placeholder}
+                    value={restoreCodeInput}
+                    onChange={(e) => setRestoreCodeInput(e.target.value.toUpperCase())}
+                    className="flex-1 px-3 py-2 bg-white rounded-xl border border-neutral-200 text-xs font-mono font-bold tracking-wider uppercase focus:outline-none focus:border-amber-500"
+                    maxLength={10}
+                  />
+                  <button
+                    disabled={isRestoring || !restoreCodeInput.trim()}
+                    onClick={async () => {
+                      setIsRestoring(true);
+                      setRestoreStatus(null);
+                      const res = await AuthService.recoverWithCode(restoreCodeInput);
+                      setIsRestoring(false);
+                      if (res.success) {
+                        setRestoreStatus({ text: t.cloud_restore_success, error: false });
+                        setCloudRecoveryCode(res.account?.recovery_code || restoreCodeInput);
+                        setRestoreCodeInput('');
+                        haptic.notification('success');
+                      } else {
+                        setRestoreStatus({ text: res.error || 'Hata oluştu', error: true });
+                        haptic.notification('error');
+                      }
+                    }}
+                    className="px-3.5 py-2 bg-[#1D1D1F] hover:bg-black text-white text-xs font-black rounded-xl active:scale-95 disabled:opacity-40 transition-all"
+                  >
+                    {isRestoring ? '...' : t.cloud_restore_btn}
+                  </button>
+                </div>
+
+                {restoreStatus && (
+                  <p className={`text-[10px] font-bold ${restoreStatus.error ? 'text-red-500' : 'text-emerald-600'}`}>
+                    {restoreStatus.text}
+                  </p>
+                )}
               </div>
 
               <div className="flex flex-col gap-2 mb-6 max-h-[220px] overflow-y-auto pr-1">
@@ -1613,7 +1715,7 @@ export default function App() {
     if (activeRematchSeedRef.current === newSeed) return;
     activeRematchSeedRef.current = newSeed;
 
-    if (useGameStore.getState().coins < 25) {
+    if (useGameStore.getState().coins < 50) {
       haptic.notification('error');
       playSound('fail');
       return;
@@ -1625,7 +1727,7 @@ export default function App() {
       duelCleanupTimerRef.current = null;
     }
     setPendingRematchInvite(null);
-    useGameStore.getState().spendCoins(25);
+    useGameStore.getState().spendCoins(50);
     setIsDuelActive(true);
     duelSeedRef.current = newSeed;
     setDuelSeed(newSeed);
@@ -1690,8 +1792,8 @@ export default function App() {
     setShowSolution(false);
     setHasPaidForSolution(false);
 
-    // Stake 25 coins entry fee
-    useGameStore.getState().spendCoins(25);
+    // Stake 50 coins entry fee
+    useGameStore.getState().spendCoins(50);
 
     DuelService.setGameCallbacks({
       onOpponentScore: (score) => {
@@ -1879,6 +1981,9 @@ export default function App() {
       level: nextLevel,
       previousAnswers: [expected, s.previousAnswers[0]]
     }));
+
+    // Auto-sync progress to Cloudflare Edge in background
+    AuthService.scheduleSync(2500);
   };
 
   const handleSubmission = () => {
@@ -1974,7 +2079,7 @@ export default function App() {
     } else {
       if (isDevMode || hasPaidForSolution) {
         setShowSolution(true);
-      } else if (coins >= 50) {
+      } else if (coins >= 75) {
         useGameStore.getState().showSolution();
         setHasPaidForSolution(true);
         setShowSolution(true);
@@ -2488,16 +2593,16 @@ export default function App() {
                 <div className="flex items-center justify-center w-full">
                   <motion.button
                     whileTap={{ scale: 0.96 }}
-                    onClick={coins >= 50 || isDevMode || hasPaidForSolution ? handleToggleSolution : handleWatchAdForSolution}
+                    onClick={coins >= 75 || isDevMode || hasPaidForSolution ? handleToggleSolution : handleWatchAdForSolution}
                     disabled={isWatchingHintAd}
                     className="w-full py-3.5 px-6 rounded-2xl bg-[#1D1D1F] hover:bg-black text-white font-black tracking-widest text-xs uppercase shadow-xl flex items-center justify-between hover:scale-[1.01] active:scale-95 transition-all"
                   >
                     <div className="flex items-center gap-2">
                       <span className="text-base">💡</span>
-                      <span>{showSolution ? t.btn_hide : (coins >= 50 || isDevMode || hasPaidForSolution ? t.btn_reveal : t.btn_reveal_ad)}</span>
+                      <span>{showSolution ? t.btn_hide : (coins >= 75 || isDevMode || hasPaidForSolution ? t.btn_reveal : t.btn_reveal_ad)}</span>
                     </div>
                     <span className="text-[10px] bg-white/20 text-white px-2.5 py-1 rounded-full font-black">
-                      {coins >= 50 || isDevMode || hasPaidForSolution ? '50C' : t.ad_label}
+                      {coins >= 75 || isDevMode || hasPaidForSolution ? '75C' : t.ad_label}
                     </span>
                   </motion.button>
                 </div>
@@ -2527,13 +2632,13 @@ export default function App() {
 
                   <motion.button
                     whileTap={{ scale: 0.95 }}
-                    onClick={coins >= 50 || isDevMode || hasPaidForSolution ? handleToggleSolution : handleWatchAdForSolution}
+                    onClick={coins >= 75 || isDevMode || hasPaidForSolution ? handleToggleSolution : handleWatchAdForSolution}
                     disabled={isPaused || showTutorialModal || showIntroModal || isWatchingHintAd}
                     className="flex flex-col items-center justify-center p-2 rounded-xl bg-white border border-neutral-100 text-[9px] font-bold tracking-widest shadow-sm disabled:opacity-30 transition-all hover:bg-neutral-50"
                   >
-                    <span>{showSolution ? t.btn_hide : (coins >= 50 || isDevMode || hasPaidForSolution ? t.btn_reveal : t.btn_reveal_ad)}</span>
+                    <span>{showSolution ? t.btn_hide : (coins >= 75 || isDevMode || hasPaidForSolution ? t.btn_reveal : t.btn_reveal_ad)}</span>
                     <span className="text-[8px] bg-amber-50 text-amber-600 px-1.5 py-0.5 rounded-full mt-1">
-                      {coins >= 50 || isDevMode || hasPaidForSolution ? '50C' : t.ad_label}
+                      {coins >= 75 || isDevMode || hasPaidForSolution ? '75C' : t.ad_label}
                     </span>
                   </motion.button>
                 </div>

@@ -3,7 +3,9 @@
  * Powered exclusively by Cloudflare Edge Workers & Cloudflare D1
  */
 
-const CF_WORKER_URL = (import.meta.env.VITE_CF_WORKER_URL || 'https://zeka-edge-api.zekagame.workers.dev').replace(/\/$/, '');
+import { AppConfig } from '../config/AppConfig';
+
+const CF_WORKER_URL = (import.meta.env.VITE_CF_WORKER_URL || AppConfig.api.workerUrl).replace(/\/$/, '');
 
 export interface ScoreEntry {
   id: string;

@@ -254,8 +254,8 @@ export const useGameStore = create<GameState>((set, get) => ({
   }),
   
   showSolution: () => set((state) => {
-    if (state.coins >= 50) {
-      const newCoins = state.coins - 50;
+    if (state.coins >= 75) {
+      const newCoins = state.coins - 75;
       const newHelpCount = state.helpCount + 1;
       localStorage.setItem('zeka_coins', String(newCoins));
       localStorage.setItem('zeka_help_count', String(newHelpCount));
@@ -296,7 +296,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     localStorage.setItem('dailyRewardState', JSON.stringify(newState));
     localStorage.setItem('zeka_daily_total', String(total));
     set(newState);
-    get().addCoins(200);
+    get().addCoins(75);
   },
 
   unlockMedal: (id) => {

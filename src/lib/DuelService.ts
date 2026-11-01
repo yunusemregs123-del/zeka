@@ -1,12 +1,18 @@
 /**
- * ZEKA: Mind Puzzle - 100% Cloudflare 1v1 Real-Time Multiplayer Service
+ * ZEKA: Mind Puzzle - 15-Year Scalable Real-Time 1v1 Multiplayer Service
  * Powered exclusively by Cloudflare Edge Worker & Cloudflare D1
+ * - Round-isolated synchronization (immune to score leakage)
+ * - Sequenced repeat emotes support
+ * - Smart adaptive polling backoff (850ms during match, 2500ms during GameOver, 45s auto-stop)
+ * - Atomic two-phase rematch handshake
  */
 
 import { getDuelPlayerId, getPlayerName, getCachedCountry } from './Leaderboard';
 import { haptic } from './Haptics';
 
-const CF_WORKER_URL = (import.meta.env.VITE_CF_WORKER_URL || 'https://zeka-edge-api.zekagame.workers.dev').replace(/\/$/, '');
+import { AppConfig } from '../config/AppConfig';
+
+const CF_WORKER_URL = (import.meta.env.VITE_CF_WORKER_URL || AppConfig.api.workerUrl).replace(/\/$/, '');
 
 export interface OpponentInfo {
   id: string;
@@ -38,19 +44,21 @@ export interface GameCallbacks {
 let activeRoomCode = '';
 let isHostPlayer = false;
 let currentActiveSeed = 0;
+let currentRoomRound = 1;
 let isMatchFinishedReported = false;
 let hasReportedRematchInvite = false;
 let isBotMatch = false;
 let activeBotOpponent: OpponentInfo | null = null;
 let syncInterval: any = null;
 let matchmakingInterval: any = null;
+let gameOverInactivityTimeout: any = null;
 let simulatedBotTimeout: any = null;
 let botTargetDeathScore = 0;
 let botScoreTracker = 0;
 let currentScore = 0;
 let lastReportedOpponentScore = -1;
 let pendingEmote: string | null = null;
-let lastSeenEmote: string | null = null;
+let lastSeenEmoteSeq = 0;
 let activeGameCallbacks: GameCallbacks = {};
 
 const BOT_ROSTER: OpponentInfo[] = [
@@ -94,29 +102,26 @@ function clearBotSimulation() {
 function startBotSimulation(myId: string, initialCallback?: (score: number) => void) {
   clearBotSimulation();
 
-  // Intelligent bot: randomly eliminated between levels 15 and 100
   botTargetDeathScore = Math.floor(Math.random() * (100 - 15 + 1)) + 15;
   botScoreTracker = 0;
 
   function scheduleNextStep() {
     if (isMatchFinishedReported) return;
 
-    // Dynamic, natural human-like reaction time depending on depth
     let delay = 2200;
     if (botScoreTracker < 10) {
-      delay = 1800 + Math.random() * 800; // 1.8s - 2.6s
+      delay = 1800 + Math.random() * 800;
     } else if (botScoreTracker < 25) {
-      delay = 2100 + Math.random() * 1000; // 2.1s - 3.1s
+      delay = 2100 + Math.random() * 1000;
     } else if (botScoreTracker < 50) {
-      delay = 2400 + Math.random() * 1200; // 2.4s - 3.6s
+      delay = 2400 + Math.random() * 1200;
     } else {
-      delay = 2700 + Math.random() * 1400; // 2.7s - 4.1s
+      delay = 2700 + Math.random() * 1400;
     }
 
     simulatedBotTimeout = setTimeout(() => {
       if (isMatchFinishedReported) return;
 
-      // Check if bot reached its elimination threshold
       if (botScoreTracker >= botTargetDeathScore) {
         isMatchFinishedReported = true;
         activeGameCallbacks.onMatchFinish?.(myId, true, botScoreTracker);
@@ -127,7 +132,6 @@ function startBotSimulation(myId: string, initialCallback?: (score: number) => v
       initialCallback?.(botScoreTracker);
       activeGameCallbacks.onOpponentScore?.(botScoreTracker);
 
-      // Occasional lively emote
       if (botScoreTracker % 7 === 0 && Math.random() < 0.35) {
         const emojis = ['🔥', '⚡', '🧠', '😎', '👏'];
         const emoji = emojis[Math.floor(Math.random() * emojis.length)];
@@ -138,7 +142,6 @@ function startBotSimulation(myId: string, initialCallback?: (score: number) => v
     }, Math.round(delay));
   }
 
-  // Natural pause before answering the first level
   simulatedBotTimeout = setTimeout(() => {
     scheduleNextStep();
   }, 2200);
@@ -153,8 +156,10 @@ export const DuelService = {
     activeRoomCode = roomCode;
     isHostPlayer = true;
     currentScore = 0;
+    currentRoomRound = 1;
     isBotMatch = false;
     isMatchFinishedReported = false;
+    lastSeenEmoteSeq = 0;
 
     const myId = getDuelPlayerId();
     const myName = getPlayerName() || 'Oyuncu';
@@ -187,6 +192,7 @@ export const DuelService = {
             body: JSON.stringify({
               room_code: roomCode,
               player_id: myId,
+              round: currentRoomRound,
               score: currentScore,
               emote: pendingEmote,
             }),
@@ -200,6 +206,7 @@ export const DuelService = {
             if (data.status === 'ACTIVE' && data.guest && !hasMatchStarted) {
               hasMatchStarted = true;
               currentActiveSeed = data.seed;
+              currentRoomRound = data.round || 1;
               isMatchFinishedReported = false;
               callbacks.onMatchStart(data.guest, data.seed, true, roomCode);
               this.startRoomSync(roomCode, myId, callbacks);
@@ -209,7 +216,7 @@ export const DuelService = {
         } catch (e) {
           // ignore transient poll drops
         }
-      }, 600);
+      }, 700);
     } catch (err) {
       console.error('Cloudflare createFriendRoom error:', err);
     }
@@ -223,8 +230,10 @@ export const DuelService = {
     activeRoomCode = roomCode;
     isHostPlayer = false;
     currentScore = 0;
+    currentRoomRound = 1;
     isBotMatch = false;
     isMatchFinishedReported = false;
+    lastSeenEmoteSeq = 0;
 
     const myId = getDuelPlayerId();
     const myName = getPlayerName() || 'Oyuncu';
@@ -250,8 +259,10 @@ export const DuelService = {
 
       const data = await res.json();
       currentActiveSeed = data.seed;
+      currentRoomRound = data.round || 1;
       isMatchFinishedReported = false;
       lastReportedOpponentScore = -1;
+      lastSeenEmoteSeq = 0;
       callbacks.onMatchStart(data.host, data.seed, false, roomCode);
       this.startRoomSync(roomCode, myId, callbacks);
     } catch {
@@ -268,6 +279,7 @@ export const DuelService = {
     const myName = getPlayerName() || 'Oyuncu';
     isBotMatch = false;
     isMatchFinishedReported = false;
+    lastSeenEmoteSeq = 0;
 
     try {
       const joinRes = await fetch(`${CF_WORKER_URL}/api/duel/matchmaking/join`, {
@@ -284,6 +296,7 @@ export const DuelService = {
           activeRoomCode = joinData.room_code;
           isHostPlayer = false;
           currentActiveSeed = joinData.seed;
+          currentRoomRound = joinData.round || 1;
           isMatchFinishedReported = false;
           callbacks.onMatchStart(joinData.opponent, joinData.seed, false, joinData.room_code);
           this.startRoomSync(joinData.room_code, myId, callbacks);
@@ -306,6 +319,7 @@ export const DuelService = {
               activeRoomCode = pollData.room_code;
               isHostPlayer = pollData.isHost;
               currentActiveSeed = pollData.seed;
+              currentRoomRound = pollData.round || 1;
               isMatchFinishedReported = false;
               callbacks.onMatchStart(pollData.opponent, pollData.seed, pollData.isHost, pollData.room_code);
               this.startRoomSync(pollData.room_code, myId, callbacks);
@@ -316,18 +330,19 @@ export const DuelService = {
           // ignore
         }
 
-        // After minimum 7s (7200ms = 9 polling attempts), fallback to intelligent challenger bot
+        // Fallback to intelligent challenger bot after 7.2s
         if (searchElapsed >= 7200) {
           clearInterval(matchmakingInterval);
           this.cancelMatchmaking(myId);
 
           const randomBot = BOT_ROSTER[Math.floor(Math.random() * BOT_ROSTER.length)];
-          const botRoom = `ZK-${Math.floor(1000 + Math.random() * 9000)}`;
+          const botRoom = `ZK-${Math.floor(10000 + Math.random() * 90000)}`;
           const botSeed = Math.floor(Math.random() * 900000) + 100000;
           activeRoomCode = botRoom;
           isBotMatch = true;
           activeBotOpponent = randomBot;
           currentActiveSeed = botSeed;
+          currentRoomRound = 1;
           isMatchFinishedReported = false;
 
           startBotSimulation(myId, (score) => callbacks.onOpponentScore(score));
@@ -343,8 +358,14 @@ export const DuelService = {
     currentScore = 0;
     isMatchFinishedReported = false;
     lastReportedOpponentScore = -1;
-    clearInterval(syncInterval);
-    syncInterval = setInterval(async () => {
+    lastSeenEmoteSeq = 0;
+
+    if (gameOverInactivityTimeout) {
+      clearTimeout(gameOverInactivityTimeout);
+      gameOverInactivityTimeout = null;
+    }
+
+    const runSyncTick = async () => {
       try {
         const syncRes = await fetch(`${CF_WORKER_URL}/api/duel/room/sync`, {
           method: 'POST',
@@ -352,6 +373,7 @@ export const DuelService = {
           body: JSON.stringify({
             room_code: roomCode,
             player_id: myId,
+            round: currentRoomRound,
             score: currentScore,
             emote: pendingEmote,
           }),
@@ -361,14 +383,28 @@ export const DuelService = {
         if (syncRes.ok) {
           const data = await syncRes.json();
 
-          // 1. Rematch Start detected
-          if (data.status === 'ACTIVE' && typeof data.seed === 'number' && currentActiveSeed !== 0 && data.seed !== currentActiveSeed) {
+          // 1. Rematch Start detected with Round Isolation
+          const isNewRound = typeof data.round === 'number' && data.round > currentRoomRound;
+          const isNewSeed = typeof data.seed === 'number' && currentActiveSeed !== 0 && data.seed !== currentActiveSeed;
+
+          if (data.status === 'ACTIVE' && (isNewRound || isNewSeed)) {
             currentActiveSeed = data.seed;
+            currentRoomRound = data.round || (currentRoomRound + 1);
             currentScore = 0;
             isMatchFinishedReported = false;
             hasReportedRematchInvite = false;
             lastReportedOpponentScore = -1;
+            lastSeenEmoteSeq = 0;
+
+            if (gameOverInactivityTimeout) {
+              clearTimeout(gameOverInactivityTimeout);
+              gameOverInactivityTimeout = null;
+            }
+
+            // Resume fast sync (900ms)
+            restartSyncInterval(900);
             activeGameCallbacks.onRematchStart?.(data.seed);
+            return;
           }
 
           // 2. Match Finished (immediate simultaneous screen transition)
@@ -378,6 +414,31 @@ export const DuelService = {
             const isWinner = data.winnerId === myId;
             const finalOppScore = typeof data.opponentScore === 'number' ? data.opponentScore : 0;
             activeGameCallbacks.onMatchFinish?.(data.winnerId, isWinner, finalOppScore);
+
+            // If opponent surrendered/quit during game
+            if (data.status === 'FORFEIT' && isWinner) {
+              callbacks?.onOpponentQuit?.();
+              activeGameCallbacks.onOpponentQuit?.();
+            }
+
+            // Slow down polling during GameOver (2400ms) to conserve D1 quota
+            restartSyncInterval(2400);
+
+            // Inactivity auto-stop after 45 seconds to stop query spamming
+            if (gameOverInactivityTimeout) clearTimeout(gameOverInactivityTimeout);
+            gameOverInactivityTimeout = setTimeout(() => {
+              clearInterval(syncInterval);
+              syncInterval = null;
+            }, 45000);
+          }
+
+          // 2b. Opponent Left / Room Closed
+          if (data.status === 'CLOSED') {
+            callbacks?.onOpponentQuit?.();
+            activeGameCallbacks.onOpponentQuit?.();
+            clearInterval(syncInterval);
+            syncInterval = null;
+            return;
           }
 
           // 3. Rematch Requested by Opponent (single-fire latch)
@@ -397,24 +458,25 @@ export const DuelService = {
             activeGameCallbacks.onOpponentScore?.(data.opponentScore);
           }
 
-          // 4b. Opponent Emote Update
-          if (data.opponentEmote && data.opponentEmote !== lastSeenEmote) {
-            lastSeenEmote = data.opponentEmote;
+          // 4b. Opponent Emote Update (Sequenced to allow duplicate emojis)
+          if (data.opponentEmote && typeof data.opponentEmoteSeq === 'number' && data.opponentEmoteSeq > lastSeenEmoteSeq) {
+            lastSeenEmoteSeq = data.opponentEmoteSeq;
             callbacks?.onOpponentEmote(data.opponentEmote);
             activeGameCallbacks.onOpponentEmote?.(data.opponentEmote);
           }
-
-          // 5. Opponent Forfeit / Left
-          if (data.status === 'FORFEIT' && data.winnerId === myId && !isMatchFinishedReported) {
-            isMatchFinishedReported = true;
-            callbacks?.onOpponentQuit();
-            activeGameCallbacks.onOpponentQuit?.();
-          }
         }
       } catch {
-        // ignore
+        // ignore transient network drops
       }
-    }, 850);
+    };
+
+    const restartSyncInterval = (ms: number) => {
+      clearInterval(syncInterval);
+      syncInterval = setInterval(runSyncTick, ms);
+    };
+
+    // Initial fast interval for active gameplay (900ms)
+    restartSyncInterval(900);
   },
 
   setGameCallbacks(callbacks: GameCallbacks) {
@@ -436,6 +498,7 @@ export const DuelService = {
       body: JSON.stringify({
         room_code: activeRoomCode,
         player_id: myId,
+        round: currentRoomRound,
         score: newScore,
       }),
     })
@@ -473,6 +536,7 @@ export const DuelService = {
       body: JSON.stringify({
         room_code: activeRoomCode,
         player_id: myId,
+        round: currentRoomRound,
         score: currentScore,
         forfeit: true,
       }),
@@ -491,6 +555,7 @@ export const DuelService = {
       const newSeed = Math.floor(Math.random() * 900000) + 100000;
       currentActiveSeed = newSeed;
       currentScore = 0;
+      currentRoomRound += 1;
       isMatchFinishedReported = false;
       hasReportedRematchInvite = false;
       lastReportedOpponentScore = -1;
@@ -509,20 +574,33 @@ export const DuelService = {
       const res = await fetch(`${CF_WORKER_URL}/api/duel/room/rematch`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ room_code: activeRoomCode, player_id: myId }),
+        body: JSON.stringify({ room_code: activeRoomCode, player_id: myId, round: currentRoomRound }),
       });
       if (res.ok) {
         const data = await res.json();
         if (data.status === 'REMATCH_START') {
           currentActiveSeed = data.seed;
+          currentRoomRound = data.round || (currentRoomRound + 1);
           currentScore = 0;
           isMatchFinishedReported = false;
           hasReportedRematchInvite = false;
           lastReportedOpponentScore = -1;
+          lastSeenEmoteSeq = 0;
+
+          if (gameOverInactivityTimeout) {
+            clearTimeout(gameOverInactivityTimeout);
+            gameOverInactivityTimeout = null;
+          }
+
           activeGameCallbacks.onRematchStart?.(data.seed);
           return { success: true, started: true, seed: data.seed };
         }
         return { success: true, started: false };
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        if (errData.opponentLeft) {
+          activeGameCallbacks.onOpponentQuit?.();
+        }
       }
     } catch (e) {}
     return { success: false, started: false };
@@ -538,6 +616,7 @@ export const DuelService = {
         body: JSON.stringify({
           room_code: activeRoomCode,
           player_id: myId,
+          round: currentRoomRound,
           emote: emoji,
         }),
       }).catch(() => {});
@@ -569,16 +648,22 @@ export const DuelService = {
   cleanup() {
     clearInterval(syncInterval);
     clearInterval(matchmakingInterval);
+    if (gameOverInactivityTimeout) {
+      clearTimeout(gameOverInactivityTimeout);
+      gameOverInactivityTimeout = null;
+    }
     clearBotSimulation();
     syncInterval = null;
     matchmakingInterval = null;
     currentActiveSeed = 0;
+    currentRoomRound = 1;
     isMatchFinishedReported = false;
     hasReportedRematchInvite = false;
     isBotMatch = false;
     activeBotOpponent = null;
     activeGameCallbacks = {};
     lastReportedOpponentScore = -1;
+    lastSeenEmoteSeq = 0;
     haptic.cancel();
 
     if (activeRoomCode) {

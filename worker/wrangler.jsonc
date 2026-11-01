@@ -8,11 +8,6 @@
 			"binding": "DB",
 			"database_name": "zeka-db",
 			"database_id": "c65b29de-f61d-418f-b936-4b6be0671889"
-		},
-		{
-			"binding": "zeka_db",
-			"database_name": "zeka-db",
-			"database_id": "c65b29de-f61d-418f-b936-4b6be0671889"
 		}
 	]
 }

@@ -1,9 +1,10 @@
 import { AdMob, RewardAdPluginEvents } from '@capacitor-community/admob';
 import { Capacitor } from '@capacitor/core';
+import { AppConfig } from '../config/AppConfig';
 
 /**
  * ZEKA - Google Ads (AdMob) Integration Layer
- * Fixed for Verbatim Module Syntax and Capacitor Handle API.
+ * Connected to centralized AppConfig.ts
  */
 
 export interface AdResult {
@@ -17,11 +18,14 @@ class AdsService {
   private isAdPrepared: boolean = false;
   private isPreparing: boolean = false;
 
-  private config = {
-    rewardedAdIdAndroid: 'ca-app-pub-3940256099942544/5224354917',
-    rewardedAdIdIOS: 'ca-app-pub-3940256099942544/1712485313',
-    isEnabled: true 
-  };
+  private get config() {
+    return {
+      rewardedAdIdAndroid: AppConfig.admob.androidRewardedAdId,
+      rewardedAdIdIOS: AppConfig.admob.iosRewardedAdId,
+      isEnabled: AppConfig.admob.isEnabled,
+      isTesting: AppConfig.admob.isTesting,
+    };
+  }
 
   private constructor() {
     this.init();
@@ -39,7 +43,7 @@ class AdsService {
 
     try {
       await AdMob.initialize({
-        initializeForTesting: true,
+        initializeForTesting: this.config.isTesting,
       });
       this.isInitialized = true;
       this.preloadRewardedAd(); // Start preloading first ad

@@ -39,7 +39,7 @@ export const DuelModal: React.FC<DuelModalProps> = ({
   const [searchTimer, setSearchTimer] = useState(0);
   const matchStartedRef = useRef(false);
 
-  const hasEnoughCoins = coins >= 25;
+  const hasEnoughCoins = coins >= 50;
 
   // Generate clean room code when opened
   useEffect(() => {
