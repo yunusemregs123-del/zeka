@@ -210,6 +210,7 @@ function MenuScreen({
   const [isRestoring, setIsRestoring] = useState(false);
   const [codeCopied, setCodeCopied] = useState(false);
   const [showRestoreInput, setShowRestoreInput] = useState(false);
+  const [infoTab, setInfoTab] = useState<'settings' | 'symbols'>('settings');
 
   useEffect(() => {
     if (showInfo) {
@@ -641,187 +642,221 @@ function MenuScreen({
               transition={{ duration: 0.2 }}
               className="bg-white rounded-3xl p-5 w-full max-w-[340px] shadow-2xl relative"
             >
+              {/* Header with 2-Tab Switcher & Close */}
               <div className="flex justify-between items-center mb-3">
-                <h2 className="text-xl font-black">{t.info_title}</h2>
-                <button onClick={() => setShowInfo(false)} className="w-9 h-9 flex items-center justify-center bg-neutral-100 rounded-full hover:bg-neutral-200 transition-colors">
+                <div className="flex bg-neutral-100 p-0.5 rounded-2xl gap-1">
+                  <button
+                    onClick={() => setInfoTab('settings')}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all ${
+                      infoTab === 'settings'
+                        ? 'bg-white text-neutral-900 shadow-2xs'
+                        : 'text-neutral-400 hover:text-neutral-700'
+                    }`}
+                  >
+                    ⚙️ {t.settings_title || 'AYARLAR'}
+                  </button>
+                  <button
+                    onClick={() => setInfoTab('symbols')}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all ${
+                      infoTab === 'symbols'
+                        ? 'bg-white text-neutral-900 shadow-2xs'
+                        : 'text-neutral-400 hover:text-neutral-700'
+                    }`}
+                  >
+                    📖 {t.settings_tab_rules || 'Kurallar'}
+                  </button>
+                </div>
+
+                <button onClick={() => setShowInfo(false)} className="w-8 h-8 flex items-center justify-center bg-neutral-100 rounded-full hover:bg-neutral-200 transition-colors">
                   <span className="font-bold text-neutral-400 text-xs">✕</span>
                 </button>
               </div>
-              <p className="text-xs font-medium text-neutral-600 mb-4 leading-relaxed">
-                {t.info_desc}
-              </p>
 
-              {/* Settings Toggles */}
-              <div className="flex flex-col gap-2.5 mb-5">
-                <div className="flex items-center justify-between p-3 bg-neutral-50 rounded-2xl border border-neutral-100 shadow-sm">
-                  <div className="flex items-center gap-3">
-                    <div className={`w-8 h-8 rounded-xl flex items-center justify-center transition-colors ${!muteAudio ? 'bg-amber-100 text-amber-700' : 'bg-neutral-200 text-neutral-400'}`}>
-                      {!muteAudio ? <Icons.Volume className="w-4 h-4" /> : <Icons.VolumeMute className="w-4 h-4" />}
-                    </div>
-                    <span className="text-xs font-bold text-neutral-800 tracking-wide uppercase">{t.sound_toggle}</span>
-                  </div>
-                  <button
-                    onClick={toggleMute}
-                    className={`w-11 h-6 rounded-full p-0.5 transition-colors flex items-center ${!muteAudio ? 'bg-[#1D1D1F]' : 'bg-neutral-300'}`}
-                  >
-                    <div className={`w-5 h-5 rounded-full bg-white shadow-sm transition-transform ${!muteAudio ? 'translate-x-5' : 'translate-x-0'}`} />
-                  </button>
-                </div>
-
-                <div className="flex items-center justify-between p-3 bg-neutral-50 rounded-2xl border border-neutral-100 shadow-sm">
-                  <div className="flex items-center gap-3">
-                    <div className={`w-8 h-8 rounded-xl flex items-center justify-center transition-colors ${isHapticsOn ? 'bg-blue-100 text-blue-700' : 'bg-neutral-200 text-neutral-400'}`}>
-                      {isHapticsOn ? <Icons.Vibrate className="w-4 h-4" /> : <Icons.VibrateOff className="w-4 h-4" />}
-                    </div>
-                    <span className="text-xs font-bold text-neutral-800 tracking-wide uppercase">{t.haptics_toggle}</span>
-                  </div>
-                  <button
-                    onClick={toggleHaptics}
-                    className={`w-11 h-6 rounded-full p-0.5 transition-colors flex items-center ${isHapticsOn ? 'bg-[#1D1D1F]' : 'bg-neutral-300'}`}
-                  >
-                    <div className={`w-5 h-5 rounded-full bg-white shadow-sm transition-transform ${isHapticsOn ? 'translate-x-5' : 'translate-x-0'}`} />
-                  </button>
-                </div>
-              </div>
-
-              {/* COMPACT CLOUD SAVE & RECOVERY ROW */}
-              <div className="bg-neutral-50 rounded-2xl p-3 border border-neutral-100 shadow-2xs mb-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-sm">☁️</span>
-                    <span className="text-[11px] font-black text-neutral-800 tracking-wide uppercase">
-                      {t.cloud_save_title}
-                    </span>
-                    <span className="text-[9px] bg-emerald-100 text-emerald-800 font-bold px-1.5 py-0.5 rounded-full">
-                      {t.cloud_save_active}
-                    </span>
-                  </div>
-
-                  {/* Recovery Code Pill */}
-                  <div className="flex items-center gap-1 bg-white px-2 py-1 rounded-xl border border-neutral-200/90 shadow-2xs">
-                    <span className="text-xs font-black text-amber-600 font-mono tracking-wider">
-                      {cloudRecoveryCode || 'ZK-SYNC'}
-                    </span>
+              {infoTab === 'settings' ? (
+                /* ─── TAB 1: SETTINGS (COMPACT, ZERO SCROLL) ─── */
+                <div className="flex flex-col">
+                  {/* Sound & Haptics - Side-by-Side 2-Column Grid */}
+                  <div className="grid grid-cols-2 gap-2 mb-3">
+                    {/* Sound */}
                     <button
-                      onClick={() => {
-                        if (cloudRecoveryCode) {
-                          navigator.clipboard?.writeText(cloudRecoveryCode);
-                          setCodeCopied(true);
-                          haptic.notification('success');
-                          setTimeout(() => setCodeCopied(false), 2000);
-                        }
-                      }}
-                      className="p-0.5 text-neutral-500 hover:text-neutral-800 active:scale-95 text-[10px]"
-                      title={t.cloud_copy_btn}
+                      onClick={toggleMute}
+                      className="flex items-center justify-between p-2.5 bg-neutral-50 hover:bg-neutral-100/80 rounded-2xl border border-neutral-100 transition-all text-left"
                     >
-                      {codeCopied ? '✓' : '📋'}
+                      <div className="flex items-center gap-2">
+                        <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${!muteAudio ? 'bg-amber-100 text-amber-700' : 'bg-neutral-200 text-neutral-400'}`}>
+                          {!muteAudio ? <Icons.Volume className="w-3.5 h-3.5" /> : <Icons.VolumeMute className="w-3.5 h-3.5" />}
+                        </div>
+                        <span className="text-[11px] font-bold text-neutral-800">{t.sound_toggle || 'Ses'}</span>
+                      </div>
+                      <div className={`w-8 h-4 rounded-full p-0.5 transition-colors flex items-center ${!muteAudio ? 'bg-[#1D1D1F]' : 'bg-neutral-300'}`}>
+                        <div className={`w-3 h-3 rounded-full bg-white transition-transform ${!muteAudio ? 'translate-x-4' : 'translate-x-0'}`} />
+                      </div>
+                    </button>
+
+                    {/* Haptics */}
+                    <button
+                      onClick={toggleHaptics}
+                      className="flex items-center justify-between p-2.5 bg-neutral-50 hover:bg-neutral-100/80 rounded-2xl border border-neutral-100 transition-all text-left"
+                    >
+                      <div className="flex items-center gap-2">
+                        <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${isHapticsOn ? 'bg-blue-100 text-blue-700' : 'bg-neutral-200 text-neutral-400'}`}>
+                          {isHapticsOn ? <Icons.Vibrate className="w-3.5 h-3.5" /> : <Icons.VibrateOff className="w-3.5 h-3.5" />}
+                        </div>
+                        <span className="text-[11px] font-bold text-neutral-800">{t.haptics_toggle || 'Titreşim'}</span>
+                      </div>
+                      <div className={`w-8 h-4 rounded-full p-0.5 transition-colors flex items-center ${isHapticsOn ? 'bg-[#1D1D1F]' : 'bg-neutral-300'}`}>
+                        <div className={`w-3 h-3 rounded-full bg-white transition-transform ${isHapticsOn ? 'translate-x-4' : 'translate-x-0'}`} />
+                      </div>
+                    </button>
+                  </div>
+
+                  {/* Compact Cloud Save Row */}
+                  <div className="bg-neutral-50 rounded-2xl p-2.5 border border-neutral-100 shadow-2xs mb-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-sm">☁️</span>
+                        <span className="text-[11px] font-black text-neutral-800 tracking-wide uppercase">
+                          {t.cloud_save_title}
+                        </span>
+                        <span className="text-[9px] bg-emerald-100 text-emerald-800 font-bold px-1.5 py-0.5 rounded-full">
+                          {t.cloud_save_active}
+                        </span>
+                      </div>
+
+                      {/* Recovery Code Pill */}
+                      <div className="flex items-center gap-1 bg-white px-2 py-0.5 rounded-xl border border-neutral-200/90 shadow-2xs">
+                        <span className="text-xs font-black text-amber-600 font-mono tracking-wider">
+                          {cloudRecoveryCode || 'ZK-SYNC'}
+                        </span>
+                        <button
+                          onClick={() => {
+                            if (cloudRecoveryCode) {
+                              navigator.clipboard?.writeText(cloudRecoveryCode);
+                              setCodeCopied(true);
+                              haptic.notification('success');
+                              setTimeout(() => setCodeCopied(false), 2000);
+                            }
+                          }}
+                          className="p-0.5 text-neutral-500 hover:text-neutral-800 active:scale-95 text-[10px]"
+                          title={t.cloud_copy_btn}
+                        >
+                          {codeCopied ? '✓' : '📋'}
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Restore Dropdown Toggle */}
+                    <div className="mt-2 pt-1.5 border-t border-neutral-200/60">
+                      <button
+                        onClick={() => setShowRestoreInput(!showRestoreInput)}
+                        className="text-[10px] font-bold text-neutral-500 hover:text-neutral-800 flex items-center justify-between w-full"
+                      >
+                        <span>{t.cloud_restore_toggle || 'Kodu Gir & Geri Yükle ▾'}</span>
+                        <span className="text-[9px] text-neutral-400">{showRestoreInput ? '▲' : '▼'}</span>
+                      </button>
+
+                      {showRestoreInput && (
+                        <div className="mt-2 flex flex-col gap-1.5">
+                          <div className="flex gap-1.5">
+                            <input
+                              type="text"
+                              placeholder={t.cloud_restore_placeholder}
+                              value={restoreCodeInput}
+                              onChange={(e) => setRestoreCodeInput(e.target.value.toUpperCase())}
+                              className="flex-1 px-2.5 py-1.5 bg-white rounded-xl border border-neutral-200 text-xs font-mono font-bold tracking-wider uppercase focus:outline-none focus:border-amber-500"
+                              maxLength={10}
+                            />
+                            <button
+                              disabled={isRestoring || !restoreCodeInput.trim()}
+                              onClick={async () => {
+                                setIsRestoring(true);
+                                setRestoreStatus(null);
+                                const res = await AuthService.recoverWithCode(restoreCodeInput);
+                                setIsRestoring(false);
+                                if (res.success) {
+                                  setRestoreStatus({ text: t.cloud_restore_success, error: false });
+                                  setCloudRecoveryCode(res.account?.recovery_code || restoreCodeInput);
+                                  setRestoreCodeInput('');
+                                  haptic.notification('success');
+                                } else {
+                                  setRestoreStatus({ text: res.error || 'Hata oluştu', error: true });
+                                  haptic.notification('error');
+                                }
+                              }}
+                              className="px-3 py-1.5 bg-[#1D1D1F] hover:bg-black text-white text-[11px] font-black rounded-xl active:scale-95 disabled:opacity-40 transition-all"
+                            >
+                              {isRestoring ? '...' : t.cloud_restore_btn}
+                            </button>
+                          </div>
+                          {restoreStatus && (
+                            <p className={`text-[10px] font-bold ${restoreStatus.error ? 'text-red-500' : 'text-emerald-600'}`}>
+                              {restoreStatus.text}
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* If guest, show Link Account button */}
+                    {AuthService.getAuthProvider() === 'guest' && openOnboarding && (
+                      <button
+                        onClick={() => {
+                          setShowInfo(false);
+                          openOnboarding();
+                        }}
+                        className="w-full mt-2 py-1.5 bg-white hover:bg-neutral-100 border border-neutral-200 rounded-xl text-neutral-800 font-bold text-[11px] flex items-center justify-center gap-1.5 transition-all shadow-2xs"
+                      >
+                        <span>🔗</span>
+                        <span>{t.cloud_link_account || 'Google / Apple ile Hesabını Bağla'}</span>
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Clean Minimal Footer */}
+                  <div className="pt-2 border-t border-neutral-100 flex items-center justify-between">
+                    <span className="text-[10px] font-bold text-neutral-400">ARCN Games • v1.0</span>
+                    <button
+                      onClick={() => window.open('https://your-privacy-policy-link-here.com', '_blank')}
+                      className="text-[10px] font-bold text-blue-500 hover:underline"
+                    >
+                      {t.privacy_policy || "Gizlilik Politikası"} ↗
                     </button>
                   </div>
                 </div>
-
-                {/* Restore Dropdown Toggle */}
-                <div className="mt-2 pt-1.5 border-t border-neutral-200/60">
-                  <button
-                    onClick={() => setShowRestoreInput(!showRestoreInput)}
-                    className="text-[10px] font-bold text-neutral-500 hover:text-neutral-800 flex items-center justify-between w-full"
-                  >
-                    <span>{t.cloud_restore_toggle || 'Kodu Gir & Geri Yükle ▾'}</span>
-                    <span className="text-[9px] text-neutral-400">{showRestoreInput ? '▲' : '▼'}</span>
-                  </button>
-
-                  {showRestoreInput && (
-                    <div className="mt-2 flex flex-col gap-1.5">
-                      <div className="flex gap-1.5">
-                        <input
-                          type="text"
-                          placeholder={t.cloud_restore_placeholder}
-                          value={restoreCodeInput}
-                          onChange={(e) => setRestoreCodeInput(e.target.value.toUpperCase())}
-                          className="flex-1 px-2.5 py-1.5 bg-white rounded-xl border border-neutral-200 text-xs font-mono font-bold tracking-wider uppercase focus:outline-none focus:border-amber-500"
-                          maxLength={10}
-                        />
-                        <button
-                          disabled={isRestoring || !restoreCodeInput.trim()}
-                          onClick={async () => {
-                            setIsRestoring(true);
-                            setRestoreStatus(null);
-                            const res = await AuthService.recoverWithCode(restoreCodeInput);
-                            setIsRestoring(false);
-                            if (res.success) {
-                              setRestoreStatus({ text: t.cloud_restore_success, error: false });
-                              setCloudRecoveryCode(res.account?.recovery_code || restoreCodeInput);
-                              setRestoreCodeInput('');
-                              haptic.notification('success');
-                            } else {
-                              setRestoreStatus({ text: res.error || 'Hata oluştu', error: true });
-                              haptic.notification('error');
-                            }
-                          }}
-                          className="px-3 py-1.5 bg-[#1D1D1F] hover:bg-black text-white text-[11px] font-black rounded-xl active:scale-95 disabled:opacity-40 transition-all"
-                        >
-                          {isRestoring ? '...' : t.cloud_restore_btn}
-                        </button>
+              ) : (
+                /* ─── TAB 2: RULES & SYMBOLS GUIDE (SCROLLABLE) ─── */
+                <div className="flex flex-col">
+                  <p className="text-[11px] font-medium text-neutral-500 mb-2 leading-tight">
+                    {t.info_desc}
+                  </p>
+                  <div className="flex flex-col gap-1.5 max-h-[260px] overflow-y-auto pr-1">
+                    {[
+                      { symKey: 'CircleFilled', label: t.info_sym1, desc: t.info_sym1_desc || Translations['en'].info_sym1_desc },
+                      { symKey: 'CircleEmpty', label: t.info_sym1_neg, desc: t.info_sym1_neg_desc || Translations['en'].info_sym1_neg_desc },
+                      { symKey: 'TriangleUp', label: t.info_sym2, desc: t.info_sym2_desc || Translations['en'].info_sym2_desc },
+                      { symKey: 'TriangleDown', label: t.info_sym2_neg, desc: t.info_sym2_neg_desc || Translations['en'].info_sym2_neg_desc },
+                      { symKey: 'Mul2', label: t.info_sym5, desc: t.info_sym5_desc || Translations['en'].info_sym5_desc },
+                      { symKey: 'Div2', label: t.info_sym6, desc: t.info_sym6_desc || Translations['en'].info_sym6_desc },
+                      { symKey: 'Prev1', label: t.info_sym3, desc: t.info_sym3_desc || Translations['en'].info_sym3_desc },
+                      { symKey: 'ReverseNext', label: t.info_sym7, desc: t.info_sym7_desc || Translations['en'].info_sym7_desc },
+                      { symKey: 'InvertAll', label: t.info_sym9, desc: t.info_sym9_desc || Translations['en'].info_sym9_desc },
+                      { symKey: 'Star', label: t.info_sym8, desc: t.info_sym8_desc || Translations['en'].info_sym8_desc },
+                      { symKey: 'Heart', label: t.info_sym10, desc: t.info_sym10_desc || Translations['en'].info_sym10_desc },
+                      { symKey: 'Prev2', label: t.info_sym4, desc: t.info_sym4_desc || Translations['en'].info_sym4_desc },
+                    ].map((item, i) => (
+                      <div key={`info-${item.symKey}-${i}`} className="flex items-start gap-2.5 bg-neutral-50/80 p-2.5 rounded-2xl border border-neutral-100 shadow-2xs">
+                        <div className="w-8 h-8 bg-white shrink-0 shadow-2xs rounded-xl border border-neutral-200 flex items-center justify-center">
+                          <GameSymbol type={item.symKey as SymbolType} size="small" />
+                        </div>
+                        <div className="flex flex-col flex-1 pt-0.5">
+                          <span className="text-[10px] font-black text-neutral-800 uppercase tracking-widest">{item.label}</span>
+                          <span className="text-[9px] font-medium text-neutral-500 leading-tight mt-0.5">{item.desc}</span>
+                        </div>
                       </div>
-                      {restoreStatus && (
-                        <p className={`text-[10px] font-bold ${restoreStatus.error ? 'text-red-500' : 'text-emerald-600'}`}>
-                          {restoreStatus.text}
-                        </p>
-                      )}
-                    </div>
-                  )}
-                </div>
-
-                {/* If guest, show Link Account button */}
-                {AuthService.getAuthProvider() === 'guest' && openOnboarding && (
-                  <button
-                    onClick={() => {
-                      setShowInfo(false);
-                      openOnboarding();
-                    }}
-                    className="w-full mt-2 py-1.5 bg-white hover:bg-neutral-100 border border-neutral-200 rounded-xl text-neutral-800 font-bold text-[11px] flex items-center justify-center gap-1.5 transition-all shadow-2xs"
-                  >
-                    <span>🔗</span>
-                    <span>{t.cloud_link_account || 'Google / Apple ile Hesabını Bağla'}</span>
-                  </button>
-                )}
-              </div>
-
-              <div className="flex flex-col gap-2 mb-6 max-h-[220px] overflow-y-auto pr-1">
-                {[
-                  { symKey: 'CircleFilled', label: t.info_sym1, desc: t.info_sym1_desc || Translations['en'].info_sym1_desc },
-                  { symKey: 'CircleEmpty', label: t.info_sym1_neg, desc: t.info_sym1_neg_desc || Translations['en'].info_sym1_neg_desc },
-                  { symKey: 'TriangleUp', label: t.info_sym2, desc: t.info_sym2_desc || Translations['en'].info_sym2_desc },
-                  { symKey: 'TriangleDown', label: t.info_sym2_neg, desc: t.info_sym2_neg_desc || Translations['en'].info_sym2_neg_desc },
-                  { symKey: 'Mul2', label: t.info_sym5, desc: t.info_sym5_desc || Translations['en'].info_sym5_desc },
-                  { symKey: 'Div2', label: t.info_sym6, desc: t.info_sym6_desc || Translations['en'].info_sym6_desc },
-                  { symKey: 'Prev1', label: t.info_sym3, desc: t.info_sym3_desc || Translations['en'].info_sym3_desc },
-                  { symKey: 'ReverseNext', label: t.info_sym7, desc: t.info_sym7_desc || Translations['en'].info_sym7_desc },
-                  { symKey: 'InvertAll', label: t.info_sym9, desc: t.info_sym9_desc || Translations['en'].info_sym9_desc },
-                  { symKey: 'Star', label: t.info_sym8, desc: t.info_sym8_desc || Translations['en'].info_sym8_desc },
-                  { symKey: 'Heart', label: t.info_sym10, desc: t.info_sym10_desc || Translations['en'].info_sym10_desc },
-                  { symKey: 'Prev2', label: t.info_sym4, desc: t.info_sym4_desc || Translations['en'].info_sym4_desc },
-                ].map((item, i) => (
-                  <div key={`info-${item.symKey}-${i}`} className="flex items-start gap-3 bg-neutral-50/80 p-3 rounded-2xl border border-neutral-100 shadow-sm">
-                    <div className="w-10 h-10 bg-white shrink-0 shadow-sm rounded-xl border border-neutral-200 flex items-center justify-center">
-                      <GameSymbol type={item.symKey as SymbolType} size="small" />
-                    </div>
-                    <div className="flex flex-col flex-1 pt-0.5">
-                      <span className="text-[10px] sm:text-xs font-black text-neutral-800 uppercase tracking-widest">{item.label}</span>
-                      <span className="text-[9px] sm:text-[10px] font-medium text-neutral-500 leading-tight mt-0.5">{item.desc}</span>
-                    </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-
-              <div className="text-center mb-6">
-                <span className="text-[10px] font-black tracking-widest text-neutral-400 uppercase block mb-1">{t.info_dev}</span>
-                <span className="text-sm font-bold text-[#1D1D1F]">ARCN Games</span>
-              </div>
-              <div className="flex flex-col gap-2">
-                <button onClick={() => window.open('https://your-privacy-policy-link-here.com', '_blank')} className="w-full py-2 bg-neutral-50 text-blue-500 rounded-xl font-bold tracking-wider text-xs md:text-sm hover:bg-neutral-100 border border-neutral-200">
-                  {t.privacy_policy || "Gizlilik Politikası (Privacy Policy)"} ↗
-                </button>
-              </div>
+                </div>
+              )}
             </motion.div>
           </div>
         )}

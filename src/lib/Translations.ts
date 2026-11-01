@@ -283,6 +283,7 @@ export const Translations: Record<LanguageCode, Record<string, string>> = {
     onboarding_guest: "Play as Guest",
     onboarding_terms: "By continuing, you accept our Privacy Policy & Terms of Service.",
     brain_share_unified: "SHARE BRAIN REPORT",
+    settings_tab_rules: "Rules & Symbols",
   },
   tr: {
     "btn_plus10": "+10 SN",
@@ -566,6 +567,7 @@ export const Translations: Record<LanguageCode, Record<string, string>> = {
     onboarding_guest: "Misafir Olarak Başla",
     onboarding_terms: "Devam ederek Gizlilik Politikası ve Kullanım Şartları'nı kabul etmiş olursunuz.",
     brain_share_unified: "BEYİN RAPORUNU PAYLAŞ",
+    settings_tab_rules: "Kurallar & Semboller",
   },
   de: {
     "btn_plus10": "+10 SEK",
@@ -849,6 +851,7 @@ export const Translations: Record<LanguageCode, Record<string, string>> = {
     onboarding_guest: "Als Gast spielen",
     onboarding_terms: "Mit dem Fortfahren akzeptieren Sie unsere Datenschutz- & Nutzungsbedingungen.",
     brain_share_unified: "GEHIRNBERICHT TEILEN",
+    settings_tab_rules: "Regeln & Symbole",
   },
   ja: {
     "btn_plus10": "+10 秒",
@@ -1132,6 +1135,7 @@ export const Translations: Record<LanguageCode, Record<string, string>> = {
     onboarding_guest: "ゲストとしてプレイ",
     onboarding_terms: "続行すると、利用規約およびプライバシーポリシーに同意したことになります。",
     brain_share_unified: "脳年齢レポートを共有",
+    settings_tab_rules: "ルール＆記号",
   },
   pt: {
     "btn_plus10": "+10 SEG",
@@ -1415,5 +1419,6 @@ export const Translations: Record<LanguageCode, Record<string, string>> = {
     onboarding_guest: "Jogar como Convidado",
     onboarding_terms: "Ao continuar, você concorda com nossos Termos e Política de Privacidade.",
     brain_share_unified: "COMPARTILHAR RELATÓRIO",
+    settings_tab_rules: "Regras & Símbolos",
   }
 };
