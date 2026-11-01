@@ -967,6 +967,19 @@ export default {
             existingUser.id
           ).run();
 
+          // Seamless leaderboard name migration: if player changed/upgraded name, migrate scores
+          if (existingUser.player_name && existingUser.player_name !== playerName && deviceId) {
+            try {
+              await env.DB.batch([
+                env.DB.prepare('UPDATE OR IGNORE scores_alltime SET player_name = ? WHERE device_id = ? AND device_id != ?').bind(playerName, deviceId, ''),
+                env.DB.prepare('UPDATE OR IGNORE scores_daily SET player_name = ? WHERE device_id = ? AND device_id != ?').bind(playerName, deviceId, ''),
+                env.DB.prepare('UPDATE OR IGNORE scores_weekly SET player_name = ? WHERE device_id = ? AND device_id != ?').bind(playerName, deviceId, '')
+              ]);
+            } catch (e) {
+              console.warn('Leaderboard rename skipped:', e);
+            }
+          }
+
           return json({
             success: true,
             account_id: existingUser.id,

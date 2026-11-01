@@ -4,7 +4,7 @@
  */
 
 import { AppConfig } from '../config/AppConfig';
-import { getDeviceId, getPlayerName } from './Leaderboard';
+import { getDeviceId, getPlayerName, setPlayerName } from './Leaderboard';
 import { useGameStore } from '../store/useGameStore';
 
 const CF_WORKER_URL = (import.meta.env.VITE_CF_WORKER_URL || AppConfig.api.workerUrl).replace(/\/$/, '');
@@ -148,8 +148,11 @@ export const AuthService = {
    * Hook for Google Play / Google Sign-In
    * When user clicks "Sign In with Google", pass the Google User ID here.
    */
-  async signInWithGoogle(googleUserId: string, _googleUserName?: string): Promise<boolean> {
+  async signInWithGoogle(googleUserId: string, googleUserName?: string): Promise<boolean> {
     if (!googleUserId) return false;
+    if (googleUserName && googleUserName.trim()) {
+      setPlayerName(googleUserName);
+    }
     const account = await this.syncNow('google', googleUserId);
     return !!account;
   },
@@ -158,8 +161,11 @@ export const AuthService = {
    * Hook for Apple Sign-In
    * When user clicks "Sign In with Apple", pass the Apple User ID here.
    */
-  async signInWithApple(appleUserId: string, _appleUserName?: string): Promise<boolean> {
+  async signInWithApple(appleUserId: string, appleUserName?: string): Promise<boolean> {
     if (!appleUserId) return false;
+    if (appleUserName && appleUserName.trim()) {
+      setPlayerName(appleUserName);
+    }
     const account = await this.syncNow('apple', appleUserId);
     return !!account;
   },

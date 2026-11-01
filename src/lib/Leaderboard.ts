@@ -45,8 +45,18 @@ export function getDuelPlayerId(): string {
   }
 }
 
+export function generateGuestName(): string {
+  const randomDigits = Math.floor(1000 + Math.random() * 9000);
+  return `Zeka_${randomDigits}`;
+}
+
 export function getPlayerName(): string {
-  return localStorage.getItem(PLAYER_NAME_KEY) || '';
+  let name = localStorage.getItem(PLAYER_NAME_KEY);
+  if (!name || name.trim() === '' || name === 'Oyuncu') {
+    name = generateGuestName();
+    localStorage.setItem(PLAYER_NAME_KEY, name);
+  }
+  return name;
 }
 
 export function setPlayerName(name: string): void {

@@ -165,7 +165,8 @@ function MenuScreen({
   showMedals, setShowMedals,
   selectedMedal, setSelectedMedal,
   showLangMenu, setShowLangMenu,
-  openBrainStats, openDuel
+  openBrainStats, openDuel,
+  openOnboarding
 }: {
   startGame: (asDev?: boolean, startLevel?: number, mode?: GameMode) => void,
   openDailyReward: () => void,
@@ -177,6 +178,7 @@ function MenuScreen({
   showLangMenu: boolean, setShowLangMenu: (v: boolean) => void,
   openBrainStats: () => void,
   openDuel: () => void,
+  openOnboarding?: () => void,
 }) {
   const {
     language, setLanguage, medals, claimedMedals, claimMedalReward,
@@ -207,6 +209,7 @@ function MenuScreen({
   const [restoreStatus, setRestoreStatus] = useState<{ text: string; error: boolean } | null>(null);
   const [isRestoring, setIsRestoring] = useState(false);
   const [codeCopied, setCodeCopied] = useState(false);
+  const [showRestoreInput, setShowRestoreInput] = useState(false);
 
   useEffect(() => {
     if (showInfo) {
@@ -681,85 +684,105 @@ function MenuScreen({
                 </div>
               </div>
 
-              {/* CLOUD SAVE & ACCOUNT RECOVERY CARD */}
-              <div className="bg-neutral-50 rounded-2xl p-3.5 border border-neutral-100 shadow-sm mb-5">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
+              {/* COMPACT CLOUD SAVE & RECOVERY ROW */}
+              <div className="bg-neutral-50 rounded-2xl p-3 border border-neutral-100 shadow-2xs mb-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5">
                     <span className="text-sm">☁️</span>
-                    <span className="text-xs font-black text-neutral-800 tracking-wide uppercase">
+                    <span className="text-[11px] font-black text-neutral-800 tracking-wide uppercase">
                       {t.cloud_save_title}
                     </span>
+                    <span className="text-[9px] bg-emerald-100 text-emerald-800 font-bold px-1.5 py-0.5 rounded-full">
+                      {t.cloud_save_active}
+                    </span>
                   </div>
-                  <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full">
-                    {t.cloud_save_active}
-                  </span>
+
+                  {/* Recovery Code Pill */}
+                  <div className="flex items-center gap-1 bg-white px-2 py-1 rounded-xl border border-neutral-200/90 shadow-2xs">
+                    <span className="text-xs font-black text-amber-600 font-mono tracking-wider">
+                      {cloudRecoveryCode || 'ZK-SYNC'}
+                    </span>
+                    <button
+                      onClick={() => {
+                        if (cloudRecoveryCode) {
+                          navigator.clipboard?.writeText(cloudRecoveryCode);
+                          setCodeCopied(true);
+                          haptic.notification('success');
+                          setTimeout(() => setCodeCopied(false), 2000);
+                        }
+                      }}
+                      className="p-0.5 text-neutral-500 hover:text-neutral-800 active:scale-95 text-[10px]"
+                      title={t.cloud_copy_btn}
+                    >
+                      {codeCopied ? '✓' : '📋'}
+                    </button>
+                  </div>
                 </div>
 
-                <div className="bg-white rounded-xl p-2.5 border border-neutral-200/80 flex items-center justify-between mb-2">
-                  <div className="flex flex-col">
-                    <span className="text-[9px] font-bold text-neutral-400 uppercase tracking-widest">
-                      {t.cloud_recovery_label}
-                    </span>
-                    <span className="text-sm font-black text-amber-600 font-mono tracking-wider">
-                      {cloudRecoveryCode || 'ZK-SYNC...'}
-                    </span>
-                  </div>
+                {/* Restore Dropdown Toggle */}
+                <div className="mt-2 pt-1.5 border-t border-neutral-200/60">
+                  <button
+                    onClick={() => setShowRestoreInput(!showRestoreInput)}
+                    className="text-[10px] font-bold text-neutral-500 hover:text-neutral-800 flex items-center justify-between w-full"
+                  >
+                    <span>{t.cloud_restore_toggle || 'Kodu Gir & Geri Yükle ▾'}</span>
+                    <span className="text-[9px] text-neutral-400">{showRestoreInput ? '▲' : '▼'}</span>
+                  </button>
+
+                  {showRestoreInput && (
+                    <div className="mt-2 flex flex-col gap-1.5">
+                      <div className="flex gap-1.5">
+                        <input
+                          type="text"
+                          placeholder={t.cloud_restore_placeholder}
+                          value={restoreCodeInput}
+                          onChange={(e) => setRestoreCodeInput(e.target.value.toUpperCase())}
+                          className="flex-1 px-2.5 py-1.5 bg-white rounded-xl border border-neutral-200 text-xs font-mono font-bold tracking-wider uppercase focus:outline-none focus:border-amber-500"
+                          maxLength={10}
+                        />
+                        <button
+                          disabled={isRestoring || !restoreCodeInput.trim()}
+                          onClick={async () => {
+                            setIsRestoring(true);
+                            setRestoreStatus(null);
+                            const res = await AuthService.recoverWithCode(restoreCodeInput);
+                            setIsRestoring(false);
+                            if (res.success) {
+                              setRestoreStatus({ text: t.cloud_restore_success, error: false });
+                              setCloudRecoveryCode(res.account?.recovery_code || restoreCodeInput);
+                              setRestoreCodeInput('');
+                              haptic.notification('success');
+                            } else {
+                              setRestoreStatus({ text: res.error || 'Hata oluştu', error: true });
+                              haptic.notification('error');
+                            }
+                          }}
+                          className="px-3 py-1.5 bg-[#1D1D1F] hover:bg-black text-white text-[11px] font-black rounded-xl active:scale-95 disabled:opacity-40 transition-all"
+                        >
+                          {isRestoring ? '...' : t.cloud_restore_btn}
+                        </button>
+                      </div>
+                      {restoreStatus && (
+                        <p className={`text-[10px] font-bold ${restoreStatus.error ? 'text-red-500' : 'text-emerald-600'}`}>
+                          {restoreStatus.text}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* If guest, show Link Account button */}
+                {AuthService.getAuthProvider() === 'guest' && openOnboarding && (
                   <button
                     onClick={() => {
-                      if (cloudRecoveryCode) {
-                        navigator.clipboard?.writeText(cloudRecoveryCode);
-                        setCodeCopied(true);
-                        haptic.notification('success');
-                        setTimeout(() => setCodeCopied(false), 2000);
-                      }
+                      setShowInfo(false);
+                      openOnboarding();
                     }}
-                    className="px-3 py-1.5 bg-neutral-100 hover:bg-neutral-200 active:scale-95 transition-all text-[10px] font-black text-neutral-700 rounded-lg"
+                    className="w-full mt-2 py-1.5 bg-white hover:bg-neutral-100 border border-neutral-200 rounded-xl text-neutral-800 font-bold text-[11px] flex items-center justify-center gap-1.5 transition-all shadow-2xs"
                   >
-                    {codeCopied ? t.cloud_copied_btn : t.cloud_copy_btn}
+                    <span>🔗</span>
+                    <span>{t.cloud_link_account || 'Google / Apple ile Hesabını Bağla'}</span>
                   </button>
-                </div>
-
-                <p className="text-[10px] text-neutral-500 leading-tight mb-3">
-                  {t.cloud_save_desc}
-                </p>
-
-                {/* Restore input */}
-                <div className="flex gap-1.5 mb-2">
-                  <input
-                    type="text"
-                    placeholder={t.cloud_restore_placeholder}
-                    value={restoreCodeInput}
-                    onChange={(e) => setRestoreCodeInput(e.target.value.toUpperCase())}
-                    className="flex-1 px-3 py-2 bg-white rounded-xl border border-neutral-200 text-xs font-mono font-bold tracking-wider uppercase focus:outline-none focus:border-amber-500"
-                    maxLength={10}
-                  />
-                  <button
-                    disabled={isRestoring || !restoreCodeInput.trim()}
-                    onClick={async () => {
-                      setIsRestoring(true);
-                      setRestoreStatus(null);
-                      const res = await AuthService.recoverWithCode(restoreCodeInput);
-                      setIsRestoring(false);
-                      if (res.success) {
-                        setRestoreStatus({ text: t.cloud_restore_success, error: false });
-                        setCloudRecoveryCode(res.account?.recovery_code || restoreCodeInput);
-                        setRestoreCodeInput('');
-                        haptic.notification('success');
-                      } else {
-                        setRestoreStatus({ text: res.error || 'Hata oluştu', error: true });
-                        haptic.notification('error');
-                      }
-                    }}
-                    className="px-3.5 py-2 bg-[#1D1D1F] hover:bg-black text-white text-xs font-black rounded-xl active:scale-95 disabled:opacity-40 transition-all"
-                  >
-                    {isRestoring ? '...' : t.cloud_restore_btn}
-                  </button>
-                </div>
-
-                {restoreStatus && (
-                  <p className={`text-[10px] font-bold ${restoreStatus.error ? 'text-red-500' : 'text-emerald-600'}`}>
-                    {restoreStatus.text}
-                  </p>
                 )}
               </div>
 
@@ -1847,13 +1870,12 @@ export default function App() {
     startDuelCountdown();
   };
 
-  // AUTO-SHOW TRACKING MODAL FOR NEW PLAYERS
+  // AUTO-SHOW ONBOARDING & TERMS FOR NEW PLAYERS
   useEffect(() => {
-    const hasSeenTracking = localStorage.getItem('tracking_seen_v1'); // New key to force reset
+    const hasSeenTracking = localStorage.getItem('tracking_seen_v1');
     if (!hasSeenTracking) {
       setTimeout(() => {
         setShowTrackingModal(true);
-        localStorage.setItem('tracking_seen_v1', 'true');
       }, 500);
     }
   }, []);
@@ -2229,6 +2251,7 @@ export default function App() {
             showLangMenu={showLangMenu} setShowLangMenu={setShowLangMenu}
             openBrainStats={() => setShowBrainStats(true)}
             openDuel={() => setShowDuel(true)}
+            openOnboarding={() => setShowTrackingModal(true)}
           />
         ) : gameState === 'GAMEOVER' ? (
           <GameOverScreen
@@ -2652,11 +2675,97 @@ export default function App() {
         <div className="fixed inset-0 pointer-events-none z-[1000]">
           <AnimatePresence>
             {showTrackingModal && (
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 pointer-events-auto">
-                <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-white p-8 rounded-[2rem] max-w-[320px] shadow-2xl text-center">
-                  <h2 className="text-xl font-black mb-4 uppercase">{t.att_title}</h2>
-                  <p className="text-neutral-500 mb-6 text-xs">{t.att_desc}</p>
-                  <button onClick={() => setShowTrackingModal(false)} className="w-full py-3 bg-blue-500 text-white rounded-full font-black text-xs uppercase shadow-lg shadow-blue-500/30">{t.att_continue}</button>
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 pointer-events-auto">
+                <motion.div initial={{ scale: 0.9, opacity: 0, y: 15 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0, y: 15 }} className="bg-white p-6 sm:p-7 rounded-[2.2rem] max-w-[340px] w-full shadow-2xl text-center relative overflow-hidden border border-neutral-100">
+                  {/* Decorative Brand Header */}
+                  <div className="flex flex-col items-center mb-3">
+                    <div className="w-14 h-14 rounded-2xl bg-[#1D1D1F] border border-neutral-700 shadow-md flex items-center justify-center mb-2.5 relative">
+                      <span className="text-2xl font-black text-white">Z</span>
+                      <span className="absolute -top-1 -right-1 w-4 h-4 bg-amber-400 rounded-full border-2 border-white flex items-center justify-center text-[8px] font-black">⚡</span>
+                    </div>
+                    <h2 className="text-lg font-black tracking-tight text-[#1D1D1F] uppercase">{t.onboarding_title || "ZEKA'YA HOŞ GELDİN"}</h2>
+                    <p className="text-neutral-500 mt-1 text-[11px] leading-relaxed">
+                      {t.onboarding_subtitle || "Zihnini saf hesaplama ve gerçek zamanlı düellolarla geliştir."}
+                    </p>
+                  </div>
+
+                  {/* Feature Badges */}
+                  <div className="flex items-center justify-center gap-1.5 mb-4 text-[9px] font-bold text-neutral-600 bg-neutral-50 py-1.5 px-3 rounded-full border border-neutral-100">
+                    <span>⚡ Düellolar</span>
+                    <span>•</span>
+                    <span>🧠 Bilişsel Skor</span>
+                    <span>•</span>
+                    <span>☁️ Bulut Kaydı</span>
+                  </div>
+
+                  {/* Auth & Guest Action Buttons */}
+                  <div className="flex flex-col gap-2 mb-4">
+                    {/* Google Sign-In */}
+                    <button
+                      onClick={async () => {
+                        haptic.impact('medium');
+                        playSound('click');
+                        localStorage.setItem('tracking_seen_v1', 'true');
+                        await AuthService.signInWithGoogle('google_' + Leaderboard.getDeviceId().substring(0, 8));
+                        setShowTrackingModal(false);
+                      }}
+                      className="w-full py-2.5 px-3 bg-white hover:bg-neutral-50 active:scale-[0.98] border border-neutral-200 rounded-2xl text-neutral-800 font-bold text-xs flex items-center justify-center gap-2 shadow-2xs transition-all"
+                    >
+                      <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
+                        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
+                        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
+                      </svg>
+                      <span>{t.onboarding_google || "Google ile Giriş Yap"}</span>
+                    </button>
+
+                    {/* Apple Sign-In */}
+                    <button
+                      onClick={async () => {
+                        haptic.impact('medium');
+                        playSound('click');
+                        localStorage.setItem('tracking_seen_v1', 'true');
+                        await AuthService.signInWithApple('apple_' + Leaderboard.getDeviceId().substring(0, 8));
+                        setShowTrackingModal(false);
+                      }}
+                      className="w-full py-2.5 px-3 bg-[#1D1D1F] hover:bg-black active:scale-[0.98] text-white rounded-2xl font-bold text-xs flex items-center justify-center gap-2 shadow-2xs transition-all"
+                    >
+                      <svg className="w-3.5 h-3.5 fill-white shrink-0" viewBox="0 0 170 170">
+                        <path d="M150.37 130.25c-2.45 5.66-5.35 10.87-8.71 15.66-4.58 6.53-8.33 11.05-11.22 13.56-4.48 4.12-9.28 6.23-14.42 6.35-3.69 0-8.14-1.05-13.32-3.18-5.19-2.12-9.97-3.17-14.34-3.17-4.58 0-9.49 1.05-14.75 3.17-5.26 2.13-9.5 3.24-12.74 3.35-4.35.13-9.16-1.9-14.42-6.08-3.69-3.04-7.59-7.71-11.71-14.01-6.73-10.32-11.83-21.78-15.3-34.37-3.47-12.59-5.21-24.58-5.21-35.97 0-14.44 3.73-26.49 11.2-36.14 7.46-9.66 16.73-14.59 27.79-14.81 5.32 0 11.2 1.34 17.65 4.02 6.45 2.68 10.74 4.08 12.87 4.2 2.01-.25 6.48-1.74 13.41-4.47 6.94-2.73 12.87-4.04 17.81-3.92 12.06.63 21.72 4.96 28.98 13.01-10.45 6.34-15.6 15.01-15.46 26.01.16 8.5 3.34 15.68 9.54 21.54 6.2 5.86 13.65 9.28 22.36 10.26-2.58 7.82-5.75 15.42-9.52 22.8zM119.22 31.05c0-6.84 2.47-13.25 7.42-19.23 4.94-5.99 11.13-9.66 18.57-11.02.16 1.05.25 2.1.25 3.14 0 6.64-2.54 13.1-7.62 19.38-5.08 6.28-11.3 9.87-18.62 10.78-.16-1.05-.25-2.07-.25-3.05z" />
+                      </svg>
+                      <span>{t.onboarding_apple || "Apple ile Giriş Yap"}</span>
+                    </button>
+
+                    {/* Play as Guest */}
+                    <button
+                      onClick={() => {
+                        haptic.impact('medium');
+                        playSound('click');
+                        localStorage.setItem('tracking_seen_v1', 'true');
+                        Leaderboard.getPlayerName(); // Generates Zeka_XXXX
+                        AuthService.scheduleSync(500);
+                        setShowTrackingModal(false);
+                      }}
+                      className="w-full py-2.5 px-3 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 active:scale-[0.98] text-neutral-950 rounded-2xl font-black text-xs flex items-center justify-center gap-2 shadow-2xs transition-all"
+                    >
+                      <span>👤</span>
+                      <span>{t.onboarding_guest || "Misafir Olarak Başla"}</span>
+                    </button>
+                  </div>
+
+                  {/* Terms & Privacy Compliance Footer */}
+                  <div className="pt-2 border-t border-neutral-100 flex flex-col items-center">
+                    <p className="text-[10px] text-neutral-400 leading-tight">
+                      {t.onboarding_terms || "Devam ederek Gizlilik Politikası ve Kullanım Şartları'nı kabul etmiş olursunuz."}
+                    </p>
+                    <button
+                      onClick={() => window.open('https://your-privacy-policy-link-here.com', '_blank')}
+                      className="mt-1 text-[10px] font-bold text-blue-500 hover:underline"
+                    >
+                      {t.privacy_policy || "Gizlilik Politikası (Privacy Policy)"} ↗
+                    </button>
+                  </div>
                 </motion.div>
               </motion.div>
             )}
