@@ -1612,10 +1612,11 @@ export default function App() {
     setIsPaused(false);
     
     if (gameState === 'PLAYING') {
-      if (level === 1 && !hideIntro) {
+      const isDuel = isDuelActive || gameMode === 'DUEL';
+      if (!isDuel && level === 1 && !hideIntro) {
         setShowIntroModal(true);
         playSound('intro');
-      } else if (level > 1 && isTutorialLevel(level)) {
+      } else if (!isDuel && level > 1 && isTutorialLevel(level)) {
         setShowTutorialModal(true);
         playSound('intro');
       } else {
@@ -1630,13 +1631,14 @@ export default function App() {
       setShowTutorialModal(false);
       setShowIntroModal(false);
     }
-  }, [level, gameState, hideIntro, showCompanySplash]);
+  }, [level, gameState, hideIntro, showCompanySplash, isDuelActive, gameMode]);
 
 
 
   useEffect(() => {
     let interval: number;
-    const isModalOpen = showTutorialModal || showIntroModal; // Intentionally excluding showExitConfirm so timer keeps running
+    const isDuel = isDuelActive || gameMode === 'DUEL';
+    const isModalOpen = !isDuel && (showTutorialModal || showIntroModal); // Intentionally excluding showExitConfirm so timer keeps running; In Duel mode, never pause timer for modals!
     if (gameState === 'PLAYING' && !isPaused && !isModalOpen && !isDevMode && duelCountdown === null) {
       interval = setInterval(() => {
         tickTimer(0.1);
@@ -1822,6 +1824,8 @@ export default function App() {
     duelRewardHandledRef.current = false;
     setShowSolution(false);
     setHasPaidForSolution(false);
+    setShowIntroModal(false);
+    setShowTutorialModal(false);
     haptic.notification('success');
     playSound('success');
     startGame(false, 1, 'DUEL');
@@ -1873,6 +1877,8 @@ export default function App() {
     setShowDuel(false);
     setShowSolution(false);
     setHasPaidForSolution(false);
+    setShowIntroModal(false);
+    setShowTutorialModal(false);
 
     // Stake 50 coins entry fee
     useGameStore.getState().spendCoins(50);
@@ -2829,7 +2835,7 @@ export default function App() {
               </motion.div>
             )}
 
-            {showIntroModal && (
+            {showIntroModal && !isDuelActive && gameMode !== 'DUEL' && (
               <motion.div key="intro-modal" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 pointer-events-auto">
                 <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-white p-5 rounded-3xl max-w-[320px] shadow-2xl text-center">
                   <h2 className="text-lg font-black mb-3">{t.intro_title}</h2>
@@ -2858,7 +2864,7 @@ export default function App() {
               </motion.div>
             )}
 
-            {showTutorialModal && (
+            {showTutorialModal && !isDuelActive && gameMode !== 'DUEL' && (
               <motion.div key="tutorial-modal" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 pointer-events-auto">
                 <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-white p-6 rounded-3xl max-w-[340px] w-full flex flex-col items-center max-h-[85vh] overflow-y-auto shadow-2xl">
                   <div className="px-3 py-1.5 bg-amber-100 text-amber-600 rounded-full font-bold text-[10px] mb-6 uppercase flex items-center gap-2 shrink-0">

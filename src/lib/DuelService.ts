@@ -102,26 +102,73 @@ function clearBotSimulation() {
 function startBotSimulation(myId: string, initialCallback?: (score: number) => void) {
   clearBotSimulation();
 
-  botTargetDeathScore = Math.floor(Math.random() * (100 - 15 + 1)) + 15;
+  // Balanced target death score distribution:
+  // - 35% casual players (die at score 6 - 12)
+  // - 45% standard players (die at score 13 - 22)
+  // - 16% skilled players (die at score 23 - 32)
+  // - 4% master players (die at score 33 - 42)
+  const roll = Math.random();
+  if (roll < 0.35) {
+    botTargetDeathScore = 6 + Math.floor(Math.random() * 7);
+  } else if (roll < 0.80) {
+    botTargetDeathScore = 13 + Math.floor(Math.random() * 10);
+  } else if (roll < 0.96) {
+    botTargetDeathScore = 23 + Math.floor(Math.random() * 10);
+  } else {
+    botTargetDeathScore = 33 + Math.floor(Math.random() * 10);
+  }
+
   botScoreTracker = 0;
 
-  function scheduleNextStep() {
+  function scheduleNextStep(isFirstStep = false) {
     if (isMatchFinishedReported) return;
 
-    let delay = 2200;
-    if (botScoreTracker < 10) {
-      delay = 1800 + Math.random() * 800;
-    } else if (botScoreTracker < 25) {
-      delay = 2100 + Math.random() * 1000;
-    } else if (botScoreTracker < 50) {
-      delay = 2400 + Math.random() * 1200;
+    let delay = 3600;
+
+    if (isFirstStep) {
+      // Duel has a 3-second countdown (3.. 2.. 1.. GO!).
+      // Human needs ~3.5-5.5s to read and solve puzzle 1.
+      // Bot's first solve arrives at 4.8s - 6.6s after match starts.
+      delay = 4800 + Math.random() * 1800;
     } else {
-      delay = 2700 + Math.random() * 1400;
+      // Human-paced solve times (each puzzle gives 15s max)
+      if (botScoreTracker < 6) {
+        // Early simple arithmetic: 3.5s - 5.2s (avg ~4.3s)
+        delay = 3500 + Math.random() * 1700;
+      } else if (botScoreTracker < 15) {
+        // Intermediate sequences: 4.2s - 6.4s (avg ~5.3s)
+        delay = 4200 + Math.random() * 2200;
+      } else if (botScoreTracker < 25) {
+        // Prev1, negative symbols, more items: 5.2s - 7.8s (avg ~6.5s)
+        delay = 5200 + Math.random() * 2600;
+      } else if (botScoreTracker < 35) {
+        // Complex symbols (InvertAll, ReverseNext): 6.2s - 9.2s (avg ~7.7s)
+        delay = 6200 + Math.random() * 3000;
+      } else {
+        // Advanced symbols (Prev2, Heart, Star): 7.2s - 10.8s (avg ~9.0s)
+        delay = 7200 + Math.random() * 3600;
+      }
+
+      // Natural human hesitation / recalculation pause (22% chance: adds 1.5s - 3.2s)
+      if (Math.random() < 0.22) {
+        delay += 1500 + Math.random() * 1700;
+      }
     }
 
     simulatedBotTimeout = setTimeout(() => {
       if (isMatchFinishedReported) return;
 
+      // 1. Natural blunder / mistake chance under pressure
+      if (botScoreTracker >= 6) {
+        const blunderChance = botScoreTracker < 12 ? 0.04 : (botScoreTracker < 22 ? 0.07 : 0.12);
+        if (Math.random() < blunderChance) {
+          isMatchFinishedReported = true;
+          activeGameCallbacks.onMatchFinish?.(myId, true, botScoreTracker);
+          return;
+        }
+      }
+
+      // 2. Target death score reached
       if (botScoreTracker >= botTargetDeathScore) {
         isMatchFinishedReported = true;
         activeGameCallbacks.onMatchFinish?.(myId, true, botScoreTracker);
@@ -129,22 +176,32 @@ function startBotSimulation(myId: string, initialCallback?: (score: number) => v
       }
 
       botScoreTracker += 1;
-      initialCallback?.(botScoreTracker);
-      activeGameCallbacks.onOpponentScore?.(botScoreTracker);
+      if (activeGameCallbacks.onOpponentScore) {
+        activeGameCallbacks.onOpponentScore(botScoreTracker);
+      } else if (initialCallback) {
+        initialCallback(botScoreTracker);
+      }
 
-      if (botScoreTracker % 7 === 0 && Math.random() < 0.35) {
-        const emojis = ['🔥', '⚡', '🧠', '😎', '👏'];
+      // Context-aware dynamic emotes
+      if (Math.random() < 0.28) {
+        let emojis = ['🔥', '⚡', '🧠', '😎', '👏'];
+        if (currentScore > botScoreTracker) {
+          // Player is leading! Bot looks pressured/sweating
+          emojis = ['😅', '🤯', '👀', '👏', '🔥'];
+        } else if (botScoreTracker - currentScore >= 2) {
+          // Bot is ahead
+          emojis = ['😎', '⚡', '💪', '🔥'];
+        }
         const emoji = emojis[Math.floor(Math.random() * emojis.length)];
         activeGameCallbacks.onOpponentEmote?.(emoji);
       }
 
-      scheduleNextStep();
+      scheduleNextStep(false);
     }, Math.round(delay));
   }
 
-  simulatedBotTimeout = setTimeout(() => {
-    scheduleNextStep();
-  }, 2200);
+  // Start with the first step
+  scheduleNextStep(true);
 }
 
 export const DuelService = {
