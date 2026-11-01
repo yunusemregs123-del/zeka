@@ -257,10 +257,10 @@ export const DuelModal: React.FC<DuelModalProps> = ({
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <div className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-black border tabular-nums shadow-xs ${
+                <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-black border tabular-nums shadow-xs ${
                   hasEnoughCoins ? 'bg-amber-50 border-amber-200 text-amber-900' : 'bg-rose-50 border-rose-200 text-rose-700'
                 }`}>
-                  <span>🪙</span>
+                  <Icons.Coin className="w-3.5 h-3.5 text-amber-500 shrink-0" />
                   <span>{coins}</span>
                 </div>
                 <button
@@ -268,9 +268,9 @@ export const DuelModal: React.FC<DuelModalProps> = ({
                     DuelService.cleanup();
                     onClose();
                   }}
-                  className="w-8 h-8 flex items-center justify-center bg-neutral-100 rounded-full hover:bg-neutral-200 transition-colors text-neutral-400 font-bold text-xs"
+                  className="w-8 h-8 flex items-center justify-center bg-neutral-100 hover:bg-neutral-200 rounded-full transition-colors text-neutral-400 hover:text-neutral-700"
                 >
-                  ✕
+                  <Icons.X className="w-3.5 h-3.5" />
                 </button>
               </div>
             </div>
@@ -279,7 +279,7 @@ export const DuelModal: React.FC<DuelModalProps> = ({
             {!hasEnoughCoins && (
               <div className="mb-3 p-3 rounded-2xl bg-rose-50 border border-rose-200/80 flex flex-col gap-2 shrink-0">
                 <div className="flex items-center gap-1.5 text-rose-700 text-[11px] font-black uppercase tracking-wide">
-                  <span>⚠️</span>
+                  <Icons.AlertCircle className="w-3.5 h-3.5 shrink-0" />
                   <span>{t.duel_insufficient_coins}</span>
                 </div>
                 <button
@@ -287,7 +287,7 @@ export const DuelModal: React.FC<DuelModalProps> = ({
                   disabled={isWatchingAd}
                   className="w-full py-2 bg-amber-400 hover:bg-amber-500 text-neutral-900 rounded-xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-xs active:scale-95 transition-all disabled:opacity-50"
                 >
-                  <span>📺</span>
+                  <Icons.Tv className="w-3.5 h-3.5 shrink-0" />
                   <span>{isWatchingAd ? '...' : t.duel_watch_ad_coins}</span>
                 </button>
               </div>
@@ -343,7 +343,7 @@ export const DuelModal: React.FC<DuelModalProps> = ({
                 </p>
 
                 <div className="flex items-center gap-1.5 mb-5 px-3 py-1.5 bg-amber-50 rounded-xl border border-amber-200/60 text-[10px] font-black text-amber-700">
-                  <span>🪙</span>
+                  <Icons.Coin className="w-3.5 h-3.5 text-amber-600 shrink-0" />
                   <span>{t.duel_stake_info || 'Giriş: 25 Coin • Kazanan: +100 Coin'}</span>
                 </div>
 
@@ -374,7 +374,7 @@ export const DuelModal: React.FC<DuelModalProps> = ({
             {tab === 'friend' && (
               <div className="flex flex-col gap-3 py-1">
                 <div className="flex items-center justify-center gap-1.5 py-1 px-3 bg-amber-50 rounded-xl border border-amber-200/60 text-[10px] font-black text-amber-700 text-center">
-                  <span>🪙</span>
+                  <Icons.Coin className="w-3.5 h-3.5 text-amber-600 shrink-0" />
                   <span>{t.duel_stake_info || 'Giriş: 25 Coin • Kazanan: +100 Coin'}</span>
                 </div>
 
@@ -401,7 +401,11 @@ export const DuelModal: React.FC<DuelModalProps> = ({
                         : 'bg-neutral-900 hover:bg-black text-white'
                     }`}
                   >
-                    <span>{codeCopied ? '✓' : '📋'}</span>
+                    {codeCopied ? (
+                      <Icons.Check className="w-4 h-4 text-white shrink-0" />
+                    ) : (
+                      <Icons.Copy className="w-4 h-4 text-white shrink-0" />
+                    )}
                     <span>{codeCopied ? (t.duel_code_copied || 'KOPYALANDI!') : (t.duel_copy_btn || 'KODU KOPYALA')}</span>
                   </motion.button>
                 </div>

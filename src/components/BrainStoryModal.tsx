@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore } from '../store/useGameStore';
 import { Translations } from '../lib/Translations';
 import { haptic } from '../lib/Haptics';
+import * as Icons from './Icons';
 
 interface BrainStoryModalProps {
   isOpen: boolean;
@@ -517,8 +518,8 @@ export const BrainStoryModal: React.FC<BrainStoryModalProps> = ({
             {/* Header */}
             <div className="flex justify-between items-center mb-3 shrink-0">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-xl bg-amber-400/10 border border-amber-400/20 flex items-center justify-center text-amber-400 text-sm">
-                  📸
+                <div className="w-8 h-8 rounded-xl bg-amber-400/10 border border-amber-400/20 flex items-center justify-center text-amber-400">
+                  <Icons.Camera className="w-4 h-4" />
                 </div>
                 <div>
                   <h3 className="text-sm font-black tracking-tight text-white leading-none">
@@ -531,9 +532,9 @@ export const BrainStoryModal: React.FC<BrainStoryModalProps> = ({
               </div>
               <button
                 onClick={onClose}
-                className="w-8 h-8 flex items-center justify-center bg-neutral-800 hover:bg-neutral-700 rounded-full transition-colors text-neutral-400 font-bold text-xs"
+                className="w-8 h-8 flex items-center justify-center bg-neutral-800 hover:bg-neutral-700 rounded-full transition-colors text-neutral-400 hover:text-white"
               >
-                ✕
+                <Icons.X className="w-3.5 h-3.5" />
               </button>
             </div>
 
@@ -561,7 +562,7 @@ export const BrainStoryModal: React.FC<BrainStoryModalProps> = ({
                 disabled={!imageUrl || isSharing}
                 className="w-full py-3.5 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 text-neutral-950 rounded-2xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 active:scale-95 transition-all"
               >
-                <span>🚀</span>
+                <Icons.Share className="w-4 h-4 shrink-0" />
                 <span>{t.brain_story_share || 'HİKAYEDE PAYLAŞ'}</span>
               </motion.button>
 
@@ -570,7 +571,7 @@ export const BrainStoryModal: React.FC<BrainStoryModalProps> = ({
                 disabled={!imageUrl}
                 className="w-full py-2.5 bg-neutral-800/80 hover:bg-neutral-800 text-neutral-300 rounded-2xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-colors border border-neutral-700/50"
               >
-                <span>💾</span>
+                <Icons.Download className="w-4 h-4 shrink-0" />
                 <span>{isCopied ? (t.brain_story_copied || 'KAYDEDİLDİ! ✓') : (t.brain_story_save || 'GÖRSELİ İNDİR')}</span>
               </button>
             </div>

@@ -358,7 +358,7 @@ function MenuScreen({
         <div className="flex items-center gap-2">
           {streak > 0 && (
             <div className="flex items-center gap-1 bg-white border border-amber-200/80 px-2.5 py-1.5 rounded-full shadow-sm">
-              <span className="text-amber-500 text-xs">🔥</span>
+              <Icons.Flame className="w-3.5 h-3.5 text-amber-500 shrink-0" />
               <span className="text-xs font-black text-amber-700 tabular-nums">{streak}</span>
             </div>
           )}
@@ -532,8 +532,8 @@ function MenuScreen({
                   <Icons.Medal className="w-6 h-6 text-[#1D1D1F]" />
                   {t.medals_title}
                 </h2>
-                <button onClick={() => setShowMedals(false)} className="w-9 h-9 flex items-center justify-center bg-neutral-100 rounded-full hover:bg-neutral-200 transition-colors">
-                  <span className="font-bold text-neutral-400 text-xs">✕</span>
+                <button onClick={() => setShowMedals(false)} className="w-9 h-9 flex items-center justify-center bg-neutral-100 hover:bg-neutral-200 text-neutral-400 hover:text-neutral-700 rounded-full transition-colors">
+                  <Icons.X className="w-4 h-4" />
                 </button>
               </div>
 
@@ -644,31 +644,36 @@ function MenuScreen({
             >
               {/* Header with 2-Tab Switcher & Close */}
               <div className="flex justify-between items-center mb-3">
-                <div className="flex bg-neutral-100 p-0.5 rounded-2xl gap-1">
+                <div className="flex bg-neutral-100 p-0.5 rounded-2xl gap-1 flex-1 mr-2 min-w-0">
                   <button
                     onClick={() => setInfoTab('settings')}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all ${
+                    className={`flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black transition-all flex-1 min-w-0 ${
                       infoTab === 'settings'
                         ? 'bg-white text-neutral-900 shadow-2xs'
                         : 'text-neutral-400 hover:text-neutral-700'
                     }`}
                   >
-                    ⚙️ {t.settings_title || 'AYARLAR'}
+                    <Icons.Settings className="w-3.5 h-3.5 shrink-0" />
+                    <span className="truncate">{t.settings_title || 'AYARLAR'}</span>
                   </button>
                   <button
                     onClick={() => setInfoTab('symbols')}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all ${
+                    className={`flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black transition-all flex-1 min-w-0 ${
                       infoTab === 'symbols'
                         ? 'bg-white text-neutral-900 shadow-2xs'
                         : 'text-neutral-400 hover:text-neutral-700'
                     }`}
                   >
-                    📖 {t.settings_tab_rules || 'Kurallar'}
+                    <Icons.BookOpen className="w-3.5 h-3.5 shrink-0" />
+                    <span className="truncate">{t.settings_tab_rules || 'Kurallar'}</span>
                   </button>
                 </div>
 
-                <button onClick={() => setShowInfo(false)} className="w-8 h-8 flex items-center justify-center bg-neutral-100 rounded-full hover:bg-neutral-200 transition-colors">
-                  <span className="font-bold text-neutral-400 text-xs">✕</span>
+                <button
+                  onClick={() => setShowInfo(false)}
+                  className="w-8 h-8 flex items-center justify-center bg-neutral-100 hover:bg-neutral-200 text-neutral-400 hover:text-neutral-700 rounded-full transition-colors shrink-0"
+                >
+                  <Icons.X className="w-3.5 h-3.5" />
                 </button>
               </div>
 
@@ -682,13 +687,13 @@ function MenuScreen({
                       onClick={toggleMute}
                       className="flex items-center justify-between p-2.5 bg-neutral-50 hover:bg-neutral-100/80 rounded-2xl border border-neutral-100 transition-all text-left"
                     >
-                      <div className="flex items-center gap-2">
-                        <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${!muteAudio ? 'bg-amber-100 text-amber-700' : 'bg-neutral-200 text-neutral-400'}`}>
+                      <div className="flex items-center gap-2 min-w-0">
+                        <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${!muteAudio ? 'bg-amber-100 text-amber-700' : 'bg-neutral-200 text-neutral-400'}`}>
                           {!muteAudio ? <Icons.Volume className="w-3.5 h-3.5" /> : <Icons.VolumeMute className="w-3.5 h-3.5" />}
                         </div>
-                        <span className="text-[11px] font-bold text-neutral-800">{t.sound_toggle || 'Ses'}</span>
+                        <span className="text-[11px] font-bold text-neutral-800 truncate">{t.sound_toggle || 'Ses'}</span>
                       </div>
-                      <div className={`w-8 h-4 rounded-full p-0.5 transition-colors flex items-center ${!muteAudio ? 'bg-[#1D1D1F]' : 'bg-neutral-300'}`}>
+                      <div className={`w-8 h-4 rounded-full p-0.5 transition-colors flex items-center shrink-0 ml-1.5 ${!muteAudio ? 'bg-[#1D1D1F]' : 'bg-neutral-300'}`}>
                         <div className={`w-3 h-3 rounded-full bg-white transition-transform ${!muteAudio ? 'translate-x-4' : 'translate-x-0'}`} />
                       </div>
                     </button>
@@ -698,61 +703,76 @@ function MenuScreen({
                       onClick={toggleHaptics}
                       className="flex items-center justify-between p-2.5 bg-neutral-50 hover:bg-neutral-100/80 rounded-2xl border border-neutral-100 transition-all text-left"
                     >
-                      <div className="flex items-center gap-2">
-                        <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${isHapticsOn ? 'bg-blue-100 text-blue-700' : 'bg-neutral-200 text-neutral-400'}`}>
+                      <div className="flex items-center gap-2 min-w-0">
+                        <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${isHapticsOn ? 'bg-blue-100 text-blue-700' : 'bg-neutral-200 text-neutral-400'}`}>
                           {isHapticsOn ? <Icons.Vibrate className="w-3.5 h-3.5" /> : <Icons.VibrateOff className="w-3.5 h-3.5" />}
                         </div>
-                        <span className="text-[11px] font-bold text-neutral-800">{t.haptics_toggle || 'Titreşim'}</span>
+                        <span className="text-[11px] font-bold text-neutral-800 truncate">{t.haptics_toggle || 'Titreşim'}</span>
                       </div>
-                      <div className={`w-8 h-4 rounded-full p-0.5 transition-colors flex items-center ${isHapticsOn ? 'bg-[#1D1D1F]' : 'bg-neutral-300'}`}>
+                      <div className={`w-8 h-4 rounded-full p-0.5 transition-colors flex items-center shrink-0 ml-1.5 ${isHapticsOn ? 'bg-[#1D1D1F]' : 'bg-neutral-300'}`}>
                         <div className={`w-3 h-3 rounded-full bg-white transition-transform ${isHapticsOn ? 'translate-x-4' : 'translate-x-0'}`} />
                       </div>
                     </button>
                   </div>
 
-                  {/* Compact Cloud Save Row */}
+                  {/* Cloud Save Card - Rock-Solid 2-Row Layout */}
                   <div className="bg-neutral-50 rounded-2xl p-2.5 border border-neutral-100 shadow-2xs mb-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-sm">☁️</span>
-                        <span className="text-[11px] font-black text-neutral-800 tracking-wide uppercase">
-                          {t.cloud_save_title}
-                        </span>
-                        <span className="text-[9px] bg-emerald-100 text-emerald-800 font-bold px-1.5 py-0.5 rounded-full">
-                          {t.cloud_save_active}
+                    {/* Row 1: Cloud Title & Active Badge */}
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-1.5 min-w-0 pr-1">
+                        <div className="w-6 h-6 rounded-lg bg-emerald-100/70 text-emerald-700 flex items-center justify-center shrink-0">
+                          <Icons.Cloud className="w-3.5 h-3.5" />
+                        </div>
+                        <span className="text-[11px] font-black text-neutral-800 tracking-wide uppercase truncate">
+                          {t.cloud_save_title || 'Bulut Yedekleme'}
                         </span>
                       </div>
-
-                      {/* Recovery Code Pill */}
-                      <div className="flex items-center gap-1 bg-white px-2 py-0.5 rounded-xl border border-neutral-200/90 shadow-2xs">
-                        <span className="text-xs font-black text-amber-600 font-mono tracking-wider">
-                          {cloudRecoveryCode || 'ZK-SYNC'}
-                        </span>
-                        <button
-                          onClick={() => {
-                            if (cloudRecoveryCode) {
-                              navigator.clipboard?.writeText(cloudRecoveryCode);
-                              setCodeCopied(true);
-                              haptic.notification('success');
-                              setTimeout(() => setCodeCopied(false), 2000);
-                            }
-                          }}
-                          className="p-0.5 text-neutral-500 hover:text-neutral-800 active:scale-95 text-[10px]"
-                          title={t.cloud_copy_btn}
-                        >
-                          {codeCopied ? '✓' : '📋'}
-                        </button>
-                      </div>
+                      <span className="text-[9px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full shrink-0">
+                        {t.cloud_save_active || 'Aktif'}
+                      </span>
                     </div>
 
-                    {/* Restore Dropdown Toggle */}
+                    {/* Row 2: Recovery Code with Dedicated Copy Action (Zero Wrapping) */}
+                    <div className="flex items-center justify-between bg-white px-2.5 py-1.5 rounded-xl border border-neutral-200/80 shadow-2xs">
+                      <div className="flex items-center gap-1.5 min-w-0 flex-1 mr-2">
+                        <span className="text-[9px] font-bold text-neutral-400 uppercase tracking-wider shrink-0">KOD:</span>
+                        <span className="text-xs font-mono font-black text-amber-600 tracking-wider select-all truncate">
+                          {cloudRecoveryCode || 'ZK-SYNC'}
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => {
+                          if (cloudRecoveryCode) {
+                            navigator.clipboard?.writeText(cloudRecoveryCode);
+                            setCodeCopied(true);
+                            haptic.notification('success');
+                            setTimeout(() => setCodeCopied(false), 2000);
+                          }
+                        }}
+                        className="flex items-center gap-1 px-2.5 py-1 bg-neutral-100 hover:bg-neutral-200 active:scale-95 text-neutral-700 rounded-lg text-[10px] font-bold shrink-0 whitespace-nowrap transition-all"
+                      >
+                        {codeCopied ? (
+                          <>
+                            <Icons.Check className="w-3 h-3 text-emerald-600 shrink-0" />
+                            <span className="text-emerald-700 text-[9px] whitespace-nowrap">{t.cloud_copied_btn || 'Kopyalandı'}</span>
+                          </>
+                        ) : (
+                          <>
+                            <Icons.Copy className="w-3 h-3 text-neutral-500 shrink-0" />
+                            <span className="text-[9px] whitespace-nowrap">{t.cloud_copy_btn || 'Kopyala'}</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+
+                    {/* Restore Code Dropdown Toggle */}
                     <div className="mt-2 pt-1.5 border-t border-neutral-200/60">
                       <button
                         onClick={() => setShowRestoreInput(!showRestoreInput)}
-                        className="text-[10px] font-bold text-neutral-500 hover:text-neutral-800 flex items-center justify-between w-full"
+                        className="text-[10px] font-bold text-neutral-500 hover:text-neutral-800 flex items-center justify-between w-full py-0.5"
                       >
                         <span>{t.cloud_restore_toggle || 'Kodu Gir & Geri Yükle ▾'}</span>
-                        <span className="text-[9px] text-neutral-400">{showRestoreInput ? '▲' : '▼'}</span>
+                        <Icons.ChevronDown className={`w-3.5 h-3.5 text-neutral-400 transition-transform ${showRestoreInput ? 'rotate-180' : ''}`} />
                       </button>
 
                       {showRestoreInput && (
@@ -806,7 +826,7 @@ function MenuScreen({
                         }}
                         className="w-full mt-2 py-1.5 bg-white hover:bg-neutral-100 border border-neutral-200 rounded-xl text-neutral-800 font-bold text-[11px] flex items-center justify-center gap-1.5 transition-all shadow-2xs"
                       >
-                        <span>🔗</span>
+                        <Icons.Link className="w-3.5 h-3.5 text-neutral-500" />
                         <span>{t.cloud_link_account || 'Google / Apple ile Hesabını Bağla'}</span>
                       </button>
                     )}
@@ -876,8 +896,8 @@ function MenuScreen({
             >
               <div className="flex justify-between items-center p-4 border-b border-neutral-100 shrink-0">
                 <h2 className="text-xl font-black text-[#1D1D1F] flex items-center gap-2"><Icons.Trophy className="w-6 h-6 text-amber-500" /> {t.lb_title}</h2>
-                <button onClick={() => setShowLeaderboard(false)} className="w-9 h-9 flex items-center justify-center bg-neutral-100 rounded-full hover:bg-neutral-200 transition-colors">
-                  <span className="font-bold text-neutral-400 text-xs">✕</span>
+                <button onClick={() => setShowLeaderboard(false)} className="w-9 h-9 flex items-center justify-center bg-neutral-100 hover:bg-neutral-200 text-neutral-400 hover:text-neutral-700 rounded-full transition-colors">
+                  <Icons.X className="w-4 h-4" />
                 </button>
               </div>
 
@@ -907,7 +927,7 @@ function MenuScreen({
                   </div>
                 ) : scores.length === 0 ? (
                   <div className="text-center flex flex-col items-center justify-center h-full min-h-[250px]">
-                    <span className="text-4xl mb-3 block">🎯</span>
+                    <Icons.Target className="w-12 h-12 text-neutral-300 mx-auto mb-3" />
                     <p className="text-neutral-400 font-semibold text-sm">{t.lb_empty}</p>
                   </div>
                 ) : (
@@ -917,7 +937,7 @@ function MenuScreen({
                       return (
                         <div key={entry.id} className={`flex items-center gap-3 p-2 sm:p-3 rounded-xl transition ${isMe ? 'bg-blue-50 border-2 border-blue-400 shadow-sm z-10 relative' : idx === 0 ? 'bg-yellow-50 border border-yellow-400 shadow-sm' : idx === 1 ? 'bg-slate-50 border border-slate-300 shadow-sm' : idx === 2 ? 'bg-orange-50 border border-orange-400 shadow-sm' : 'bg-white border border-transparent'}`}>
                           <div className={`relative flex items-center justify-center font-black shrink-0 ${isMe ? 'bg-blue-400 text-white shadow-md ring-2 ring-blue-100 w-8 h-8 rounded-full text-sm' : idx === 0 ? 'bg-yellow-400 text-yellow-950 border-2 border-yellow-200 shadow-md w-8 h-8 rounded-full text-sm' : idx === 1 ? 'bg-slate-200 text-slate-800 border-2 border-slate-100 shadow-sm w-7 h-7 rounded-full text-xs' : idx === 2 ? 'bg-orange-400 text-orange-950 border-2 border-orange-200 shadow-sm w-7 h-7 rounded-full text-xs' : 'bg-neutral-100 text-neutral-500 w-6 h-6 rounded-full text-[10px]'}`}>
-                            {idx === 0 && <span className="absolute -top-3 -right-1 text-sm drop-shadow-sm">👑</span>}
+                            {idx === 0 && <Icons.Crown className="w-4 h-4 text-amber-500 absolute -top-3 -right-1 drop-shadow-xs" />}
                             {idx + 1}
                           </div>
                           <div className="flex-1 min-w-0 pr-1">
@@ -1025,7 +1045,7 @@ function GameOverScreen({
             <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0" />
             <span className="text-[10px] uppercase font-bold text-neutral-500 tracking-wider">{t.coins_title || 'Bakiye'}:</span>
             <span className="tabular-nums font-black text-xs text-neutral-900 flex items-center gap-1">
-              <RollingNumber value={coins} /> 🪙
+              <RollingNumber value={coins} /> <Icons.Coin className="w-3.5 h-3.5 text-amber-500 inline-block align-middle ml-0.5 shrink-0" />
             </span>
           </div>
 
@@ -1042,7 +1062,7 @@ function GameOverScreen({
             <span className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-black uppercase tracking-wider ${
               won ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/80 shadow-2xs' : 'bg-rose-50 text-rose-700 border border-rose-200/80 shadow-2xs'
             }`}>
-              <span>🪙</span>
+              <Icons.Coin className="w-3.5 h-3.5 text-amber-500 shrink-0" />
               <span>{won ? `+100 COIN (${t.duel_net || 'Net'} +75)` : '-25 COIN'}</span>
             </span>
             <span className="text-[10px] font-bold text-neutral-400 mt-1">
@@ -1067,7 +1087,7 @@ function GameOverScreen({
           <div className={`mb-3 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-1.5 border ${
             won ? 'bg-emerald-50/60 text-emerald-700 border-emerald-200/40' : 'bg-rose-50/60 text-rose-700 border-rose-200/40'
           }`}>
-            <span>{won ? '🎯' : '⚠️'}</span>
+            {won ? <Icons.Target className="w-3.5 h-3.5 text-emerald-600 shrink-0" /> : <Icons.AlertCircle className="w-3.5 h-3.5 text-rose-600 shrink-0" />}
             <span>{won ? (t.duel_reason_opponent_out || 'Rakip elendi') : (t.duel_reason_you_out || 'Hata yaptın')}</span>
           </div>
 
@@ -1081,8 +1101,9 @@ function GameOverScreen({
           {/* Insufficient Coins Notice on GameOver */}
           {!hasEnoughCoins && !duelOpponentLeft && (
             <div className="mb-3 p-3 rounded-2xl bg-rose-50 border border-rose-200/80 flex flex-col gap-2 text-center">
-              <span className="text-[10px] font-black text-rose-700 uppercase tracking-wide">
-                ⚠️ {t.duel_insufficient_coins}
+              <span className="text-[10px] font-black text-rose-700 uppercase tracking-wide flex items-center justify-center gap-1">
+                <Icons.AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                <span>{t.duel_insufficient_coins}</span>
               </span>
               <button
                 onClick={async () => {
@@ -1099,7 +1120,7 @@ function GameOverScreen({
                 disabled={isWatchingAd}
                 className="w-full py-2 bg-amber-400 hover:bg-amber-500 text-neutral-900 rounded-xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-2xs active:scale-95 transition-all disabled:opacity-50"
               >
-                <span>📺</span>
+                <Icons.Tv className="w-3.5 h-3.5 shrink-0" />
                 <span>{isWatchingAd ? '...' : t.duel_watch_ad_coins}</span>
               </button>
             </div>
@@ -1175,7 +1196,8 @@ function GameOverScreen({
             <motion.div initial={{ scale: 0, y: -20 }} animate={{ scale: 1, y: 0 }}
               className="bg-amber-50 border border-amber-200 text-amber-700 rounded-full px-3 py-1 inline-flex items-center gap-1.5 font-black text-[10px] tracking-widest mb-3"
             >
-              <span>⚡</span> {t.new_record}
+              <Icons.Zap className="w-3 h-3 text-amber-600 fill-amber-500 shrink-0" />
+              <span>{t.new_record}</span>
             </motion.div>
           )}
 
@@ -1231,7 +1253,8 @@ function GameOverScreen({
             <motion.div initial={{ scale: 0, y: -20 }} animate={{ scale: 1, y: 0 }}
               className="bg-blue-50 border border-blue-200 text-blue-700 rounded-full px-3 py-1 inline-flex items-center gap-1.5 font-black text-[10px] tracking-widest mb-3"
             >
-              <span>🧠</span> {t.gameover_newbest || 'YENİ REKOR!'}
+              <Icons.Brain className="w-3 h-3 text-blue-600 shrink-0" />
+              <span>{t.gameover_newbest || 'YENİ REKOR!'}</span>
             </motion.div>
           )}
 
@@ -1326,7 +1349,8 @@ function GameOverScreen({
           <motion.div initial={{ scale: 0, y: -20 }} animate={{ scale: 1, y: 0 }}
             className="bg-amber-50 border border-amber-200 text-amber-700 rounded-full px-3 py-1 inline-flex items-center gap-1.5 font-bold text-[10px] tracking-widest mb-3 mt-1"
           >
-            <span>🏆</span> {t.gameover_newbest}
+            <Icons.Trophy className="w-3 h-3 text-amber-600 shrink-0" />
+            <span>{t.gameover_newbest}</span>
           </motion.div>
         )}
 
@@ -2442,7 +2466,7 @@ export default function App() {
                   <motion.div
                     animate={timeLeft <= 5 ? { scale: [1, 1.05, 1] } : {}}
                     transition={{ repeat: Infinity, duration: 0.6 }}
-                    className={`px-3 py-1.5 rounded-full flex items-center gap-1 shadow-sm border font-black text-xs sm:text-sm tabular-nums transition-colors ${
+                    className={`px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-sm border font-black text-xs sm:text-sm tabular-nums transition-colors ${
                       timeLeft <= 5
                         ? 'bg-rose-500 border-rose-600 text-white animate-pulse'
                         : isDuelActive || gameMode === 'DUEL'
@@ -2450,7 +2474,7 @@ export default function App() {
                         : 'bg-amber-100 border-amber-300 text-amber-900'
                     }`}
                   >
-                    <span>⏱️</span>
+                    <Icons.Clock className="w-3.5 h-3.5 shrink-0" />
                     <span>{timeLeft.toFixed(1)}s</span>
                   </motion.div>
                 )}
@@ -2629,9 +2653,9 @@ export default function App() {
             <footer className="w-full max-w-2xl mx-auto px-4 pb-4 md:px-6 md:pb-6 flex flex-col gap-2 z-10 relative shrink-0">
               {/* Live countdown numeric indicator */}
               <div className="flex items-center justify-between text-[11px] font-black tracking-wider uppercase px-1">
-                <span className="text-neutral-400 flex items-center gap-1">
-                  <span>⏱️</span>
-                  {gameMode === 'TIME_ATTACK' ? t.timer_countdown : gameMode === 'MEMORY' ? t.timer_memory : t.timer_general}
+                <span className="text-neutral-400 flex items-center gap-1.5">
+                  <Icons.Clock className="w-3.5 h-3.5 shrink-0" />
+                  <span>{gameMode === 'TIME_ATTACK' ? t.timer_countdown : gameMode === 'MEMORY' ? t.timer_memory : t.timer_general}</span>
                 </span>
                 <span className={`tabular-nums font-black ${timeLeft <= 5 ? 'text-red-500 text-sm animate-pulse' : 'text-neutral-800'}`}>
                   {isDevMode ? '∞' : `${timeLeft.toFixed(1)}s`}
@@ -2656,7 +2680,7 @@ export default function App() {
                     className="w-full py-3.5 px-6 rounded-2xl bg-[#1D1D1F] hover:bg-black text-white font-black tracking-widest text-xs uppercase shadow-xl flex items-center justify-between hover:scale-[1.01] active:scale-95 transition-all"
                   >
                     <div className="flex items-center gap-2">
-                      <span className="text-base">💡</span>
+                      <Icons.Lightbulb className="w-4 h-4 text-amber-400 shrink-0" />
                       <span>{showSolution ? t.btn_hide : (coins >= 75 || isDevMode || hasPaidForSolution ? t.btn_reveal : t.btn_reveal_ad)}</span>
                     </div>
                     <span className="text-[10px] bg-white/20 text-white px-2.5 py-1 rounded-full font-black">
@@ -2716,7 +2740,9 @@ export default function App() {
                   <div className="flex flex-col items-center mb-3">
                     <div className="w-14 h-14 rounded-2xl bg-[#1D1D1F] border border-neutral-700 shadow-md flex items-center justify-center mb-2.5 relative">
                       <span className="text-2xl font-black text-white">Z</span>
-                      <span className="absolute -top-1 -right-1 w-4 h-4 bg-amber-400 rounded-full border-2 border-white flex items-center justify-center text-[8px] font-black">⚡</span>
+                      <span className="absolute -top-1 -right-1 w-4 h-4 bg-amber-400 rounded-full border-2 border-white flex items-center justify-center">
+                        <Icons.Zap className="w-2.5 h-2.5 text-neutral-900 fill-neutral-900" />
+                      </span>
                     </div>
                     <h2 className="text-lg font-black tracking-tight text-[#1D1D1F] uppercase">{t.onboarding_title || "ZEKA'YA HOŞ GELDİN"}</h2>
                     <p className="text-neutral-500 mt-1 text-[11px] leading-relaxed">
@@ -2725,12 +2751,12 @@ export default function App() {
                   </div>
 
                   {/* Feature Badges */}
-                  <div className="flex items-center justify-center gap-1.5 mb-4 text-[9px] font-bold text-neutral-600 bg-neutral-50 py-1.5 px-3 rounded-full border border-neutral-100">
-                    <span>⚡ Düellolar</span>
-                    <span>•</span>
-                    <span>🧠 Bilişsel Skor</span>
-                    <span>•</span>
-                    <span>☁️ Bulut Kaydı</span>
+                  <div className="flex items-center justify-center gap-2 mb-4 text-[9px] font-bold text-neutral-600 bg-neutral-50 py-1.5 px-3 rounded-full border border-neutral-100">
+                    <span className="flex items-center gap-1"><Icons.Zap className="w-3 h-3 text-amber-500 fill-amber-500 shrink-0" /> Düellolar</span>
+                    <span className="text-neutral-300">•</span>
+                    <span className="flex items-center gap-1"><Icons.Brain className="w-3 h-3 text-blue-500 shrink-0" /> Bilişsel Skor</span>
+                    <span className="text-neutral-300">•</span>
+                    <span className="flex items-center gap-1"><Icons.Cloud className="w-3 h-3 text-emerald-500 shrink-0" /> Bulut Kaydı</span>
                   </div>
 
                   {/* Auth & Guest Action Buttons */}
@@ -2784,7 +2810,7 @@ export default function App() {
                       }}
                       className="w-full py-2.5 px-3 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 active:scale-[0.98] text-neutral-950 rounded-2xl font-black text-xs flex items-center justify-center gap-2 shadow-2xs transition-all"
                     >
-                      <span>👤</span>
+                      <Icons.User className="w-4 h-4 text-neutral-950 shrink-0" />
                       <span>{t.onboarding_guest || "Misafir Olarak Başla"}</span>
                     </button>
                   </div>
@@ -2874,7 +2900,9 @@ export default function App() {
             {showDailyRewardGlobal && (
               <div key="daily-reward-overlay" className="fixed inset-0 flex items-center justify-center p-4 bg-black/70 pointer-events-auto">
                 <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="bg-white rounded-[2rem] p-6 w-full max-w-[320px] shadow-2xl text-center relative pointer-events-auto">
-                  <button onClick={() => setShowDailyRewardGlobal(false)} className="absolute top-4 right-4 w-9 h-9 bg-neutral-100 rounded-full text-neutral-400 font-bold hover:bg-neutral-200 shadow-sm transition-colors text-xs flex items-center justify-center">✕</button>
+                  <button onClick={() => setShowDailyRewardGlobal(false)} className="absolute top-4 right-4 w-9 h-9 bg-neutral-100 hover:bg-neutral-200 rounded-full text-neutral-400 hover:text-neutral-700 shadow-sm transition-colors flex items-center justify-center">
+                    <Icons.X className="w-4 h-4" />
+                  </button>
                   <div className="w-16 h-16 bg-amber-100 text-amber-500 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-amber-200"><Icons.Gift className="w-10 h-10" /></div>
                   <h2 className="text-2xl font-black mb-2">{t.daily_gift_title}</h2>
                   <p className="text-sm text-neutral-500 mb-6 font-medium leading-relaxed">{t.daily_gift_desc?.split('200')[0]}<strong className="text-amber-500">200 Coin</strong>{t.daily_gift_desc?.split('200')[1]}</p>
@@ -2911,7 +2939,9 @@ export default function App() {
             {showSuccessGlobal && (
               <div key="success-overlay" className="fixed inset-0 flex items-center justify-center p-4 bg-black/70 pointer-events-auto">
                 <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 20, opacity: 0 }} className="bg-white rounded-[2rem] p-8 w-full max-w-[300px] shadow-2xl text-center border-b-8 border-amber-400 pointer-events-auto">
-                  <div className="text-5xl mb-4">✨</div>
+                  <div className="w-16 h-16 bg-amber-100 text-amber-500 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-amber-200">
+                    <Icons.Trophy className="w-9 h-9" />
+                  </div>
                   <h3 className="text-2xl font-black mb-1">{t.congrats_title}</h3>
                   <p className="text-neutral-500 font-bold mb-6 text-sm">{t.congrats_desc}</p>
                   <button onClick={() => setShowSuccessGlobal(false)} className="w-full py-4 bg-amber-400 text-white rounded-2xl font-black tracking-widest shadow-lg shadow-amber-200 active:scale-95 transition-all">{t.congrats_btn}</button>

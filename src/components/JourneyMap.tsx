@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { getCheckpointForLevel, getNextCheckpoint } from '../lib/LevelEngine';
+import * as Icons from './Icons';
 
 interface JourneyMapProps {
   level: number;
@@ -41,7 +42,7 @@ export const JourneyMap: React.FC<JourneyMapProps> = ({
           <span className={`text-[10px] font-black tracking-tight uppercase tabular-nums ${isDark ? 'text-neutral-500' : 'text-neutral-400'}`}>
             {levelLabel} {nextCP}
           </span>
-          <span className="text-[10px]">★</span>
+          <Icons.Star className="w-2.5 h-2.5 text-amber-400 shrink-0" />
         </div>
       </div>
 
@@ -88,7 +89,7 @@ export const JourneyMap: React.FC<JourneyMapProps> = ({
                 }`}
               >
                 {isTarget ? (
-                  <span className="text-[7px] font-black text-amber-400 leading-none">★</span>
+                  <Icons.Star className="w-2 h-2 text-amber-400" />
                 ) : isPassed ? (
                   <span className="w-1 h-1 rounded-full bg-white"></span>
                 ) : null}

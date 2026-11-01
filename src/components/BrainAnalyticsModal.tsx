@@ -115,14 +115,16 @@ export const BrainAnalyticsModal: React.FC<BrainAnalyticsModalProps> = ({
             {/* Header */}
             <div className="flex justify-between items-center p-4 border-b border-neutral-100">
               <div className="flex items-center gap-2">
-                <span className="text-xl">🧠</span>
+                <div className="w-7 h-7 rounded-lg bg-blue-50 text-blue-500 flex items-center justify-center shrink-0">
+                  <Icons.Brain className="w-4 h-4" />
+                </div>
                 <h2 className="text-lg font-black text-[#1D1D1F] tracking-tight">{t.brain_analytics_title}</h2>
               </div>
               <button
                 onClick={onClose}
-                className="w-8 h-8 flex items-center justify-center bg-neutral-100 hover:bg-neutral-200 rounded-full transition-colors"
+                className="w-8 h-8 flex items-center justify-center bg-neutral-100 hover:bg-neutral-200 text-neutral-400 hover:text-neutral-700 rounded-full transition-colors"
               >
-                <span className="font-bold text-neutral-400 text-xs">✕</span>
+                <Icons.X className="w-3.5 h-3.5" />
               </button>
             </div>
 
@@ -193,12 +195,12 @@ export const BrainAnalyticsModal: React.FC<BrainAnalyticsModalProps> = ({
               >
                 {isSharing ? (
                   <>
-                    <span className="text-sm animate-spin">⏳</span>
+                    <div className="w-3.5 h-3.5 border-2 border-neutral-950 border-t-transparent rounded-full animate-spin shrink-0" />
                     <span>{t.brain_share_loading || 'HAZIRLANIYOR...'}</span>
                   </>
                 ) : (
                   <>
-                    <span className="text-sm">📤</span>
+                    <Icons.Share className="w-4 h-4 shrink-0" />
                     <span>{sharedStatus || t.brain_share_unified || 'BEYİN RAPORUNU PAYLAŞ'}</span>
                   </>
                 )}
