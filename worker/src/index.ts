@@ -996,7 +996,7 @@ export default {
 
         const chars = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
         let recoveryCode = 'ZK-';
-        for (let i = 0; i < 4; i++) {
+        for (let i = 0; i < 6; i++) {
           recoveryCode += chars[Math.floor(Math.random() * chars.length)];
         }
         const accountId = crypto.randomUUID();
