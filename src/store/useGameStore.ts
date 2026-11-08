@@ -13,6 +13,7 @@ interface GameState {
   maxTime: number;
   previousAnswers: number[]; 
   hideIntro: boolean;
+  hideMemoryIntro: boolean;
   isDevMode: boolean; // Developer mode toggle
   hasRevivedInCurrentGame: boolean;
   language: 'en' | 'tr' | 'de' | 'ja' | 'pt';
@@ -60,6 +61,7 @@ interface GameState {
   reviveGame: () => void;
   showSolution: () => void;
   setHideIntro: (hide: boolean) => void;
+  setHideMemoryIntro: (hide: boolean) => void;
   addLevelTime: (timeSpent: number) => void;
   endGame: () => void;
   toggleDevMode: () => void;
@@ -101,6 +103,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   maxTime: 20,
   previousAnswers: [0, 0],
   hideIntro: localStorage.getItem('hideIntro') === 'true',
+  hideMemoryIntro: localStorage.getItem('hideMemoryIntro') === 'true',
   isDevMode: false,
   hasRevivedInCurrentGame: false,
   language: getInitialLanguage(),
@@ -267,6 +270,11 @@ export const useGameStore = create<GameState>((set, get) => ({
   setHideIntro: (hide: boolean) => {
     localStorage.setItem('hideIntro', String(hide));
     set({ hideIntro: hide });
+  },
+
+  setHideMemoryIntro: (hide: boolean) => {
+    localStorage.setItem('hideMemoryIntro', String(hide));
+    set({ hideMemoryIntro: hide });
   },
 
   addLevelTime: (timeSpent: number) => set((state) => ({

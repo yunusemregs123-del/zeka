@@ -1696,10 +1696,10 @@ function GameOverScreen({
 
 export default function App() {
   const {
-    gameState, gameMode, level, totalTimeSpent, currentValue, timeLeft, maxTime, coins, previousAnswers, hideIntro, isDevMode, hasRevivedInCurrentGame, language,
+    gameState, gameMode, level, totalTimeSpent, currentValue, timeLeft, maxTime, coins, previousAnswers, hideIntro, hideMemoryIntro, isDevMode, hasRevivedInCurrentGame, language,
     timeAttackScore, memoryScore, timeAttackBest, memoryBest,
     streak, helpCount, langsUsed, dailyRewardsToday, lastRewardTime,
-    startNewLevel, setCurrentValue, tickTimer, addLevelTime, setHideIntro, startGame, goToMenu, resetStreak, unlockMedal, claimDailyReward, devAdvanceLevel,
+    startNewLevel, setCurrentValue, tickTimer, addLevelTime, setHideIntro, setHideMemoryIntro, startGame, goToMenu, resetStreak, unlockMedal, claimDailyReward, devAdvanceLevel,
     incrementModeScore
   } = useGameStore();
   const t = Translations[language];
@@ -1776,6 +1776,7 @@ export default function App() {
   const [showTutorialModal, setShowTutorialModal] = useState(false);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
   const [showIntroModal, setShowIntroModal] = useState(false);
+  const [showMemoryIntroModal, setShowMemoryIntroModal] = useState(false);
   const [showDailyRewardGlobal, setShowDailyRewardGlobal] = useState(false);
   const [showSuccessGlobal, setShowSuccessGlobal] = useState(false);
   const [showInfo, setShowInfo] = useState(false);
@@ -1785,6 +1786,7 @@ export default function App() {
   const [showNameEditModal, setShowNameEditModal] = useState(false);
   const [showLangMenu, setShowLangMenu] = useState(false);
   const [introCheckbox, setIntroCheckbox] = useState(hideIntro);
+  const [memoryIntroCheckbox, setMemoryIntroCheckbox] = useState(hideMemoryIntro);
   const [isWatchingDaily, setIsWatchingDaily] = useState(false);
   const [adError, setAdError] = useState<string | null>(null);
   const [showComboAnim, setShowComboAnim] = useState(false);
@@ -1849,7 +1851,14 @@ export default function App() {
         if (showExitConfirm) setShowExitConfirm(false);
         else if (showNameEditModal) setShowNameEditModal(false);
         else if (showTutorialModal) setShowTutorialModal(false);
-        else if (showIntroModal) setShowIntroModal(false);
+        else if (showMemoryIntroModal) {
+          setShowMemoryIntroModal(false);
+          goToMenu();
+        }
+        else if (showIntroModal) {
+          setShowIntroModal(false);
+          goToMenu();
+        }
         else if (showTrackingModal) setShowTrackingModal(false);
         else if (showDailyRewardGlobal) setShowDailyRewardGlobal(false);
         else if (showInfo) setShowInfo(false);
@@ -1871,7 +1880,7 @@ export default function App() {
     };
     setup();
     return () => { if (backListener) backListener.remove(); };
-  }, [showTutorialModal, showIntroModal, showTrackingModal, showDailyRewardGlobal, showSuccessGlobal, showExitConfirm, showInfo, showLeaderboard, showMedals, selectedMedal, showBrainStats, showDuel, showNameEditModal, gameState, isPaused]);
+  }, [showTutorialModal, showIntroModal, showMemoryIntroModal, showTrackingModal, showDailyRewardGlobal, showSuccessGlobal, showExitConfirm, showInfo, showLeaderboard, showMedals, selectedMedal, showBrainStats, showDuel, showNameEditModal, gameState, isPaused]);
 
   useEffect(() => {
     // Reset state immediately on level/state change to ensure clean transition
@@ -1880,7 +1889,17 @@ export default function App() {
     
     if (gameState === 'PLAYING') {
       const isDuel = isDuelActive || gameMode === 'DUEL';
-      if (!isDuel && level === 1 && !hideIntro) {
+      if (gameMode === 'MEMORY') {
+        if (level === 1 && !hideMemoryIntro) {
+          setShowMemoryIntroModal(true);
+          playSound('intro');
+        } else if (level > 1 && isTutorialLevel(level)) {
+          setShowTutorialModal(true);
+          playSound('intro');
+        } else {
+          initLevel();
+        }
+      } else if (!isDuel && level === 1 && !hideIntro) {
         setShowIntroModal(true);
         playSound('intro');
       } else if (!isDuel && level > 1 && isTutorialLevel(level)) {
@@ -1897,15 +1916,16 @@ export default function App() {
       // Reset game-local UI states when not in playing mode
       setShowTutorialModal(false);
       setShowIntroModal(false);
+      setShowMemoryIntroModal(false);
     }
-  }, [level, gameState, hideIntro, showCompanySplash, isDuelActive, gameMode]);
+  }, [level, gameState, hideIntro, hideMemoryIntro, showCompanySplash, isDuelActive, gameMode]);
 
 
 
   useEffect(() => {
     let interval: number;
     const isDuel = isDuelActive || gameMode === 'DUEL';
-    const isModalOpen = !isDuel && (showTutorialModal || showIntroModal); // Intentionally excluding showExitConfirm so timer keeps running; In Duel mode, never pause timer for modals!
+    const isModalOpen = !isDuel && (showTutorialModal || showIntroModal || showMemoryIntroModal); // Intentionally excluding showExitConfirm so timer keeps running; In Duel mode, never pause timer for modals!
     if (gameState === 'PLAYING' && !isPaused && !isModalOpen && !isDevMode && duelCountdown === null) {
       interval = setInterval(() => {
         tickTimer(0.1);
@@ -1922,7 +1942,7 @@ export default function App() {
       }, 100);
     }
     return () => clearInterval(interval);
-  }, [gameState, isPaused, showTutorialModal, showIntroModal, isDevMode, isDuelActive, gameMode, duelCountdown]);
+  }, [gameState, isPaused, showTutorialModal, showIntroModal, showMemoryIntroModal, isDevMode, isDuelActive, gameMode, duelCountdown]);
 
   useEffect(() => {
     if (gameState !== 'PLAYING') {
@@ -1931,7 +1951,7 @@ export default function App() {
       return;
     }
 
-    const isModalOpen = showTutorialModal || showIntroModal || showExitConfirm;
+    const isModalOpen = showTutorialModal || showIntroModal || showMemoryIntroModal || showExitConfirm;
     if (isPaused || isModalOpen || isDevMode || duelCountdown !== null) return;
 
     const currentSec = Math.floor(timeLeft);
@@ -1950,11 +1970,11 @@ export default function App() {
         playSound('tick');
       }
     }
-  }, [Math.floor(timeLeft), gameState, isPaused, showTutorialModal, showIntroModal, showExitConfirm, isDevMode, duelCountdown, isDuelActive, gameMode]);
+  }, [Math.floor(timeLeft), gameState, isPaused, showTutorialModal, showIntroModal, showMemoryIntroModal, showExitConfirm, isDevMode, duelCountdown, isDuelActive, gameMode]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      const isModalOpen = showTutorialModal || showIntroModal || showExitConfirm;
+      const isModalOpen = showTutorialModal || showIntroModal || showMemoryIntroModal || showExitConfirm;
       if (gameState !== 'PLAYING' || isPaused || isModalOpen || duelCountdown !== null) return;
 
       if (e.key === 'ArrowUp' || e.key === 'ArrowRight') {
@@ -1971,7 +1991,7 @@ export default function App() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [gameState, isPaused, showTutorialModal, showIntroModal, showExitConfirm, currentValue, expected, isSubmitting]);
+  }, [gameState, isPaused, showTutorialModal, showIntroModal, showMemoryIntroModal, showExitConfirm, currentValue, expected, isSubmitting]);
 
   useEffect(() => {
     const s = useGameStore.getState();
@@ -2882,7 +2902,7 @@ export default function App() {
                   whileHover={{ scale: 1.15, x: -5 }}
                   whileTap={{ scale: 0.9 }}
                   onClick={() => adjustValue(-1)}
-                  disabled={isPaused || showTutorialModal || showIntroModal}
+                  disabled={isPaused || showTutorialModal || showIntroModal || showMemoryIntroModal}
                   className="w-14 h-16 md:w-16 md:h-20 flex items-center justify-center text-neutral-400 hover:text-neutral-900 transition-colors disabled:opacity-20"
                 >
                   <Icons.TriangleDown className="w-12 h-12 md:w-14 md:h-14 rotate-90" />
@@ -2906,7 +2926,7 @@ export default function App() {
                   whileHover={{ scale: 1.15, x: 5 }}
                   whileTap={{ scale: 0.9 }}
                   onClick={() => adjustValue(+1)}
-                  disabled={isPaused || showTutorialModal || showIntroModal}
+                  disabled={isPaused || showTutorialModal || showIntroModal || showMemoryIntroModal}
                   className="w-14 h-16 md:w-16 md:h-20 flex items-center justify-center text-neutral-400 hover:text-neutral-900 transition-colors disabled:opacity-20"
                 >
                   <Icons.TriangleUp className="w-12 h-12 md:w-14 md:h-14 rotate-90" />
@@ -2918,8 +2938,8 @@ export default function App() {
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={handleSubmission}
-                  disabled={isPaused || showTutorialModal || showIntroModal}
-                  className={`px-10 py-3 md:px-14 md:py-4 bg-[#1D1D1F] text-white rounded-full font-bold tracking-[0.2em] shadow-xl transition-all ${isPaused || showTutorialModal || showIntroModal ? 'opacity-20 pointer-events-none' : 'opacity-100'}`}
+                  disabled={isPaused || showTutorialModal || showIntroModal || showMemoryIntroModal}
+                  className={`px-10 py-3 md:px-14 md:py-4 bg-[#1D1D1F] text-white rounded-full font-bold tracking-[0.2em] shadow-xl transition-all ${isPaused || showTutorialModal || showIntroModal || showMemoryIntroModal ? 'opacity-20 pointer-events-none' : 'opacity-100'}`}
                 >
                   {t.btn_submit}
                 </motion.button>
@@ -2970,7 +2990,7 @@ export default function App() {
                 <div className="grid grid-cols-3 gap-2 w-full">
                   <button
                     onClick={handleTogglePause}
-                    disabled={showTutorialModal || showIntroModal || (!isPaused && !isDevMode && coins < 50)}
+                    disabled={showTutorialModal || showIntroModal || showMemoryIntroModal || (!isPaused && !isDevMode && coins < 50)}
                     className={`flex flex-col items-center justify-center p-2 rounded-xl border text-[9px] font-bold tracking-widest transition disabled:opacity-30 ${isPaused ? 'bg-amber-100 border-amber-200 text-amber-900 shadow-inner' : 'bg-white border-neutral-100 text-neutral-600 shadow-sm'}`}
                   >
                     <span>{isPaused ? t.btn_resume : t.btn_pause}</span>
@@ -2980,7 +3000,7 @@ export default function App() {
                   <motion.button
                     whileTap={{ scale: 0.95 }}
                     onClick={coins >= 10 ? () => useGameStore.getState().addTime(10) : handleWatchAdForTime}
-                    disabled={isPaused || showTutorialModal || showIntroModal || isWatchingHintAd}
+                    disabled={isPaused || showTutorialModal || showIntroModal || showMemoryIntroModal || isWatchingHintAd}
                     className="flex flex-col items-center justify-center p-2 rounded-xl bg-white border border-neutral-100 text-[9px] font-bold tracking-widest shadow-sm disabled:opacity-30 transition-all hover:bg-neutral-50"
                   >
                     <span>{coins >= 10 ? t.btn_plus10 : t.btn_plus_ad}</span>
@@ -2992,7 +3012,7 @@ export default function App() {
                   <motion.button
                     whileTap={{ scale: 0.95 }}
                     onClick={coins >= 75 || isDevMode || hasPaidForSolution ? handleToggleSolution : handleWatchAdForSolution}
-                    disabled={isPaused || showTutorialModal || showIntroModal || isWatchingHintAd}
+                    disabled={isPaused || showTutorialModal || showIntroModal || showMemoryIntroModal || isWatchingHintAd}
                     className="flex flex-col items-center justify-center p-2 rounded-xl bg-white border border-neutral-100 text-[9px] font-bold tracking-widest shadow-sm disabled:opacity-30 transition-all hover:bg-neutral-50"
                   >
                     <span>{showSolution ? t.btn_hide : (coins >= 75 || isDevMode || hasPaidForSolution ? t.btn_reveal : t.btn_reveal_ad)}</span>
@@ -3114,6 +3134,115 @@ export default function App() {
                       {t.privacy_policy || "Gizlilik Politikası (Privacy Policy)"} ↗
                     </button>
                   </div>
+                </motion.div>
+              </motion.div>
+            )}
+
+            {showMemoryIntroModal && !isDuelActive && gameMode === 'MEMORY' && (
+              <motion.div
+                key="memory-intro-modal"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 bg-black/75 flex items-center justify-center p-4 z-50 pointer-events-auto"
+              >
+                <motion.div
+                  initial={{ scale: 0.92, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ type: "spring", stiffness: 350, damping: 25 }}
+                  className="bg-white p-6 rounded-3xl max-w-[340px] w-full shadow-2xl text-center border border-neutral-100 transform-gpu will-change-transform"
+                >
+                  {/* Category Pill */}
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-sky-50 border border-sky-100 text-sky-800 text-[10px] font-black tracking-wider uppercase mb-2">
+                    <Icons.Brain className="w-3.5 h-3.5 text-sky-600 shrink-0" />
+                    <span>{t.mode_memory || 'HAFIZA MODU'}</span>
+                  </div>
+
+                  {/* Modal Title & Subtitle */}
+                  <h2 className="text-xl font-black text-neutral-900 tracking-tight mb-1">{t.intro_mem_title}</h2>
+                  <p className="text-neutral-500 text-[11px] leading-relaxed mb-4">{t.intro_mem_subtitle}</p>
+
+                  {/* Visual Demonstration: Preview -> Masking -> Question */}
+                  <div className="p-3 bg-neutral-50/80 rounded-2xl border border-neutral-100 mb-4 space-y-2.5">
+                    {/* Step 1: Visible */}
+                    <div className="flex items-center justify-between bg-white p-2 rounded-xl border border-neutral-100 shadow-sm">
+                      <div className="flex items-center gap-2">
+                        <span className="w-5 h-5 rounded-full bg-sky-100 text-sky-700 font-black text-[10px] flex items-center justify-center shrink-0">1</span>
+                        <div className="text-left">
+                          <p className="text-[11px] font-black text-neutral-800 leading-tight">{t.intro_mem_s1_title}</p>
+                          <p className="text-[10px] text-neutral-400 leading-tight">{t.intro_mem_s1_desc}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0 ml-1">
+                        <SymbolDisplay type="CircleFilled" size="small" disableAnimation />
+                        <SymbolDisplay type="Plus" size="small" disableAnimation />
+                        <SymbolDisplay type="CircleEmpty" size="small" disableAnimation />
+                      </div>
+                    </div>
+
+                    {/* Step 2: Masked */}
+                    <div className="flex items-center justify-between bg-white p-2 rounded-xl border border-neutral-100 shadow-sm">
+                      <div className="flex items-center gap-2">
+                        <span className="w-5 h-5 rounded-full bg-neutral-100 text-neutral-700 font-black text-[10px] flex items-center justify-center shrink-0">2</span>
+                        <div className="text-left">
+                          <p className="text-[11px] font-black text-neutral-800 leading-tight">{t.intro_mem_s2_title}</p>
+                          <p className="text-[10px] text-neutral-400 leading-tight">{t.intro_mem_s2_desc}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0 ml-1">
+                        <div className="w-6 h-6 rounded-lg bg-neutral-100 border border-neutral-200 text-neutral-500 font-black text-xs flex items-center justify-center shadow-inner">?</div>
+                        <SymbolDisplay type="Plus" size="small" disableAnimation />
+                        <div className="w-6 h-6 rounded-lg bg-neutral-100 border border-neutral-200 text-neutral-500 font-black text-xs flex items-center justify-center shadow-inner">?</div>
+                      </div>
+                    </div>
+
+                    {/* Step 3: Solve */}
+                    <div className="flex items-center justify-between bg-white p-2 rounded-xl border border-neutral-100 shadow-sm">
+                      <div className="flex items-center gap-2">
+                        <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 font-black text-[10px] flex items-center justify-center shrink-0">3</span>
+                        <div className="text-left">
+                          <p className="text-[11px] font-black text-neutral-800 leading-tight">{t.intro_mem_s3_title}</p>
+                          <p className="text-[10px] text-neutral-400 leading-tight">{t.intro_mem_s3_desc}</p>
+                        </div>
+                      </div>
+                      <div className="shrink-0 ml-1 px-2 py-1 bg-neutral-900 text-white font-black text-[10px] rounded-lg tracking-wider">
+                        0
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Don't show again toggle */}
+                  <div
+                    className="flex items-center justify-center gap-2 mb-4 bg-neutral-100/70 hover:bg-neutral-100 p-2.5 rounded-xl cursor-pointer transition-colors"
+                    onClick={() => setMemoryIntroCheckbox(!memoryIntroCheckbox)}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={memoryIntroCheckbox}
+                      onChange={(e) => setMemoryIntroCheckbox(e.target.checked)}
+                      className="w-3.5 h-3.5 accent-[#1D1D1F] cursor-pointer pointer-events-auto"
+                    />
+                    <label className="font-black text-[9px] text-neutral-600 cursor-pointer uppercase tracking-wider select-none">
+                      {t.intro_checkbox}
+                    </label>
+                  </div>
+
+                  {/* Start button */}
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.96 }}
+                    onClick={() => {
+                      haptic.impact('medium');
+                      if (memoryIntroCheckbox) {
+                        setHideMemoryIntro(true);
+                      }
+                      setShowMemoryIntroModal(false);
+                      initLevel();
+                    }}
+                    className="w-full py-3.5 bg-[#1D1D1F] hover:bg-black text-white rounded-full font-black text-xs uppercase tracking-[0.2em] shadow-xl transition-all"
+                  >
+                    {t.intro_mem_btn}
+                  </motion.button>
                 </motion.div>
               </motion.div>
             )}
