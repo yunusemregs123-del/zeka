@@ -148,7 +148,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     const checkpoint = get().checkpointLevel;
     const initialTime = get().checkpointTime;
     const initialLevel = activeMode === 'CLASSIC' ? (startLevel || (asDev ? 1 : checkpoint)) : 1;
-    const startingTime = activeMode === 'TIME_ATTACK' ? 30 : (activeMode === 'MEMORY' ? 15 : (activeMode === 'DUEL' ? 15 : (initialLevel <= 50 ? 20 : Math.max(5, 20 - Math.floor((initialLevel - 50) / 10)))));
+    const startingTime = activeMode === 'TIME_ATTACK' ? 30 : (activeMode === 'MEMORY' ? 15 : (activeMode === 'DUEL' ? 15 : 20));
 
     set({ 
       gameState: 'PLAYING',
@@ -184,7 +184,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       return;
     }
 
-    const currentMaxTime = mode === 'MEMORY' ? 15 : (mode === 'DUEL' ? 15 : (get().level <= 50 ? 20 : Math.max(5, 20 - Math.floor((get().level - 50) / 10))));
+    const currentMaxTime = mode === 'MEMORY' ? 15 : (mode === 'DUEL' ? 15 : 20);
     set({
       currentValue: 0,
       timeLeft: get().isDevMode ? 999 : currentMaxTime,
