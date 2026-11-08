@@ -189,6 +189,10 @@ function MenuScreen({
   const [scores, setScores] = useState<Leaderboard.ScoreEntry[]>([]);
   const [personalRankData, setPersonalRankData] = useState<{ rank: number, row: Leaderboard.ScoreEntry } | null>(null);
   const [loading, setLoading] = useState(true);
+  const tabCacheRef = useRef<Partial<Record<'daily' | 'weekly' | 'alltime', {
+    scores: Leaderboard.ScoreEntry[];
+    personalRankData: { rank: number; row: Leaderboard.ScoreEntry } | null;
+  }>>>({});
   const [muteAudio, setMuteAudio] = useState(localStorage.getItem('zeka_mute') === 'true');
   const logoControls = useAnimation();
 
@@ -243,6 +247,7 @@ function MenuScreen({
 
       Leaderboard.setPlayerName(trimmed);
       setPlayerName(trimmed);
+      tabCacheRef.current = {}; // Invalidate leaderboard cache
       await AuthService.syncNow();
       haptic.notification('success');
       setShowNameEditModal(false);
@@ -269,26 +274,55 @@ function MenuScreen({
   }, []);
 
   useEffect(() => {
-    setLoading(true);
-    const fetch = async () => {
-      let data: Leaderboard.ScoreEntry[];
-      if (tab === 'daily') data = await Leaderboard.getDailyScores();
-      else if (tab === 'weekly') data = await Leaderboard.getWeeklyScores();
-      else data = await Leaderboard.getAllTimeScores();
-      setScores(data);
+    if (!showLeaderboard) return;
 
-      const pName = Leaderboard.getPlayerName();
-      if (pName) {
-        const pr = await Leaderboard.getPersonalScoreAndRank(tab, pName);
-        setPersonalRankData(pr);
-      } else {
-        setPersonalRankData(null);
-      }
+    let isCancelled = false;
 
+    // Fast-path: Instant render if cached in memory (0ms flicker-free tab switch)
+    const cached = tabCacheRef.current[tab];
+    if (cached) {
+      setScores(cached.scores);
+      setPersonalRankData(cached.personalRankData);
       setLoading(false);
+    } else {
+      setLoading(true);
+    }
+
+    const fetchLeaderboardData = async () => {
+      try {
+        const pName = Leaderboard.getPlayerName();
+        const scoresPromise = tab === 'daily'
+          ? Leaderboard.getDailyScores()
+          : tab === 'weekly'
+          ? Leaderboard.getWeeklyScores()
+          : Leaderboard.getAllTimeScores();
+        const rankPromise = pName
+          ? Leaderboard.getPersonalScoreAndRank(tab, pName)
+          : Promise.resolve(null);
+
+        // Fetch in parallel (cuts latency in half)
+        const [data, pr] = await Promise.all([scoresPromise, rankPromise]);
+
+        if (isCancelled) return;
+
+        tabCacheRef.current[tab] = { scores: data, personalRankData: pr };
+        setScores(data);
+        setPersonalRankData(pr);
+      } catch (e) {
+        console.warn('Leaderboard fetch error:', e);
+      } finally {
+        if (!isCancelled) {
+          setLoading(false);
+        }
+      }
     };
-    fetch();
-  }, [tab]);
+
+    fetchLeaderboardData();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [tab, showLeaderboard]);
 
   // Ambiyans Müziğini Ana Menüde çaldır
   useEffect(() => {
@@ -970,13 +1004,17 @@ function MenuScreen({
       {/* LEADERBOARD MODAL */}
       <AnimatePresence>
         {showLeaderboard && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 pointer-events-auto">
+          <div
+            onClick={() => setShowLeaderboard(false)}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 pointer-events-auto"
+          >
             <motion.div
               key="lb-modal"
               initial={{ scale: 0.95, opacity: 0, y: 10 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.95, opacity: 0, y: 10 }}
               transition={{ duration: 0.2 }}
+              onClick={(e) => e.stopPropagation()}
               className="bg-white rounded-3xl w-full max-w-[360px] shadow-2xl flex flex-col overflow-hidden max-h-[85dvh]"
             >
               <div className="flex justify-between items-center p-4 border-b border-neutral-100 shrink-0">
@@ -989,7 +1027,13 @@ function MenuScreen({
               <div className="flex border-b border-neutral-100 shrink-0">
                 {(['daily', 'weekly', 'alltime'] as const).map(t => (
                   <button
-                    key={t} onClick={() => setTab(t)}
+                    key={t}
+                    onClick={() => {
+                      if (tab !== t) {
+                        haptic.impact('light');
+                        setTab(t);
+                      }
+                    }}
                     className={`flex-1 py-3 text-[10px] sm:text-xs font-black tracking-widest uppercase transition-colors relative ${tab === t ? 'text-[#1D1D1F]' : 'text-neutral-300 hover:text-neutral-500'}`}
                   >
                     {tabLabels[t]}
@@ -1005,66 +1049,89 @@ function MenuScreen({
               </div>
 
               <div className="p-3 overflow-y-auto w-full min-h-[320px] bg-neutral-50/50">
-                {loading ? (
-                  <div className="flex flex-col items-center justify-center h-full min-h-[250px] gap-3">
-                    <div className="w-8 h-8 border-4 border-neutral-200 border-t-[#1D1D1F] rounded-full animate-spin"></div>
-                    <span className="text-[10px] font-bold text-neutral-400 tracking-widest uppercase">{t.lb_loading}</span>
-                  </div>
-                ) : scores.length === 0 ? (
-                  <div className="text-center flex flex-col items-center justify-center h-full min-h-[250px]">
-                    <Icons.Target className="w-12 h-12 text-neutral-300 mx-auto mb-3" />
-                    <p className="text-neutral-400 font-semibold text-sm">{t.lb_empty}</p>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {scores.map((entry, idx) => {
-                      const isMe = personalRankData?.row.player_name && entry.player_name
-                        ? personalRankData.row.player_name.trim().toLowerCase() === entry.player_name.trim().toLowerCase()
-                        : false;
-                      return (
-                        <div key={entry.id} className={`flex items-center gap-3 p-2 sm:p-3 rounded-xl transition ${isMe ? 'bg-blue-50 border-2 border-blue-400 shadow-sm z-10 relative' : idx === 0 ? 'bg-yellow-50 border border-yellow-400 shadow-sm' : idx === 1 ? 'bg-slate-50 border border-slate-300 shadow-sm' : idx === 2 ? 'bg-orange-50 border border-orange-400 shadow-sm' : 'bg-white border border-transparent'}`}>
-                          <div className={`relative flex items-center justify-center font-black shrink-0 ${isMe ? 'bg-blue-400 text-white shadow-md ring-2 ring-blue-100 w-8 h-8 rounded-full text-sm' : idx === 0 ? 'bg-yellow-400 text-yellow-950 border-2 border-yellow-200 shadow-md w-8 h-8 rounded-full text-sm' : idx === 1 ? 'bg-slate-200 text-slate-800 border-2 border-slate-100 shadow-sm w-7 h-7 rounded-full text-xs' : idx === 2 ? 'bg-orange-400 text-orange-950 border-2 border-orange-200 shadow-sm w-7 h-7 rounded-full text-xs' : 'bg-neutral-100 text-neutral-500 w-6 h-6 rounded-full text-[10px]'}`}>
-                            {idx === 0 && <Icons.Crown className="w-4 h-4 text-amber-500 absolute -top-3 -right-1 drop-shadow-xs" />}
-                            {idx + 1}
+                <AnimatePresence mode="wait">
+                  {loading && !scores.length ? (
+                    <motion.div
+                      key="lb-loading"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.15 }}
+                      className="flex flex-col items-center justify-center h-full min-h-[250px] gap-3"
+                    >
+                      <div className="w-8 h-8 border-4 border-neutral-200 border-t-[#1D1D1F] rounded-full animate-spin"></div>
+                      <span className="text-[10px] font-bold text-neutral-400 tracking-widest uppercase">{t.lb_loading}</span>
+                    </motion.div>
+                  ) : scores.length === 0 ? (
+                    <motion.div
+                      key={`lb-empty-${tab}`}
+                      initial={{ opacity: 0, scale: 0.96 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.15 }}
+                      className="text-center flex flex-col items-center justify-center h-full min-h-[250px]"
+                    >
+                      <Icons.Target className="w-12 h-12 text-neutral-300 mx-auto mb-3" />
+                      <p className="text-neutral-400 font-semibold text-sm">{t.lb_empty}</p>
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      key={`lb-list-${tab}`}
+                      initial={{ opacity: 0, y: 5 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -5 }}
+                      transition={{ duration: 0.15, ease: "easeOut" }}
+                      className="space-y-2"
+                    >
+                      {scores.map((entry, idx) => {
+                        const isMe = personalRankData?.row.player_name && entry.player_name
+                          ? personalRankData.row.player_name.trim().toLowerCase() === entry.player_name.trim().toLowerCase()
+                          : false;
+                        return (
+                          <div key={entry.id} className={`flex items-center gap-3 p-2 sm:p-3 rounded-xl transition ${isMe ? 'bg-blue-50 border-2 border-blue-400 shadow-sm z-10 relative' : idx === 0 ? 'bg-yellow-50 border border-yellow-400 shadow-sm' : idx === 1 ? 'bg-slate-50 border border-slate-300 shadow-sm' : idx === 2 ? 'bg-orange-50 border border-orange-400 shadow-sm' : 'bg-white border border-transparent'}`}>
+                            <div className={`relative flex items-center justify-center font-black shrink-0 ${isMe ? 'bg-blue-400 text-white shadow-md ring-2 ring-blue-100 w-8 h-8 rounded-full text-sm' : idx === 0 ? 'bg-yellow-400 text-yellow-950 border-2 border-yellow-200 shadow-md w-8 h-8 rounded-full text-sm' : idx === 1 ? 'bg-slate-200 text-slate-800 border-2 border-slate-100 shadow-sm w-7 h-7 rounded-full text-xs' : idx === 2 ? 'bg-orange-400 text-orange-950 border-2 border-orange-200 shadow-sm w-7 h-7 rounded-full text-xs' : 'bg-neutral-100 text-neutral-500 w-6 h-6 rounded-full text-[10px]'}`}>
+                              {idx === 0 && <Icons.Crown className="w-4 h-4 text-amber-500 absolute -top-3 -right-1 drop-shadow-xs" />}
+                              {idx + 1}
+                            </div>
+                            <div className="flex-1 min-w-0 pr-1">
+                              <span className={`font-bold text-xs sm:text-sm block truncate flex items-center gap-1 ${isMe ? 'text-blue-800' : ''}`}>
+                                {entry.country_code && <span className="text-[10px]">{entry.country_code.toUpperCase().replace(/./g, char => String.fromCodePoint(char.charCodeAt(0) + 127397))}</span>}
+                                {entry.player_name}
+                                {isMe && <span className="text-[9px] ml-1 bg-blue-100 text-blue-600 px-1.5 py-0.5 rounded-full uppercase tracking-wider">{t.lb_you || "(Sen)"}</span>}
+                              </span>
+                              <span className={`text-[9px] sm:text-[10px] font-medium ${isMe ? 'text-blue-400/80' : 'text-neutral-400'}`}>{Leaderboard.formatDate(entry.created_at)}</span>
+                            </div>
+                            <div className="text-right shrink-0">
+                              <span className={`font-black text-xs sm:text-sm block ${isMe ? 'text-blue-800' : ''}`}>{t.lb_b_level} {entry.level}</span>
+                              <span className={`text-[9px] sm:text-[10px] font-semibold ${isMe ? 'text-blue-400/80' : 'text-neutral-400'}`}>{Leaderboard.formatTime(entry.total_time)}</span>
+                            </div>
                           </div>
-                          <div className="flex-1 min-w-0 pr-1">
-                            <span className={`font-bold text-xs sm:text-sm block truncate flex items-center gap-1 ${isMe ? 'text-blue-800' : ''}`}>
-                              {entry.country_code && <span className="text-[10px]">{entry.country_code.toUpperCase().replace(/./g, char => String.fromCodePoint(char.charCodeAt(0) + 127397))}</span>}
-                              {entry.player_name}
-                              {isMe && <span className="text-[9px] ml-1 bg-blue-100 text-blue-600 px-1.5 py-0.5 rounded-full uppercase tracking-wider">{t.lb_you || "(Sen)"}</span>}
+                        );
+                      })}
+                      {personalRankData && !scores.some(s => s.player_name?.trim().toLowerCase() === personalRankData.row.player_name?.trim().toLowerCase()) && (
+                        <>
+                          <div className="my-2 border-t-2 border-dashed border-neutral-200"></div>
+                          <div className="flex items-center gap-2 p-2 sm:p-3 rounded-xl bg-blue-50 border border-blue-100">
+                            <span className="w-6 h-6 rounded-full flex items-center justify-center font-black text-[10px] shrink-0 bg-blue-400 text-white shadow-sm ring-2 ring-blue-100">
+                              {personalRankData.rank > 999 ? '999+' : personalRankData.rank}
                             </span>
-                            <span className={`text-[9px] sm:text-[10px] font-medium ${isMe ? 'text-blue-400/80' : 'text-neutral-400'}`}>{Leaderboard.formatDate(entry.created_at)}</span>
+                            <div className="flex-1 min-w-0 pr-1">
+                              <span className="font-bold text-xs sm:text-sm text-blue-800 block truncate flex items-center gap-1">
+                                {personalRankData.row.country_code && <span className="text-[10px]">{personalRankData.row.country_code.toUpperCase().replace(/./g, char => String.fromCodePoint(char.charCodeAt(0) + 127397))}</span>}
+                                {personalRankData.row.player_name} <span className="text-[9px] ml-1 bg-blue-100 text-blue-600 px-1.5 py-0.5 rounded-full uppercase tracking-wider">{t.lb_you || "(Sen)"}</span>
+                              </span>
+                              <span className="text-[9px] sm:text-[10px] text-blue-400/80 font-medium">{Leaderboard.formatDate(personalRankData.row.created_at)}</span>
+                            </div>
+                            <div className="text-right shrink-0">
+                              <span className="font-black text-xs sm:text-sm block text-blue-800">{t.lb_b_level} {personalRankData.row.level}</span>
+                              <span className="text-[9px] sm:text-[10px] text-blue-400/80 font-semibold">{Leaderboard.formatTime(personalRankData.row.total_time)}</span>
+                            </div>
                           </div>
-                          <div className="text-right shrink-0">
-                            <span className={`font-black text-xs sm:text-sm block ${isMe ? 'text-blue-800' : ''}`}>{t.lb_b_level} {entry.level}</span>
-                            <span className={`text-[9px] sm:text-[10px] font-semibold ${isMe ? 'text-blue-400/80' : 'text-neutral-400'}`}>{Leaderboard.formatTime(entry.total_time)}</span>
-                          </div>
-                        </div>
-                      );
-                    })}
-                    {personalRankData && !scores.some(s => s.player_name?.trim().toLowerCase() === personalRankData.row.player_name?.trim().toLowerCase()) && (
-                      <>
-                        <div className="my-2 border-t-2 border-dashed border-neutral-200"></div>
-                        <div className="flex items-center gap-2 p-2 sm:p-3 rounded-xl bg-blue-50 border border-blue-100">
-                          <span className="w-6 h-6 rounded-full flex items-center justify-center font-black text-[10px] shrink-0 bg-blue-400 text-white shadow-sm ring-2 ring-blue-100">
-                            {personalRankData.rank > 999 ? '999+' : personalRankData.rank}
-                          </span>
-                          <div className="flex-1 min-w-0 pr-1">
-                            <span className="font-bold text-xs sm:text-sm text-blue-800 block truncate flex items-center gap-1">
-                              {personalRankData.row.country_code && <span className="text-[10px]">{personalRankData.row.country_code.toUpperCase().replace(/./g, char => String.fromCodePoint(char.charCodeAt(0) + 127397))}</span>}
-                              {personalRankData.row.player_name} <span className="text-[9px] ml-1 bg-blue-100 text-blue-600 px-1.5 py-0.5 rounded-full uppercase tracking-wider">{t.lb_you || "(Sen)"}</span>
-                            </span>
-                            <span className="text-[9px] sm:text-[10px] text-blue-400/80 font-medium">{Leaderboard.formatDate(personalRankData.row.created_at)}</span>
-                          </div>
-                          <div className="text-right shrink-0">
-                            <span className="font-black text-xs sm:text-sm block text-blue-800">{t.lb_b_level} {personalRankData.row.level}</span>
-                            <span className="text-[9px] sm:text-[10px] text-blue-400/80 font-semibold">{Leaderboard.formatTime(personalRankData.row.total_time)}</span>
-                          </div>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                )}
+                        </>
+                      )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             </motion.div>
           </div>
@@ -1074,13 +1141,17 @@ function MenuScreen({
       {/* NICKNAME EDIT MODAL */}
       <AnimatePresence>
         {showNameEditModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 pointer-events-auto">
+          <div
+            onClick={() => setShowNameEditModal(false)}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 pointer-events-auto"
+          >
             <motion.div
               key="name-edit-modal"
               initial={{ scale: 0.95, opacity: 0, y: 10 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.95, opacity: 0, y: 10 }}
               transition={{ duration: 0.2 }}
+              onClick={(e) => e.stopPropagation()}
               className="bg-white rounded-3xl w-full max-w-[320px] shadow-2xl p-5 border border-neutral-100 relative overflow-hidden"
             >
               <div className="flex justify-between items-center mb-3">
