@@ -83,6 +83,14 @@ function generateRoomCode(): string {
   return `ZK-${Math.floor(10000 + Math.random() * 90000)}`;
 }
 
+function getWeeklyRewardCoins(rank: number): number {
+  if (rank === 1) return 1000;
+  if (rank === 2) return 500;
+  if (rank === 3) return 250;
+  if (rank >= 4 && rank <= 10) return 100;
+  return 0;
+}
+
 export default {
   async fetch(request: Request, env: Env, ctx: any): Promise<Response> {
     const url = new URL(request.url);
@@ -964,6 +972,48 @@ export default {
           const newProvider = (provider !== 'guest' && providerUserId) ? provider : existingUser.provider;
           const newProviderId = (provider !== 'guest' && providerUserId) ? providerUserId : existingUser.provider_user_id;
 
+          // Weekly League Reward Check (Top 10 of previous ISO week):
+          // 1st: 1000C, 2nd: 500C, 3rd: 250C, 4th-10th: 100C
+          const { weekly: previousWeek } = getPeriodKeys(new Date(Date.now() - 7 * 24 * 60 * 60 * 1000));
+          let weeklyRewardWon: { week: string; rank: number; coins: number } | null = null;
+          let newLastClaimedWeek = existingUser.last_claimed_weekly_reward || '';
+
+          if (existingUser.last_claimed_weekly_reward !== previousWeek) {
+            newLastClaimedWeek = previousWeek;
+            try {
+              const top10 = await env.DB.prepare(`
+                SELECT player_name, device_id
+                FROM scores_weekly
+                WHERE period_week = ?
+                ORDER BY level DESC, total_time ASC
+                LIMIT 10
+              `).bind(previousWeek).all<any>();
+
+              if (top10.results && top10.results.length > 0) {
+                const userIndex = top10.results.findIndex((r: any) => {
+                  const nameMatch = r.player_name && playerName && r.player_name.toLowerCase() === playerName.toLowerCase();
+                  const deviceMatch = r.device_id && deviceId && r.device_id === deviceId;
+                  return nameMatch || deviceMatch;
+                });
+
+                if (userIndex !== -1) {
+                  const rank = userIndex + 1;
+                  const rewardCoins = getWeeklyRewardCoins(rank);
+                  if (rewardCoins > 0) {
+                    weeklyRewardWon = {
+                      week: previousWeek,
+                      rank,
+                      coins: rewardCoins,
+                    };
+                    mergedCoins += rewardCoins;
+                  }
+                }
+              }
+            } catch (err) {
+              console.warn('Weekly reward check skipped:', err);
+            }
+          }
+
           await env.DB.prepare(`
             UPDATE user_accounts
             SET player_name = ?,
@@ -975,6 +1025,7 @@ export default {
                 coins = ?,
                 gift_coins = 0,
                 force_coins = NULL,
+                last_claimed_weekly_reward = ?,
                 time_attack_best = ?,
                 memory_best = ?,
                 medals = ?,
@@ -989,6 +1040,7 @@ export default {
             deviceId,
             mergedLevel,
             mergedCoins,
+            newLastClaimedWeek,
             mergedTa,
             mergedMem,
             JSON.stringify(combinedMedals),
@@ -1017,7 +1069,8 @@ export default {
             max_level: mergedLevel,
             coins: mergedCoins,
             gift_coins: giftAwarded,
-            force_sync: forceApplied || isDifferentDevice,
+            weekly_reward: weeklyRewardWon,
+            force_sync: forceApplied || isDifferentDevice || Boolean(weeklyRewardWon),
             time_attack_best: mergedTa,
             memory_best: mergedMem,
             medals: combinedMedals,
@@ -1035,8 +1088,8 @@ export default {
         await env.DB.prepare(`
           INSERT INTO user_accounts (
             id, provider, provider_user_id, recovery_code, device_id, player_name, country,
-            max_level, coins, gift_coins, force_coins, time_attack_best, memory_best, medals, claimed_medals
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, NULL, ?, ?, ?, ?)
+            max_level, coins, gift_coins, force_coins, last_claimed_weekly_reward, time_attack_best, memory_best, medals, claimed_medals
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, NULL, '', ?, ?, ?, ?)
         `).bind(
           accountId,
           provider,

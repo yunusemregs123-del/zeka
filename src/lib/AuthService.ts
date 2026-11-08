@@ -11,6 +11,12 @@ const CF_WORKER_URL = (import.meta.env.VITE_CF_WORKER_URL || AppConfig.api.worke
 const RECOVERY_CODE_KEY = 'zeka_recovery_code';
 const AUTH_PROVIDER_KEY = 'zeka_auth_provider';
 
+export interface WeeklyRewardInfo {
+  week: string;
+  rank: number;
+  coins: number;
+}
+
 export interface CloudUserAccount {
   account_id: string;
   recovery_code: string;
@@ -19,6 +25,7 @@ export interface CloudUserAccount {
   max_level: number;
   coins: number;
   gift_coins?: number;
+  weekly_reward?: WeeklyRewardInfo | null;
   force_sync?: boolean;
   time_attack_best?: number;
   memory_best: number;
@@ -113,6 +120,11 @@ export const AuthService = {
           const updatedCoins = currentCoins + data.gift_coins;
           useGameStore.setState({ coins: updatedCoins });
           localStorage.setItem('zeka_coins', String(updatedCoins));
+        }
+
+        // Trigger Weekly League Reward Celebration Modal if awarded
+        if (data.weekly_reward && typeof data.weekly_reward.coins === 'number' && data.weekly_reward.coins > 0) {
+          useGameStore.setState({ pendingWeeklyReward: data.weekly_reward });
         }
         // Note: In normal gameplay, spent coins stay spent and are saved to D1.
         // We do NOT unconditionally overwrite local coins with server coins.

@@ -107,6 +107,7 @@ CREATE TABLE IF NOT EXISTS user_accounts (
   coins INTEGER DEFAULT 75,
   gift_coins INTEGER NOT NULL DEFAULT 0,
   force_coins INTEGER DEFAULT NULL,
+  last_claimed_weekly_reward TEXT DEFAULT '',
   time_attack_best INTEGER DEFAULT 0,
   memory_best INTEGER DEFAULT 0,
   medals TEXT DEFAULT '[]',

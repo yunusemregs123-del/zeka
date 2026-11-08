@@ -2,6 +2,12 @@ import { create } from "zustand";
 
 export type GameMode = 'CLASSIC' | 'MEMORY' | 'DUEL';
 
+export interface WeeklyRewardData {
+  week: string;
+  rank: number;
+  coins: number;
+}
+
 interface GameState {
   gameState: 'MENU' | 'PLAYING' | 'GAMEOVER';
   gameMode: GameMode;
@@ -66,6 +72,8 @@ interface GameState {
   devAdvanceLevel: (lvl: number) => void;
   claimDailyReward: () => void;
   incrementModeScore: () => void;
+  pendingWeeklyReward: WeeklyRewardData | null;
+  dismissWeeklyReward: () => void;
 }
 
 const getDailyRewardState = () => {
@@ -122,6 +130,8 @@ export const useGameStore = create<GameState>((set, get) => ({
   
   // Starting coins: default 200 if new player
   coins: localStorage.getItem('zeka_coins') !== null ? Number(localStorage.getItem('zeka_coins')) : 200,
+  pendingWeeklyReward: null,
+  dismissWeeklyReward: () => set({ pendingWeeklyReward: null }),
 
   setGameMode: (mode) => set({ gameMode: mode }),
 

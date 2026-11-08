@@ -18,6 +18,7 @@ import { DuelService, type OpponentInfo } from './lib/DuelService';
 import { JourneyMap } from './components/JourneyMap';
 import { RollingNumber } from './components/RollingNumber';
 import { AuthService } from './lib/AuthService';
+import { WeeklyRewardModal } from './components/WeeklyRewardModal';
 
 const BrainAnalyticsModal = lazy(() => import('./components/BrainAnalyticsModal').then(m => ({ default: m.BrainAnalyticsModal })));
 const DuelModal = lazy(() => import('./components/DuelModal').then(m => ({ default: m.DuelModal })));
@@ -1088,6 +1089,15 @@ function MenuScreen({
                 ))}
               </div>
 
+              {tab === 'weekly' && (
+                <div className="px-3.5 py-2 bg-gradient-to-r from-amber-50 via-yellow-50 to-amber-50 border-b border-amber-200/60 flex items-center justify-center text-[10px] sm:text-[11px] font-black text-amber-900 tracking-tight text-center">
+                  <span className="flex items-center gap-1.5 flex-wrap justify-center">
+                    <Icons.Crown className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                    <span>{t.weekly_rewards_banner || 'Haftalık Ödüller: 1. 1000C • 2. 500C • 3. 250C • 4-10. 100C'}</span>
+                  </span>
+                </div>
+              )}
+
               <div className="p-3 overflow-y-auto w-full min-h-[320px] bg-neutral-50/50">
                 <AnimatePresence mode="wait">
                   {loading && !scores.length ? (
@@ -1642,7 +1652,7 @@ export default function App() {
     memoryScore, memoryBest,
     streak, helpCount, langsUsed, dailyRewardsToday, lastRewardTime,
     startNewLevel, setCurrentValue, tickTimer, addLevelTime, setHideIntro, setHideMemoryIntro, startGame, goToMenu, resetStreak, unlockMedal, claimDailyReward, devAdvanceLevel,
-    incrementModeScore
+    incrementModeScore, pendingWeeklyReward, dismissWeeklyReward
   } = useGameStore();
   const t = Translations[language];
 
@@ -3469,6 +3479,19 @@ export default function App() {
           />
         )}
       </Suspense>
+
+      {/* WEEKLY LEAGUE REWARD CELEBRATION MODAL */}
+      {pendingWeeklyReward && (
+        <WeeklyRewardModal
+          reward={pendingWeeklyReward}
+          language={language}
+          onClaim={() => {
+            playSound('success');
+            haptic.notification('success');
+            dismissWeeklyReward();
+          }}
+        />
+      )}
     </div>
   );
 }
