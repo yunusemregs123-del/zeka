@@ -18,7 +18,7 @@ export interface CloudUserAccount {
   player_name: string;
   max_level: number;
   coins: number;
-  time_attack_best: number;
+  time_attack_best?: number;
   memory_best: number;
   medals: string[];
   claimed_medals: string[];
@@ -80,7 +80,6 @@ export const AuthService = {
           player_name: playerName,
           max_level: store.maxLevelCompleted,
           coins: store.coins,
-          time_attack_best: store.timeAttackBest,
           memory_best: store.memoryBest,
           medals: store.medals,
           claimed_medals: store.claimedMedals,
@@ -139,7 +138,6 @@ export const AuthService = {
       localStorage.setItem(AUTH_PROVIDER_KEY, acc.provider);
       localStorage.setItem('zeka_max_level', String(acc.max_level));
       localStorage.setItem('zeka_coins', String(acc.coins));
-      localStorage.setItem('zeka_ta_best', String(acc.time_attack_best));
       localStorage.setItem('zeka_mem_best', String(acc.memory_best));
       localStorage.setItem('zeka_medals', JSON.stringify(acc.medals || []));
       localStorage.setItem('zeka_medals_claimed', JSON.stringify(acc.claimed_medals || []));
@@ -147,7 +145,6 @@ export const AuthService = {
       useGameStore.setState({
         maxLevelCompleted: acc.max_level,
         coins: acc.coins,
-        timeAttackBest: acc.time_attack_best,
         memoryBest: acc.memory_best,
         medals: acc.medals || [],
         claimedMedals: acc.claimed_medals || [],

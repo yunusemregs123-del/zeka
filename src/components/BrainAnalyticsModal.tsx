@@ -17,7 +17,7 @@ export const BrainAnalyticsModal: React.FC<BrainAnalyticsModalProps> = ({
   onClose,
   playSound,
 }) => {
-  const { language, maxLevelCompleted, comboCount, streak, timeAttackBest, memoryBest, lastLevelTime } = useGameStore();
+  const { language, maxLevelCompleted, comboCount, streak, memoryBest, lastLevelTime } = useGameStore();
   const t = Translations[language];
   const [isSharing, setIsSharing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -25,9 +25,9 @@ export const BrainAnalyticsModal: React.FC<BrainAnalyticsModalProps> = ({
   const [savedStatus, setSavedStatus] = useState<string | null>(null);
 
   // 1. SPEED SCORE (Processing Speed & Reaction):
-  // Baseline 60. Rewards active fast solves (combo), fast level times and time attack best.
-  const speedSolveBonus = lastLevelTime > 0 && lastLevelTime <= 3.5 ? 10 : 0;
-  const speedRaw = 60 + Math.min(26, comboCount * 4.4) + Math.min(16, timeAttackBest * 2.2) + speedSolveBonus;
+  // Baseline 60. Rewards active fast solves (combo) and fast level times.
+  const speedSolveBonus = lastLevelTime > 0 && lastLevelTime <= 3.5 ? 14 : (lastLevelTime > 0 && lastLevelTime <= 5.0 ? 8 : 0);
+  const speedRaw = 60 + Math.min(26, comboCount * 5.2) + speedSolveBonus;
   const speedScore = Math.min(100, Math.max(50, Math.round(speedRaw)));
   const speedMs = Math.max(0.65, Number((2.8 - Math.min(2.0, (speedScore - 50) * 0.028)).toFixed(2)));
 

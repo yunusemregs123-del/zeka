@@ -1284,14 +1284,13 @@ function MenuScreen({
 // ─── GAME OVER SCREEN ──────────────────────────────────────
 function GameOverScreen({
   level, totalTimeSpent, expected, isDevMode, hasRevivedInCurrentGame, goToMenu, onAdError,
-  gameMode, timeAttackScore, memoryScore, onPlayAgain,
+  gameMode, memoryScore, onPlayAgain,
   isDuel, duelWinner, duelMyScore, duelOpponentName, duelOpponentScore, onPlayDuelAgain,
   duelRematchRequested, duelOpponentRematchPending, duelOpponentLeft
 }: {
   level: number; totalTimeSpent: number; expected: number; isDevMode: boolean; hasRevivedInCurrentGame: boolean; goToMenu: () => void;
   onAdError?: () => void;
   gameMode: GameMode;
-  timeAttackScore: number;
   memoryScore: number;
   onPlayAgain: () => void;
   isDuel?: boolean;
@@ -1477,63 +1476,6 @@ function GameOverScreen({
     );
   }
 
-  // TIME ATTACK GAME OVER VIEW
-  if (gameMode === 'TIME_ATTACK') {
-    const isNewRecord = timeAttackScore >= useGameStore.getState().timeAttackBest && timeAttackScore > 0;
-    return (
-      <div className="min-h-[100dvh] bg-[#F5F5F7] text-[#1D1D1F] flex flex-col items-center justify-center font-sans selection:bg-neutral-200 p-4">
-        <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="text-center bg-white p-6 rounded-[2.5rem] shadow-2xl w-full max-w-[340px] border border-neutral-100 relative overflow-hidden">
-          <div className="absolute top-0 inset-x-0 h-2 bg-amber-500"></div>
-
-          {isNewRecord && (
-            <motion.div initial={{ scale: 0, y: -20 }} animate={{ scale: 1, y: 0 }}
-              className="bg-amber-50 border border-amber-200 text-amber-700 rounded-full px-3 py-1 inline-flex items-center gap-1.5 font-black text-[10px] tracking-widest mb-3"
-            >
-              <Icons.Zap className="w-3 h-3 text-amber-600 fill-amber-500 shrink-0" />
-              <span>{t.new_record}</span>
-            </motion.div>
-          )}
-
-          <div className="w-14 h-14 bg-amber-100 text-amber-600 rounded-2xl flex items-center justify-center mx-auto mb-3">
-            <Icons.Zap className="w-7 h-7 fill-amber-500" />
-          </div>
-
-          <h1 className="text-2xl font-black tracking-tight text-[#1D1D1F] mb-1">{t.gameover_time_up}</h1>
-          <p className="text-xs font-semibold text-neutral-400 uppercase tracking-widest mb-5">
-            {t.mode_time_attack}
-          </p>
-
-          <div className="bg-neutral-50 p-4 rounded-2xl border border-neutral-100 mb-6 flex flex-col gap-2">
-            <div className="flex justify-between items-center">
-              <span className="text-[10px] font-black text-neutral-400 uppercase tracking-wider">{t.gameover_solved}</span>
-              <span className="text-3xl font-black text-amber-500">{timeAttackScore}</span>
-            </div>
-            <div className="border-t border-neutral-200/60" />
-            <div className="flex justify-between items-center">
-              <span className="text-[10px] font-black text-neutral-400 uppercase tracking-wider">{t.gameover_best}</span>
-              <span className="text-lg font-black text-neutral-800">{useGameStore.getState().timeAttackBest}</span>
-            </div>
-          </div>
-
-          <button
-            onClick={onPlayAgain}
-            className="w-full py-4 bg-[#1D1D1F] text-white rounded-2xl font-black tracking-widest text-xs shadow-xl hover:scale-[1.02] active:scale-95 transition-all mb-2.5 flex items-center justify-center gap-2"
-          >
-            <Icons.Play className="w-4 h-4 fill-current" />
-            <span>{t.gameover_retry}</span>
-          </button>
-
-          <button
-            onClick={goToMenu}
-            className="w-full py-3 bg-neutral-100 text-neutral-500 rounded-2xl font-black tracking-widest text-xs hover:bg-neutral-200 transition-colors"
-          >
-            {t.gameover_menu}
-          </button>
-        </motion.div>
-      </div>
-    );
-  }
-
   // MEMORY MODE GAME OVER VIEW
   if (gameMode === 'MEMORY') {
     const isNewRecord = memoryScore >= useGameStore.getState().memoryBest && memoryScore > 0;
@@ -1697,7 +1639,7 @@ function GameOverScreen({
 export default function App() {
   const {
     gameState, gameMode, level, totalTimeSpent, currentValue, timeLeft, maxTime, coins, previousAnswers, hideIntro, hideMemoryIntro, isDevMode, hasRevivedInCurrentGame, language,
-    timeAttackScore, memoryScore, timeAttackBest, memoryBest,
+    memoryScore, memoryBest,
     streak, helpCount, langsUsed, dailyRewardsToday, lastRewardTime,
     startNewLevel, setCurrentValue, tickTimer, addLevelTime, setHideIntro, setHideMemoryIntro, startGame, goToMenu, resetStreak, unlockMedal, claimDailyReward, devAdvanceLevel,
     incrementModeScore
@@ -2378,7 +2320,7 @@ export default function App() {
         DuelService.sendScore(nextScore);
       }
 
-      if (gameMode === 'TIME_ATTACK' || gameMode === 'MEMORY') {
+      if (gameMode === 'MEMORY') {
         incrementModeScore();
       }
 
@@ -2397,12 +2339,6 @@ export default function App() {
         handleGameOver();
         setTimeout(() => setIsSubmitting(false), 300);
         return;
-      } else if (gameMode === 'TIME_ATTACK') {
-        useGameStore.setState(s => ({ timeLeft: Math.max(0, s.timeLeft - 3) }));
-        playSound('fail');
-        if (timeLeft <= 3) {
-          handleGameOver();
-        }
       } else {
         handleGameOver();
       }
@@ -2619,7 +2555,6 @@ export default function App() {
             goToMenu={handleReturnToMenu}
             onAdError={() => setAdError(t.ad_error)}
             gameMode={gameMode}
-            timeAttackScore={timeAttackScore}
             memoryScore={memoryScore}
             onPlayAgain={() => handleStartGame(false, gameMode === 'CLASSIC' ? undefined : 1, gameMode)}
             isDuel={isDuelActive}
@@ -2726,12 +2661,7 @@ export default function App() {
                   ) : (
                     <>
                       <span className="text-base sm:text-2xl font-black tracking-tight text-[#1D1D1F] flex items-center gap-1.5 leading-tight truncate">
-                        {gameMode === 'TIME_ATTACK' ? (
-                          <span className="text-amber-500 flex items-center gap-1 font-black">
-                            <Icons.Zap className="w-4 h-4 sm:w-5 sm:h-5 fill-amber-500 shrink-0" />
-                            <span>{t.mode_time_attack}</span>
-                          </span>
-                        ) : gameMode === 'MEMORY' ? (
+                        {gameMode === 'MEMORY' ? (
                           <span className="text-blue-500 flex items-center gap-1 font-black">
                             <Icons.EyeOff className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
                             <span>{t.mode_memory}</span>
@@ -2744,9 +2674,7 @@ export default function App() {
                         {isDevMode && <span className="text-[9px] bg-amber-500 text-white px-1.5 py-0.5 rounded-full font-bold uppercase shrink-0">{t.dev_test}</span>}
                       </span>
                       <span className="text-[10px] sm:text-xs font-bold tracking-wider text-neutral-500 uppercase leading-none mt-0.5 truncate">
-                        {gameMode === 'TIME_ATTACK' ? (
-                          <span>{t.score_label}: <strong className="text-neutral-900"><RollingNumber value={timeAttackScore} /></strong> • {t.time_attack_best}: <strong className="text-amber-600">{timeAttackBest}</strong></span>
-                        ) : gameMode === 'MEMORY' ? (
+                        {gameMode === 'MEMORY' ? (
                           <span>{t.score_label}: <strong className="text-neutral-900"><RollingNumber value={memoryScore} /></strong> • {t.memory_best}: <strong className="text-blue-600">{memoryBest}</strong></span>
                         ) : (
                           <span>{t.header_time} <span className="text-neutral-900">{isDevMode ? '∞' : `${totalTimeSpent.toFixed(1)}s`}</span></span>
@@ -2759,16 +2687,14 @@ export default function App() {
 
               {/* RIGHT: Timer Pill + Coins Pill */}
               <div className="flex items-center gap-2 shrink-0">
-                {(gameMode === 'TIME_ATTACK' || isDuelActive || gameMode === 'DUEL') && (
+                {(isDuelActive || gameMode === 'DUEL') && (
                   <motion.div
                     animate={timeLeft <= 5 ? { scale: [1, 1.05, 1] } : {}}
                     transition={{ repeat: Infinity, duration: 0.6 }}
                     className={`px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-sm border font-black text-xs sm:text-sm tabular-nums transition-colors ${
                       timeLeft <= 5
                         ? 'bg-rose-500 border-rose-600 text-white animate-pulse'
-                        : isDuelActive || gameMode === 'DUEL'
-                        ? 'bg-white border-neutral-200 text-neutral-900'
-                        : 'bg-amber-100 border-amber-300 text-amber-900'
+                        : 'bg-white border-neutral-200 text-neutral-900'
                     }`}
                   >
                     <Icons.Clock className="w-3.5 h-3.5 shrink-0" />
@@ -2952,7 +2878,7 @@ export default function App() {
               <div className="flex items-center justify-between text-[11px] font-black tracking-wider uppercase px-1">
                 <span className="text-neutral-400 flex items-center gap-1.5">
                   <Icons.Clock className="w-3.5 h-3.5 shrink-0" />
-                  <span>{gameMode === 'TIME_ATTACK' ? t.timer_countdown : gameMode === 'MEMORY' ? t.timer_memory : t.timer_general}</span>
+                  <span>{gameMode === 'MEMORY' ? t.timer_memory : t.timer_general}</span>
                 </span>
                 <span className={`tabular-nums font-black ${timeLeft <= 5 ? 'text-red-500 text-sm animate-pulse' : 'text-neutral-800'}`}>
                   {isDevMode ? '∞' : `${timeLeft.toFixed(1)}s`}
@@ -2961,7 +2887,7 @@ export default function App() {
 
               <div className="w-full h-3 bg-neutral-200/60 rounded-full overflow-hidden shadow-inner">
                 <motion.div
-                  className={`h-full ${isDevMode ? 'bg-amber-400' : (timeLeft < 5 ? 'bg-red-500' : gameMode === 'TIME_ATTACK' ? 'bg-amber-500' : 'bg-[#1D1D1F]')}`}
+                  className={`h-full ${isDevMode ? 'bg-amber-400' : (timeLeft < 5 ? 'bg-red-500' : 'bg-[#1D1D1F]')}`}
                   animate={{ width: `${timePercent}%` }}
                   transition={{ ease: "linear", duration: 0.1 }}
                 />
