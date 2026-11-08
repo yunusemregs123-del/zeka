@@ -257,25 +257,21 @@ export async function generateBrainStoryBlob(params: BrainStoryParams): Promise<
       {
         name: t.brain_speed || 'HIZ',
         score: speedScore,
-        icon: '⚡',
         detail: `${t.brain_reaction || 'Reaksiyon'}: ~${speedMs}s`,
       },
       {
         name: t.brain_memory_stat || 'HAFIZA',
         score: memoryScore,
-        icon: '🧠',
         detail: `${t.brain_memory_span || 'Kapasite'}: ${memorySpan} Chunk`,
       },
       {
         name: t.brain_flexibility || 'ESNEKLİK',
         score: flexibilityScore,
-        icon: '🔄',
         detail: `${t.brain_logic_depth || 'Derinlik'}: ${ruleComplexity}`,
       },
       {
         name: t.brain_focus || 'ODAK',
         score: focusScore,
-        icon: '🎯',
         detail: `${t.brain_accuracy || 'İsabet'}: %${focusAccuracy}`,
       },
     ];
@@ -294,7 +290,7 @@ export async function generateBrainStoryBlob(params: BrainStoryParams): Promise<
       ctx.textAlign = 'left';
       ctx.font = '800 21px system-ui, -apple-system, sans-serif';
       ctx.fillStyle = '#E5E7EB';
-      ctx.fillText(`${m.icon} ${m.name}`, bx + 22, by + 42);
+      ctx.fillText(m.name, bx + 24, by + 42);
 
       ctx.textAlign = 'right';
       ctx.font = '900 24px system-ui, -apple-system, sans-serif';
@@ -409,14 +405,81 @@ export async function generateBrainStoryBlob(params: BrainStoryParams): Promise<
 }
 
 /**
- * High-level unified share action:
- * Tries native file share first (WhatsApp, Instagram, etc.), then standard share, then clipboard fallback.
+ * Formats a clean, readable text summary of the brain report without emoji clutter.
+ */
+export function formatBrainReportText(params: BrainStoryParams): string {
+  const t = Translations[params.language] || Translations['tr'];
+  return `ZEKA - ${t.brain_cognitive_report || 'BİLİŞSEL PERFORMANS RAPORU'}
+${t.brain_age_label || 'Tahmini Beyin Yaşı'}: ${params.brainAge} ${t.brain_age_years || 'Yaş'} (${t.brain_percentile || 'İlk'} %${params.percentile})
+${t.brain_cognitive_index || 'Bilişsel İndeks'}: %${params.cognitiveIndex.toFixed(1)}
+• ${t.brain_speed || 'Hız'}: %${params.speedScore} (~${params.speedMs}s ${t.brain_reaction || 'Reaksiyon'})
+• ${t.brain_memory_stat || 'Hafıza'}: %${params.memoryScore} (${params.memorySpan} Chunk ${t.brain_memory_span || 'Kapasite'})
+• ${t.brain_flexibility || 'Esneklik'}: %${params.flexibilityScore} (${params.ruleComplexity} ${t.brain_logic_depth || 'Derinlik'})
+• ${t.brain_focus || 'Odak'}: %${params.focusScore} (%${params.focusAccuracy} ${t.brain_accuracy || 'İsabet'})`;
+}
+
+/**
+ * Downloads the high-resolution 1080x1920 story image directly to the user's device.
+ */
+export async function downloadBrainStoryImage(params: BrainStoryParams): Promise<boolean> {
+  try {
+    const blob = await generateBrainStoryBlob(params);
+    if (!blob) return false;
+
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `zeka-brain-age-${params.brainAge}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+    return true;
+  } catch (e) {
+    console.warn('[ShareReport] download failed:', e);
+    return false;
+  }
+}
+
+/**
+ * Copies clean report text to clipboard.
+ */
+export async function copyBrainReportText(params: BrainStoryParams): Promise<boolean> {
+  const text = formatBrainReportText(params);
+  if (typeof navigator !== 'undefined' && navigator.clipboard && navigator.clipboard.writeText) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch {
+      // Fallback
+    }
+  }
+
+  try {
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.select();
+    const success = document.execCommand('copy');
+    document.body.removeChild(textarea);
+    return success;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * High-level native share action:
+ * Tries native file share first (WhatsApp, Instagram Stories, etc.).
+ * If the user cancels the share dialog, respects the cancellation without false-positive clipboard fallback.
+ * If file sharing is not supported by the environment, cleanly downloads the image.
  */
 export async function shareBrainReport(
   params: BrainStoryParams
-): Promise<{ success: boolean; method: 'files' | 'share' | 'clipboard' }> {
-  const t = Translations[params.language] || Translations['tr'];
-  const shareText = `ZEKA: Mind Puzzle 🧠\n${t.brain_age_label || 'Tahmini Beyin Yaşı'}: ${params.brainAge} ⚡\n• ${t.brain_cognitive_index || 'Bilişsel İndeks'}: %${params.cognitiveIndex.toFixed(1)} (${t.brain_percentile || 'Top'} %${params.percentile})\n• ${t.brain_speed || 'Hız'}: %${params.speedScore} (~${params.speedMs}s)\n• ${t.brain_memory_stat || 'Hafıza'}: %${params.memoryScore} (${params.memorySpan} Chunk)\n• ${t.brain_flexibility || 'Esneklik'}: %${params.flexibilityScore}\n• ${t.brain_focus || 'Odak'}: %${params.focusScore} (%${params.focusAccuracy})`;
+): Promise<{ success: boolean; method: 'files' | 'share' | 'download' | 'cancelled' }> {
+  const shareText = formatBrainReportText(params);
 
   try {
     const blob = await generateBrainStoryBlob(params);
@@ -440,15 +503,26 @@ export async function shareBrainReport(
       });
       return { success: true, method: 'share' };
     }
-  } catch {
-    // User dismissed or share was interrupted
+
+    // If native sharing is not supported, download the image directly
+    if (blob) {
+      const downloaded = await downloadBrainStoryImage(params);
+      if (downloaded) {
+        return { success: true, method: 'download' };
+      }
+    }
+  } catch (err: any) {
+    // If the user cancelled the native share sheet, DO NOT overwrite clipboard or claim success
+    if (err && (err.name === 'AbortError' || String(err).includes('AbortError') || String(err).includes('cancelled'))) {
+      return { success: false, method: 'cancelled' };
+    }
   }
 
-  // Clipboard fallback
-  if (typeof navigator !== 'undefined' && navigator.clipboard) {
-    await navigator.clipboard.writeText(shareText);
-    return { success: true, method: 'clipboard' };
+  // Only fall back to download if share failed for technical reasons
+  const downloaded = await downloadBrainStoryImage(params);
+  if (downloaded) {
+    return { success: true, method: 'download' };
   }
 
-  return { success: false, method: 'clipboard' };
+  return { success: false, method: 'cancelled' };
 }
