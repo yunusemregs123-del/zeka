@@ -66,7 +66,7 @@ export function getPlayerName(): string {
 }
 
 export function setPlayerName(name: string): void {
-  localStorage.setItem(PLAYER_NAME_KEY, name.trim().substring(0, 20));
+  localStorage.setItem(PLAYER_NAME_KEY, name.trim().substring(0, 15));
 }
 
 export async function fetchAndCacheCountry(): Promise<string> {
@@ -304,7 +304,13 @@ export function formatTime(seconds: number): string {
 }
 
 export function formatDate(isoDate: string): string {
-  const d = new Date(isoDate);
+  if (!isoDate) return '';
+  // Normalize SQLite space-separated UTC datetime ("YYYY-MM-DD HH:MM:SS") to standard ISO-8601 UTC
+  const normalized = isoDate.includes('T')
+    ? (isoDate.endsWith('Z') || isoDate.includes('+') ? isoDate : `${isoDate}Z`)
+    : `${isoDate.replace(' ', 'T')}Z`;
+  const d = new Date(normalized);
+  if (isNaN(d.getTime())) return '';
   const day = d.getDate().toString().padStart(2, '0');
   const month = (d.getMonth() + 1).toString().padStart(2, '0');
   const hours = d.getHours().toString().padStart(2, '0');

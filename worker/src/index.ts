@@ -104,6 +104,11 @@ export default {
         env.DB.prepare("DELETE FROM duel_rooms WHERE updated_at < datetime('now', '-2 hours')").run().catch(() => {});
         // Prune daily leaderboard entries older than 7 days
         env.DB.prepare("DELETE FROM scores_daily WHERE period_date < date('now', '-7 days')").run().catch(() => {});
+        // Prune weekly leaderboard entries older than 12 weeks (~84 days)
+        const weeklyCutoffDate = new Date();
+        weeklyCutoffDate.setUTCDate(weeklyCutoffDate.getUTCDate() - 84);
+        const { weekly: cutoffWeek } = getPeriodKeys(weeklyCutoffDate);
+        env.DB.prepare("DELETE FROM scores_weekly WHERE period_week < ?").bind(cutoffWeek).run().catch(() => {});
       }
 
       // 1. HEALTH & GEO PING

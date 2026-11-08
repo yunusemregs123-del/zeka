@@ -212,6 +212,47 @@ function MenuScreen({
   const [showRestoreInput, setShowRestoreInput] = useState(false);
   const [infoTab, setInfoTab] = useState<'settings' | 'symbols'>('settings');
 
+  const [playerName, setPlayerName] = useState(() => Leaderboard.getPlayerName());
+  const [showNameEditModal, setShowNameEditModal] = useState(false);
+  const [editNameInput, setEditNameInput] = useState(playerName);
+  const [editNameError, setEditNameError] = useState('');
+  const [isCheckingName, setIsCheckingName] = useState(false);
+
+  const handleSaveNewName = async () => {
+    const trimmed = editNameInput.trim();
+    if (!trimmed || trimmed.length < 2 || trimmed.length > 15) {
+      setEditNameError(t.name_invalid || 'İsim 2-15 karakter olmalıdır.');
+      return;
+    }
+
+    if (trimmed.toLowerCase() === playerName.trim().toLowerCase()) {
+      setShowNameEditModal(false);
+      return;
+    }
+
+    setIsCheckingName(true);
+    setEditNameError('');
+
+    try {
+      const isTaken = await Leaderboard.isNameTaken(trimmed);
+      if (isTaken) {
+        setEditNameError(t.name_taken || 'Bu isim zaten kullanılıyor!');
+        setIsCheckingName(false);
+        return;
+      }
+
+      Leaderboard.setPlayerName(trimmed);
+      setPlayerName(trimmed);
+      await AuthService.syncNow();
+      haptic.notification('success');
+      setShowNameEditModal(false);
+    } catch {
+      setEditNameError('Bağlantı hatası oluştu');
+    } finally {
+      setIsCheckingName(false);
+    }
+  };
+
   useEffect(() => {
     if (showInfo) {
       AuthService.syncNow().then(acc => {
@@ -420,9 +461,30 @@ function MenuScreen({
         <h1 className="text-5xl sm:text-6xl font-black tracking-tighter text-[#1D1D1F] mb-1">
           ZEKA
         </h1>
-        <p className="text-sm font-bold text-neutral-400 tracking-[0.25em] uppercase mb-8">
+        <p className="text-sm font-bold text-neutral-400 tracking-[0.25em] uppercase mb-3">
           {t.menu_subtitle}
         </p>
+
+        {/* PLAYER BADGE (TAPPABLE TO EDIT NICKNAME) */}
+        <motion.button
+          whileHover={{ scale: 1.03 }}
+          whileTap={{ scale: 0.96 }}
+          onClick={() => {
+            haptic.impact('light');
+            setEditNameInput(playerName);
+            setEditNameError('');
+            setShowNameEditModal(true);
+          }}
+          className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-white hover:bg-neutral-50/80 border border-neutral-200/80 rounded-full shadow-2xs text-xs font-black text-neutral-800 transition-all mb-6 group cursor-pointer"
+        >
+          <div className="w-5 h-5 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+            <Icons.User className="w-3 h-3" />
+          </div>
+          <span className="tracking-wider uppercase text-[11px] font-black truncate max-w-[140px] text-neutral-800">
+            {playerName}
+          </span>
+          <Icons.Edit className="w-3 h-3 text-neutral-400 group-hover:text-neutral-700 transition-colors ml-0.5 shrink-0" />
+        </motion.button>
 
         {/* GIANT ICONIC PLAY BUTTON (CLASSIC MODE) */}
         <motion.button
@@ -680,6 +742,29 @@ function MenuScreen({
               {infoTab === 'settings' ? (
                 /* ─── TAB 1: SETTINGS (COMPACT, ZERO SCROLL) ─── */
                 <div className="flex flex-col">
+                  {/* Player Nickname Profile Card */}
+                  <div className="flex items-center justify-between p-2.5 bg-neutral-50 rounded-2xl border border-neutral-100 mb-2.5 shadow-2xs">
+                    <div className="flex items-center gap-2 min-w-0 pr-1">
+                      <div className="w-7 h-7 rounded-lg bg-emerald-100/70 text-emerald-700 flex items-center justify-center shrink-0">
+                        <Icons.User className="w-3.5 h-3.5" />
+                      </div>
+                      <div className="flex flex-col min-w-0">
+                        <span className="text-[9px] font-bold text-neutral-400 uppercase tracking-wider leading-none mb-0.5">{t.menu_player || 'Oyuncu'}</span>
+                        <span className="text-xs font-black text-neutral-800 truncate leading-tight">{playerName}</span>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setShowInfo(false);
+                        setEditNameInput(playerName);
+                        setEditNameError('');
+                        setShowNameEditModal(true);
+                      }}
+                      className="px-2.5 py-1 bg-white hover:bg-neutral-100 border border-neutral-200 text-neutral-700 rounded-lg text-[10px] font-bold shrink-0 transition-all shadow-2xs"
+                    >
+                      {t.gameover_name_change || 'Değiştir'}
+                    </button>
+                  </div>
                   {/* Sound & Haptics - Side-by-Side 2-Column Grid */}
                   <div className="grid grid-cols-2 gap-2 mb-3">
                     {/* Sound */}
@@ -933,7 +1018,9 @@ function MenuScreen({
                 ) : (
                   <div className="space-y-2">
                     {scores.map((entry, idx) => {
-                      const isMe = personalRankData?.row.player_name === entry.player_name;
+                      const isMe = personalRankData?.row.player_name && entry.player_name
+                        ? personalRankData.row.player_name.trim().toLowerCase() === entry.player_name.trim().toLowerCase()
+                        : false;
                       return (
                         <div key={entry.id} className={`flex items-center gap-3 p-2 sm:p-3 rounded-xl transition ${isMe ? 'bg-blue-50 border-2 border-blue-400 shadow-sm z-10 relative' : idx === 0 ? 'bg-yellow-50 border border-yellow-400 shadow-sm' : idx === 1 ? 'bg-slate-50 border border-slate-300 shadow-sm' : idx === 2 ? 'bg-orange-50 border border-orange-400 shadow-sm' : 'bg-white border border-transparent'}`}>
                           <div className={`relative flex items-center justify-center font-black shrink-0 ${isMe ? 'bg-blue-400 text-white shadow-md ring-2 ring-blue-100 w-8 h-8 rounded-full text-sm' : idx === 0 ? 'bg-yellow-400 text-yellow-950 border-2 border-yellow-200 shadow-md w-8 h-8 rounded-full text-sm' : idx === 1 ? 'bg-slate-200 text-slate-800 border-2 border-slate-100 shadow-sm w-7 h-7 rounded-full text-xs' : idx === 2 ? 'bg-orange-400 text-orange-950 border-2 border-orange-200 shadow-sm w-7 h-7 rounded-full text-xs' : 'bg-neutral-100 text-neutral-500 w-6 h-6 rounded-full text-[10px]'}`}>
@@ -955,7 +1042,7 @@ function MenuScreen({
                         </div>
                       );
                     })}
-                    {personalRankData && !scores.some(s => s.player_name === personalRankData.row.player_name) && (
+                    {personalRankData && !scores.some(s => s.player_name?.trim().toLowerCase() === personalRankData.row.player_name?.trim().toLowerCase()) && (
                       <>
                         <div className="my-2 border-t-2 border-dashed border-neutral-200"></div>
                         <div className="flex items-center gap-2 p-2 sm:p-3 rounded-xl bg-blue-50 border border-blue-100">
@@ -978,6 +1065,86 @@ function MenuScreen({
                     )}
                   </div>
                 )}
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* NICKNAME EDIT MODAL */}
+      <AnimatePresence>
+        {showNameEditModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 pointer-events-auto">
+            <motion.div
+              key="name-edit-modal"
+              initial={{ scale: 0.95, opacity: 0, y: 10 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 10 }}
+              transition={{ duration: 0.2 }}
+              className="bg-white rounded-3xl w-full max-w-[320px] shadow-2xl p-5 border border-neutral-100 relative overflow-hidden"
+            >
+              <div className="flex justify-between items-center mb-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-xl bg-neutral-100 flex items-center justify-center text-neutral-800">
+                    <Icons.User className="w-4 h-4" />
+                  </div>
+                  <h3 className="text-sm font-black text-neutral-900 tracking-tight uppercase">
+                    {t.name_change_title || 'İSMİNİ DÜZENLE'}
+                  </h3>
+                </div>
+                <button
+                  onClick={() => setShowNameEditModal(false)}
+                  className="w-8 h-8 flex items-center justify-center bg-neutral-100 hover:bg-neutral-200 text-neutral-400 hover:text-neutral-700 rounded-full transition-colors"
+                >
+                  <Icons.X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+
+              <p className="text-[11px] text-neutral-400 font-bold mb-3">
+                {t.gameover_name_placeholder || 'Efsane ismini gir...'}
+              </p>
+
+              <div className="mb-3">
+                <input
+                  type="text"
+                  maxLength={15}
+                  value={editNameInput}
+                  onChange={(e) => {
+                    setEditNameInput(e.target.value);
+                    if (editNameError) setEditNameError('');
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleSaveNewName();
+                  }}
+                  placeholder="Zeka_..."
+                  autoFocus
+                  className="w-full px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-2xl text-center font-black text-sm text-neutral-900 outline-none focus:border-neutral-900 focus:bg-white transition-all uppercase tracking-wider"
+                />
+                {editNameError && (
+                  <p className="text-red-500 text-[10px] font-bold mt-1.5 text-center">{editNameError}</p>
+                )}
+              </div>
+
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowNameEditModal(false)}
+                  className="flex-1 py-3 bg-neutral-100 hover:bg-neutral-200 text-neutral-600 rounded-2xl font-black text-xs tracking-wider uppercase transition-all"
+                >
+                  {t.name_cancel_btn || 'İPTAL'}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSaveNewName}
+                  disabled={isCheckingName}
+                  className="flex-1 py-3 bg-[#1D1D1F] hover:bg-black text-white rounded-2xl font-black text-xs tracking-wider uppercase shadow-lg active:scale-95 disabled:opacity-50 transition-all flex items-center justify-center"
+                >
+                  {isCheckingName ? (
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  ) : (
+                    t.name_save_btn || 'KAYDET'
+                  )}
+                </button>
               </div>
             </motion.div>
           </div>
@@ -1012,12 +1179,6 @@ function GameOverScreen({
 }) {
   const { language, coins, addCoins } = useGameStore();
   const t = Translations[language];
-  const hasSavedName = !!Leaderboard.getPlayerName();
-  const [playerName, setPlayerName] = useState(Leaderboard.getPlayerName() || '');
-  const [showInput] = useState(!hasSavedName);
-  const [errorMsg, setErrorMsg] = useState('');
-  const [isChecking, setIsChecking] = useState(false);
-  const [saved, setSaved] = useState(false);
   const [isNewBest, setIsNewBest] = useState(false);
   const [isWatchingAd, setIsWatchingAd] = useState(false);
 
@@ -1027,6 +1188,11 @@ function GameOverScreen({
     if (!isDevMode && gameMode === 'CLASSIC' && !isDuel) {
       const newBest = Leaderboard.updatePersonalBest(level, totalTimeSpent);
       if (newBest) setIsNewBest(true);
+
+      const pName = Leaderboard.getPlayerName();
+      if (pName && level >= 1 && totalTimeSpent >= 0.5) {
+        Leaderboard.addScore(pName, level, totalTimeSpent).catch(() => {});
+      }
     }
   }, [level, totalTimeSpent, isDevMode, gameMode, isDuel]);
 
@@ -1302,30 +1468,6 @@ function GameOverScreen({
     );
   }
 
-  const handleSaveScore = async () => {
-    if (isDevMode) { goToMenu(); return; }
-    const name = playerName.trim();
-    if (!name) { setErrorMsg(t.name_empty); return; }
-
-    setIsChecking(true);
-    setErrorMsg('');
-
-    const savedName = Leaderboard.getPlayerName();
-    if (name !== savedName) {
-      const taken = await Leaderboard.isNameTaken(name);
-      if (taken) {
-        setErrorMsg(t.name_taken);
-        setIsChecking(false);
-        return;
-      }
-    }
-
-    await Leaderboard.addScore(name, level, totalTimeSpent);
-    Leaderboard.setPlayerName(name); // Persist name to device locally!
-    setSaved(true);
-    setIsChecking(false);
-  };
-
   const [isWatchingRevive, setIsWatchingRevive] = useState(false);
   const { reviveGame } = useGameStore();
 
@@ -1371,52 +1513,31 @@ function GameOverScreen({
           </div>
         </div>
 
-        {!saved && !isDevMode ? (
-          <div className="mb-2">
-            {showInput ? (
-              <div className="mb-3">
-                <input
-                  value={playerName}
-                  onChange={e => setPlayerName(e.target.value)}
-                  placeholder={t.gameover_name_placeholder}
-                  maxLength={15}
-                  className="w-full px-4 py-2.5 rounded-xl bg-neutral-50 border border-neutral-200 font-bold text-center text-sm outline-none focus:border-amber-400 focus:bg-white transition"
-                  onKeyDown={e => { if (e.key === 'Enter') handleSaveScore(); }}
-                />
-                <AnimatePresence>
-                  {errorMsg && <motion.p initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} className="text-red-500 text-[10px] mt-1 font-bold">{errorMsg}</motion.p>}
-                </AnimatePresence>
-              </div>
-            ) : (
-              <div className="mb-3 bg-neutral-100 rounded-xl px-4 py-3 flex items-center justify-center">
-                <span className="font-black text-xs block truncate text-[#1D1D1F] uppercase tracking-wider">{playerName}</span>
-                {/* 1 Cihaz 1 Kullanıcı: İsim değiştirme butonunu kaldırdık */}
-              </div>
-            )}
-
-            <button
-              onClick={handleSaveScore}
-              disabled={isChecking}
-              className={`w-full py-3.5 text-white rounded-2xl font-black tracking-widest text-xs shadow-lg transition-all ${isChecking ? 'bg-neutral-400 scale-95 pointer-events-none' : 'bg-[#1D1D1F] hover:scale-[1.02] active:scale-95'}`}
-            >
-              {isChecking ? t.gameover_save_checking : t.gameover_save_btn}
-            </button>
-
-            <button
-              onClick={goToMenu}
-              className="w-full mt-2.5 py-1 text-[9px] font-bold tracking-widest text-neutral-400 uppercase hover:text-neutral-700 transition"
-            >
-              {t.gameover_skip}
-            </button>
+        {/* Automatic Leaderboard Status Badge */}
+        {!isDevMode && (
+          <div className="mb-4 flex items-center justify-center gap-1.5 bg-emerald-50/90 border border-emerald-200/80 py-1.5 px-3.5 rounded-full text-emerald-700 text-[10px] font-black uppercase tracking-wider shadow-2xs mx-auto w-fit">
+            <Icons.Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+            <span>{t.gameover_saved_badge || 'SIRALAMAYA EKLENDİ'}</span>
           </div>
-        ) : (
+        )}
+
+        {/* Primary Action Buttons: Retry & Main Menu */}
+        <div className="flex flex-col gap-2 w-full mb-1">
           <button
-            onClick={() => goToMenu()}
-            className="w-full py-3.5 bg-[#1D1D1F] text-white rounded-2xl font-black tracking-widest text-xs shadow-lg hover:scale-[1.02] active:scale-95 transition-all mt-1"
+            onClick={onPlayAgain}
+            className="w-full py-4 bg-[#1D1D1F] hover:bg-black text-white rounded-2xl font-black tracking-widest text-xs shadow-xl hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2"
+          >
+            <Icons.Play className="w-4 h-4 fill-current" />
+            <span>{t.gameover_retry}</span>
+          </button>
+
+          <button
+            onClick={goToMenu}
+            className="w-full py-3 bg-neutral-100 text-neutral-500 rounded-2xl font-black tracking-widest text-xs hover:bg-neutral-200 transition-colors"
           >
             {t.gameover_menu}
           </button>
-        )}
+        </div>
 
         <div className="mt-4 pt-4 border-t border-neutral-100 w-full">
           {!hasRevivedInCurrentGame ? (
@@ -2333,7 +2454,7 @@ export default function App() {
             gameMode={gameMode}
             timeAttackScore={timeAttackScore}
             memoryScore={memoryScore}
-            onPlayAgain={() => handleStartGame(false, 1, gameMode)}
+            onPlayAgain={() => handleStartGame(false, gameMode === 'CLASSIC' ? undefined : 1, gameMode)}
             isDuel={isDuelActive}
             duelWinner={duelWinner}
             duelMyScore={duelMyScore}
