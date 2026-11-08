@@ -274,7 +274,7 @@ export default {
           total_time: number;
         };
 
-        const name = (body.player_name || '').trim().substring(0, 15);
+        const name = (body.player_name || '').trim().replace(/\s+/g, '_').substring(0, 15);
         const deviceId = (body.device_id || '').trim();
         const level = Number(body.level);
         const totalTime = Number(body.total_time);
@@ -755,7 +755,7 @@ export default {
         const body = (await request.json().catch(() => ({}))) as { player_id: string; player_name: string };
         if (!body.player_id) return json({ error: 'Geçersiz oyuncu' }, 400);
         const myId = body.player_id;
-        const myName = (body.player_name || 'Oyuncu').trim().substring(0, 15);
+        const myName = (body.player_name || 'Oyuncu').trim().replace(/\s+/g, '_').substring(0, 15);
         const country = detectedCountry;
 
         // Check if another waiting player is already in queue (spread across top 5 to eliminate contention)
@@ -897,7 +897,7 @@ export default {
 
         const provider = body.provider || 'guest';
         const providerUserId = body.provider_user_id ? String(body.provider_user_id).trim() : null;
-        const playerName = (body.player_name || '').trim().substring(0, 20) || 'Oyuncu';
+        const playerName = (body.player_name || '').trim().replace(/\s+/g, '_').substring(0, 20) || 'Oyuncu';
         const incomingLevel = Math.max(1, Math.min(9999, Number(body.max_level) || 1));
         const incomingCoins = Math.max(0, Math.min(9999999, Number(body.coins) || 75));
         const incomingTa = Math.max(0, Math.min(9999, Number(body.time_attack_best) || 0));

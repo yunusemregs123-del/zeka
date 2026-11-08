@@ -167,6 +167,7 @@ function MenuScreen({
   showMedals, setShowMedals,
   selectedMedal, setSelectedMedal,
   showLangMenu, setShowLangMenu,
+  showNameEditModal, setShowNameEditModal,
   openBrainStats, openDuel,
   openOnboarding
 }: {
@@ -178,6 +179,7 @@ function MenuScreen({
   showMedals: boolean, setShowMedals: (v: boolean) => void,
   selectedMedal: any, setSelectedMedal: (v: any) => void,
   showLangMenu: boolean, setShowLangMenu: (v: boolean) => void,
+  showNameEditModal: boolean, setShowNameEditModal: (v: boolean) => void,
   openBrainStats: () => void,
   openDuel: () => void,
   openOnboarding?: () => void,
@@ -219,15 +221,28 @@ function MenuScreen({
   const [infoTab, setInfoTab] = useState<'settings' | 'symbols'>('settings');
 
   const [playerName, setPlayerName] = useState(() => Leaderboard.getPlayerName());
-  const [showNameEditModal, setShowNameEditModal] = useState(false);
   const [editNameInput, setEditNameInput] = useState(playerName);
   const [editNameError, setEditNameError] = useState('');
   const [isCheckingName, setIsCheckingName] = useState(false);
 
   const handleSaveNewName = async () => {
     const trimmed = editNameInput.trim();
+
+    // 1. Space check: Nicknames CANNOT contain spaces
+    if (/\s/.test(trimmed)) {
+      setEditNameError(t.name_no_spaces || 'Kullanıcı adı boşluk içeremez.');
+      return;
+    }
+
+    // 2. Length check
     if (!trimmed || trimmed.length < 2 || trimmed.length > 15) {
       setEditNameError(t.name_invalid || 'İsim 2-15 karakter olmalıdır.');
+      return;
+    }
+
+    // 3. Allowed characters check: Unicode letters, numbers, and underscores
+    if (!/^[\p{L}0-9_]+$/u.test(trimmed)) {
+      setEditNameError(t.name_invalid_chars || 'Sadece harf, rakam ve alt çizgi (_) kullanılabilir.');
       return;
     }
 
@@ -1191,11 +1206,22 @@ function MenuScreen({
                   maxLength={15}
                   value={editNameInput}
                   onChange={(e) => {
-                    setEditNameInput(e.target.value);
-                    if (editNameError) setEditNameError('');
+                    const rawVal = e.target.value;
+                    const noSpaces = rawVal.replace(/\s+/g, '');
+                    if (rawVal !== noSpaces) {
+                      setEditNameError(t.name_no_spaces || 'Kullanıcı adı boşluk içeremez.');
+                    } else if (editNameError) {
+                      setEditNameError('');
+                    }
+                    setEditNameInput(noSpaces);
                   }}
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter') handleSaveNewName();
+                    if (e.key === ' ') {
+                      e.preventDefault();
+                      setEditNameError(t.name_no_spaces || 'Kullanıcı adı boşluk içeremez.');
+                    } else if (e.key === 'Enter') {
+                      handleSaveNewName();
+                    }
                   }}
                   placeholder="Zeka_..."
                   autoFocus
@@ -1736,6 +1762,7 @@ export default function App() {
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [showMedals, setShowMedals] = useState(false);
   const [selectedMedal, setSelectedMedal] = useState<any>(null);
+  const [showNameEditModal, setShowNameEditModal] = useState(false);
   const [showLangMenu, setShowLangMenu] = useState(false);
   const [introCheckbox, setIntroCheckbox] = useState(hideIntro);
   const [isWatchingDaily, setIsWatchingDaily] = useState(false);
@@ -1785,6 +1812,7 @@ export default function App() {
       backListener = await CapApp.addListener('backButton', () => {
         // Priorities: Close modals -> Pause menu -> Go to main menu -> Exit app
         if (showExitConfirm) setShowExitConfirm(false);
+        else if (showNameEditModal) setShowNameEditModal(false);
         else if (showTutorialModal) setShowTutorialModal(false);
         else if (showIntroModal) setShowIntroModal(false);
         else if (showTrackingModal) setShowTrackingModal(false);
@@ -1808,7 +1836,7 @@ export default function App() {
     };
     setup();
     return () => { if (backListener) backListener.remove(); };
-  }, [showTutorialModal, showIntroModal, showTrackingModal, showDailyRewardGlobal, showSuccessGlobal, showExitConfirm, showInfo, showLeaderboard, showMedals, selectedMedal, showBrainStats, showDuel, gameState, isPaused]);
+  }, [showTutorialModal, showIntroModal, showTrackingModal, showDailyRewardGlobal, showSuccessGlobal, showExitConfirm, showInfo, showLeaderboard, showMedals, selectedMedal, showBrainStats, showDuel, showNameEditModal, gameState, isPaused]);
 
   useEffect(() => {
     // Reset state immediately on level/state change to ensure clean transition
@@ -2521,6 +2549,7 @@ export default function App() {
             showMedals={showMedals} setShowMedals={setShowMedals}
             selectedMedal={selectedMedal} setSelectedMedal={setSelectedMedal}
             showLangMenu={showLangMenu} setShowLangMenu={setShowLangMenu}
+            showNameEditModal={showNameEditModal} setShowNameEditModal={setShowNameEditModal}
             openBrainStats={() => setShowBrainStats(true)}
             openDuel={() => setShowDuel(true)}
             openOnboarding={() => setShowTrackingModal(true)}

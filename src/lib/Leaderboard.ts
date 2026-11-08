@@ -61,12 +61,16 @@ export function getPlayerName(): string {
   if (!name || name.trim() === '' || name === 'Oyuncu') {
     name = generateGuestName();
     localStorage.setItem(PLAYER_NAME_KEY, name);
+  } else if (/\s/.test(name)) {
+    name = name.trim().replace(/\s+/g, '_').substring(0, 15);
+    localStorage.setItem(PLAYER_NAME_KEY, name);
   }
   return name;
 }
 
 export function setPlayerName(name: string): void {
-  localStorage.setItem(PLAYER_NAME_KEY, name.trim().substring(0, 15));
+  const cleanName = (name || '').trim().replace(/\s+/g, '_').substring(0, 15);
+  localStorage.setItem(PLAYER_NAME_KEY, cleanName);
 }
 
 export async function fetchAndCacheCountry(): Promise<string> {
