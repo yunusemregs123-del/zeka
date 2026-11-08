@@ -97,6 +97,11 @@ export const AuthService = {
           inMemoryAuthProvider = data.provider;
           localStorage.setItem(AUTH_PROVIDER_KEY, data.provider);
         }
+        // If server has more coins (e.g. gifted by admin via database), apply to local state
+        if (typeof data.coins === 'number' && data.coins > store.coins) {
+          useGameStore.setState({ coins: data.coins });
+          localStorage.setItem('zeka_coins', String(data.coins));
+        }
         return data;
       }
     } catch (err) {

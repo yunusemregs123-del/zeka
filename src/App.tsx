@@ -2840,21 +2840,21 @@ export default function App() {
                   <>
                     <div className="absolute top-0 inset-x-0 h-1.5 bg-sky-100 overflow-hidden z-20">
                       <motion.div
-                        key={`mem-bar-${level}`}
+                        key={`mem-bar-${level}-${showMemoryIntroModal || showTutorialModal || showIntroModal || isPaused}`}
                         initial={{ width: '100%' }}
-                        animate={{ width: '0%' }}
-                        transition={{ duration: 2.0, ease: 'linear' }}
+                        animate={{ width: (showMemoryIntroModal || showTutorialModal || showIntroModal || isPaused) ? '100%' : '0%' }}
+                        transition={(showMemoryIntroModal || showTutorialModal || showIntroModal || isPaused) ? { duration: 0 } : { duration: 2.0, ease: 'linear' }}
                         className="h-full bg-sky-500 rounded-full"
                       />
                     </div>
                     <motion.div
-                      key={`mem-badge-${level}`}
+                      key={`mem-badge-${level}-${showMemoryIntroModal || showTutorialModal || showIntroModal || isPaused}`}
                       initial={{ opacity: 0, scale: 0.9 }}
                       animate={{ opacity: 1, scale: 1 }}
                       exit={{ opacity: 0 }}
                       className="absolute top-2.5 right-3 px-2.5 py-0.5 rounded-full bg-sky-50 border border-sky-200/60 text-[10px] font-black uppercase text-sky-600 flex items-center gap-1 z-20 shadow-xs pointer-events-none"
                     >
-                      <span className="w-1.5 h-1.5 rounded-full bg-sky-500 animate-pulse" />
+                      <span className={`w-1.5 h-1.5 rounded-full bg-sky-500 ${(showMemoryIntroModal || showTutorialModal || showIntroModal || isPaused) ? '' : 'animate-pulse'}`} />
                       <span>{t.memory_time_remaining || '2.0s'}</span>
                     </motion.div>
                   </>
