@@ -43,7 +43,7 @@ export interface Env {
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Admin-Key',
 };
 
 function json(data: unknown, status = 200, cacheSeconds = 0): Response {
@@ -979,7 +979,6 @@ export default {
           let newLastClaimedWeek = existingUser.last_claimed_weekly_reward || '';
 
           if (existingUser.last_claimed_weekly_reward !== previousWeek) {
-            newLastClaimedWeek = previousWeek;
             try {
               const top10 = await env.DB.prepare(`
                 SELECT player_name, device_id
@@ -988,6 +987,9 @@ export default {
                 ORDER BY level DESC, total_time ASC
                 LIMIT 10
               `).bind(previousWeek).all<any>();
+
+              // Mark as checked only if DB query successfully completed
+              newLastClaimedWeek = previousWeek;
 
               if (top10.results && top10.results.length > 0) {
                 const userIndex = top10.results.findIndex((r: any) => {

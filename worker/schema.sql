@@ -119,3 +119,4 @@ CREATE TABLE IF NOT EXISTS user_accounts (
 CREATE INDEX IF NOT EXISTS idx_users_device ON user_accounts (device_id);
 CREATE INDEX IF NOT EXISTS idx_users_provider ON user_accounts (provider, provider_user_id);
 CREATE INDEX IF NOT EXISTS idx_users_recovery ON user_accounts (recovery_code);
+CREATE INDEX IF NOT EXISTS idx_users_player_name ON user_accounts (player_name COLLATE NOCASE);
