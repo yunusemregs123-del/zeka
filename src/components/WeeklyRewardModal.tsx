@@ -145,3 +145,4 @@ export const WeeklyRewardModal: React.FC<WeeklyRewardModalProps> = ({
     </AnimatePresence>
   );
 };
+
