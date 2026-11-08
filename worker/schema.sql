@@ -105,6 +105,8 @@ CREATE TABLE IF NOT EXISTS user_accounts (
   country TEXT DEFAULT 'TR',
   max_level INTEGER DEFAULT 1,
   coins INTEGER DEFAULT 75,
+  gift_coins INTEGER NOT NULL DEFAULT 0,
+  force_coins INTEGER DEFAULT NULL,
   time_attack_best INTEGER DEFAULT 0,
   memory_best INTEGER DEFAULT 0,
   medals TEXT DEFAULT '[]',

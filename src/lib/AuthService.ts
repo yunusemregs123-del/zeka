@@ -18,6 +18,8 @@ export interface CloudUserAccount {
   player_name: string;
   max_level: number;
   coins: number;
+  gift_coins?: number;
+  force_sync?: boolean;
   time_attack_best?: number;
   memory_best: number;
   medals: string[];
@@ -96,11 +98,24 @@ export const AuthService = {
           inMemoryAuthProvider = data.provider;
           localStorage.setItem(AUTH_PROVIDER_KEY, data.provider);
         }
-        // If server has more coins (e.g. gifted by admin via database), apply to local state
-        if (typeof data.coins === 'number' && data.coins > store.coins) {
-          useGameStore.setState({ coins: data.coins });
+
+        // Apply admin force balance or cloud restoration to new device
+        if (data.force_sync && typeof data.coins === 'number') {
+          useGameStore.setState({ 
+            coins: data.coins,
+            maxLevelCompleted: Math.max(store.maxLevelCompleted, data.max_level || 1)
+          });
           localStorage.setItem('zeka_coins', String(data.coins));
+          localStorage.setItem('zeka_max_level', String(Math.max(store.maxLevelCompleted, data.max_level || 1)));
+        } else if (typeof data.gift_coins === 'number' && data.gift_coins > 0) {
+          // If server delivered gifted coins, increment current client wallet
+          const currentCoins = useGameStore.getState().coins;
+          const updatedCoins = currentCoins + data.gift_coins;
+          useGameStore.setState({ coins: updatedCoins });
+          localStorage.setItem('zeka_coins', String(updatedCoins));
         }
+        // Note: In normal gameplay, spent coins stay spent and are saved to D1.
+        // We do NOT unconditionally overwrite local coins with server coins.
         return data;
       }
     } catch (err) {

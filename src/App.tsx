@@ -1784,6 +1784,16 @@ export default function App() {
     }
   }, []);
 
+  // Auto-sync cloud wallet whenever coins change (spent or earned)
+  const isFirstCoinRender = useRef(true);
+  useEffect(() => {
+    if (isFirstCoinRender.current) {
+      isFirstCoinRender.current = false;
+      return;
+    }
+    AuthService.scheduleSync(2000);
+  }, [coins]);
+
   // BACK BUTTON HANDLING (CAPACITOR)
   useEffect(() => {
     let backListener: any;

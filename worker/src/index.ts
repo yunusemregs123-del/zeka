@@ -899,7 +899,7 @@ export default {
         const providerUserId = body.provider_user_id ? String(body.provider_user_id).trim() : null;
         const playerName = (body.player_name || '').trim().replace(/\s+/g, '_').substring(0, 20) || 'Oyuncu';
         const incomingLevel = Math.max(1, Math.min(9999, Number(body.max_level) || 1));
-        const incomingCoins = Math.max(0, Math.min(9999999, Number(body.coins) || 75));
+        const incomingCoins = typeof body.coins === 'number' ? Math.max(0, Math.min(999999999, Math.floor(body.coins))) : 75;
         const incomingTa = Math.max(0, Math.min(9999, Number(body.time_attack_best) || 0));
         const incomingMem = Math.max(0, Math.min(9999, Number(body.memory_best) || 0));
         const medalsJson = JSON.stringify(Array.isArray(body.medals) ? body.medals : []);
@@ -927,9 +927,31 @@ export default {
 
         if (existingUser) {
           const mergedLevel = Math.max(existingUser.max_level || 1, incomingLevel);
-          const mergedCoins = Math.max(existingUser.coins || 0, incomingCoins);
           const mergedTa = Math.max(existingUser.time_attack_best || 0, incomingTa);
           const mergedMem = Math.max(existingUser.memory_best || 0, incomingMem);
+
+          // Robust Coin Sync & Admin Gifting Logic:
+          // 1. If admin set force_coins, force client to adopt this exact balance (replaces endless loops)
+          // 2. If admin or event gifted coins (gift_coins > 0), add to player balance and clear gift
+          // 3. If player is restoring account on a new device, adopt the existing cloud coins
+          // 4. Normal gameplay on same device: incomingCoins is authoritative (spent coins stay spent!)
+          let mergedCoins = incomingCoins;
+          let giftAwarded = 0;
+          let forceApplied = false;
+          const isDifferentDevice = Boolean(existingUser.device_id && existingUser.device_id !== deviceId);
+
+          if (existingUser.force_coins !== null && existingUser.force_coins !== undefined) {
+            mergedCoins = Math.max(0, Math.floor(Number(existingUser.force_coins)));
+            forceApplied = true;
+          } else {
+            const pendingGift = Math.max(0, Math.floor(Number(existingUser.gift_coins) || 0));
+            if (isDifferentDevice) {
+              mergedCoins = Math.max(existingUser.coins || 0, incomingCoins) + pendingGift;
+            } else {
+              mergedCoins = Math.max(0, incomingCoins + pendingGift);
+            }
+            giftAwarded = pendingGift;
+          }
 
           let existingMedals: string[] = [];
           try { existingMedals = JSON.parse(existingUser.medals || '[]'); } catch {}
@@ -951,6 +973,8 @@ export default {
                 device_id = ?,
                 max_level = ?,
                 coins = ?,
+                gift_coins = 0,
+                force_coins = NULL,
                 time_attack_best = ?,
                 memory_best = ?,
                 medals = ?,
@@ -992,6 +1016,8 @@ export default {
             provider: newProvider,
             max_level: mergedLevel,
             coins: mergedCoins,
+            gift_coins: giftAwarded,
+            force_sync: forceApplied || isDifferentDevice,
             time_attack_best: mergedTa,
             memory_best: mergedMem,
             medals: combinedMedals,
@@ -1009,8 +1035,8 @@ export default {
         await env.DB.prepare(`
           INSERT INTO user_accounts (
             id, provider, provider_user_id, recovery_code, device_id, player_name, country,
-            max_level, coins, time_attack_best, memory_best, medals, claimed_medals
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            max_level, coins, gift_coins, force_coins, time_attack_best, memory_best, medals, claimed_medals
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, NULL, ?, ?, ?, ?)
         `).bind(
           accountId,
           provider,
@@ -1034,6 +1060,8 @@ export default {
           provider,
           max_level: incomingLevel,
           coins: incomingCoins,
+          gift_coins: 0,
+          force_sync: false,
           time_attack_best: incomingTa,
           memory_best: incomingMem,
           medals: Array.isArray(body.medals) ? body.medals : [],
@@ -1086,6 +1114,84 @@ export default {
           medals: parsedMedals,
           claimed_medals: parsedClaimed,
         });
+      }
+
+      // 16. ADMIN COIN MANAGEMENT (/api/admin/coins)
+      // Gift coins or set coins by username (player_name) or recovery_code
+      if (request.method === 'POST' && path === '/api/admin/coins') {
+        const body = (await request.json().catch(() => ({}))) as {
+          admin_key?: string;
+          player_name?: string;
+          recovery_code?: string;
+          coins?: number;
+          action?: 'gift' | 'set';
+        };
+
+        const authKey = request.headers.get('x-admin-key') || body.admin_key || '';
+        if (authKey !== 'zeka-master-2026') {
+          return json({ success: false, error: 'Yetkisiz erişim. Geçersiz admin anahtarı.' }, 401);
+        }
+
+        const playerName = (body.player_name || '').trim();
+        const recoveryCode = (body.recovery_code || '').trim().toUpperCase();
+        const amount = Math.floor(Number(body.coins) || 0);
+        const action = body.action === 'set' ? 'set' : 'gift';
+
+        if (!playerName && !recoveryCode) {
+          return json({ success: false, error: 'player_name veya recovery_code belirtilmelidir.' }, 400);
+        }
+
+        let user: any = null;
+        if (playerName) {
+          user = await env.DB.prepare(
+            'SELECT * FROM user_accounts WHERE player_name = ? COLLATE NOCASE LIMIT 1'
+          ).bind(playerName).first<any>();
+        } else if (recoveryCode) {
+          user = await env.DB.prepare(
+            'SELECT * FROM user_accounts WHERE recovery_code = ? LIMIT 1'
+          ).bind(recoveryCode).first<any>();
+        }
+
+        if (!user) {
+          return json({ success: false, error: 'Belirtilen kullanıcı veritabanında bulunamadı.' }, 404);
+        }
+
+        if (action === 'set') {
+          const targetCoins = Math.max(0, amount);
+          await env.DB.prepare(
+            'UPDATE user_accounts SET coins = ?, force_coins = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?'
+          ).bind(targetCoins, targetCoins, user.id).run();
+
+          return json({
+            success: true,
+            player_name: user.player_name,
+            recovery_code: user.recovery_code,
+            action: 'set',
+            coins: targetCoins,
+            message: `${user.player_name} kullanıcısının coin bakiyesi ${targetCoins} olarak ayarlandı.`
+          });
+        } else {
+          // 'gift' action: increments gift_coins
+          if (amount <= 0) {
+            return json({ success: false, error: 'Hediye edilecek coin miktarı 0 dan büyük olmalıdır.' }, 400);
+          }
+          await env.DB.prepare(
+            'UPDATE user_accounts SET gift_coins = gift_coins + ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?'
+          ).bind(amount, user.id).run();
+
+          const updated = await env.DB.prepare('SELECT coins, gift_coins FROM user_accounts WHERE id = ?').bind(user.id).first<any>();
+
+          return json({
+            success: true,
+            player_name: user.player_name,
+            recovery_code: user.recovery_code,
+            action: 'gift',
+            gifted_amount: amount,
+            pending_gift_total: updated?.gift_coins || amount,
+            current_db_coins: updated?.coins || user.coins,
+            message: `${user.player_name} kullanıcısına ${amount} coin hediye edildi. Senkronda eklenecek.`
+          });
+        }
       }
 
       return json({ error: 'Endpoint bulunamadı' }, 404);
