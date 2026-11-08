@@ -7,6 +7,14 @@
 }
 
 @layer base {
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  button, a, input, select {
+    touch-action: manipulation;
+  }
+
   body {
     background-color: var(--color-base);
     color: var(--color-contrast);
@@ -16,6 +24,7 @@
     overflow: hidden; /* Avoid scrollbars in the game view */
     user-select: none;
     -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 }
 

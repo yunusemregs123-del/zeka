@@ -120,7 +120,13 @@ export const WeeklyRewardModal: React.FC<WeeklyRewardModalProps> = ({
             transition={{ duration: 0.6, delay: 0.15 }}
             className="my-5 py-3.5 px-4 bg-gradient-to-r from-amber-50 via-yellow-50 to-amber-50 border border-amber-200/80 rounded-2xl shadow-inner flex items-center justify-center gap-3"
           >
-            <Icons.Coin className="w-8 h-8 text-amber-500 animate-spin-slow drop-shadow" />
+            <motion.div
+              animate={{ rotateY: [0, 360] }}
+              transition={{ repeat: Infinity, duration: 3.5, ease: 'easeInOut' }}
+              className="shrink-0 flex items-center justify-center"
+            >
+              <Icons.Coin className="w-8 h-8 text-amber-500 drop-shadow" />
+            </motion.div>
             <div className="text-left">
               <span className="block text-[10px] font-bold text-amber-700/80 uppercase tracking-widest">
                 KAZANILAN ÖDÜL

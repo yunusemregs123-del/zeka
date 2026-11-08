@@ -18,10 +18,10 @@ import { DuelService, type OpponentInfo } from './lib/DuelService';
 import { JourneyMap } from './components/JourneyMap';
 import { RollingNumber } from './components/RollingNumber';
 import { AuthService } from './lib/AuthService';
-import { WeeklyRewardModal } from './components/WeeklyRewardModal';
 
 const BrainAnalyticsModal = lazy(() => import('./components/BrainAnalyticsModal').then(m => ({ default: m.BrainAnalyticsModal })));
 const DuelModal = lazy(() => import('./components/DuelModal').then(m => ({ default: m.DuelModal })));
+const WeeklyRewardModal = lazy(() => import('./components/WeeklyRewardModal').then(m => ({ default: m.WeeklyRewardModal })));
 
 let audioCtx: AudioContext | null = null;
 let ambientMusic: AmbientMusic | null = null;
@@ -1784,6 +1784,7 @@ export default function App() {
     const prewarm = () => {
       import('./components/BrainAnalyticsModal');
       import('./components/DuelModal');
+      import('./components/WeeklyRewardModal');
     };
     if (typeof window !== 'undefined') {
       if ('requestIdleCallback' in window) {
@@ -3478,20 +3479,20 @@ export default function App() {
             playSound={playSound}
           />
         )}
-      </Suspense>
 
-      {/* WEEKLY LEAGUE REWARD CELEBRATION MODAL */}
-      {pendingWeeklyReward && (
-        <WeeklyRewardModal
-          reward={pendingWeeklyReward}
-          language={language}
-          onClaim={() => {
-            playSound('success');
-            haptic.notification('success');
-            dismissWeeklyReward();
-          }}
-        />
-      )}
+        {/* WEEKLY LEAGUE REWARD CELEBRATION MODAL */}
+        {pendingWeeklyReward && (
+          <WeeklyRewardModal
+            reward={pendingWeeklyReward}
+            language={language}
+            onClaim={() => {
+              playSound('success');
+              haptic.notification('success');
+              dismissWeeklyReward();
+            }}
+          />
+        )}
+      </Suspense>
     </div>
   );
 }
