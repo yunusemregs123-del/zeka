@@ -1,5 +1,5 @@
 import { createPortal } from 'react-dom';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, lazy, Suspense } from 'react';
 import { StatusBar } from '@capacitor/status-bar';
 import { App as CapApp } from '@capacitor/app';
 import { useGameStore, type GameMode } from './store/useGameStore';
@@ -13,12 +13,14 @@ import { Ads } from './lib/Ads';
 import { Translations, type LanguageCode } from './lib/Translations';
 import { ACHIEVEMENTS } from './lib/Achievements';
 import { haptic } from './lib/Haptics';
-import { BrainAnalyticsModal } from './components/BrainAnalyticsModal';
-import { DuelModal, type StartDuelPayload } from './components/DuelModal';
+import type { StartDuelPayload } from './components/DuelModal';
 import { DuelService, type OpponentInfo } from './lib/DuelService';
 import { JourneyMap } from './components/JourneyMap';
 import { RollingNumber } from './components/RollingNumber';
 import { AuthService } from './lib/AuthService';
+
+const BrainAnalyticsModal = lazy(() => import('./components/BrainAnalyticsModal').then(m => ({ default: m.BrainAnalyticsModal })));
+const DuelModal = lazy(() => import('./components/DuelModal').then(m => ({ default: m.DuelModal })));
 
 let audioCtx: AudioContext | null = null;
 let ambientMusic: AmbientMusic | null = null;
@@ -614,13 +616,17 @@ function MenuScreen({
       {/* MEDALS MODAL */}
       <AnimatePresence>
         {showMedals && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 pointer-events-auto">
+          <div
+            onClick={() => setShowMedals(false)}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 pointer-events-auto"
+          >
             <motion.div
               key="medals-modal"
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
               transition={{ duration: 0.2 }}
+              onClick={(e) => e.stopPropagation()}
               className="bg-white rounded-[2.5rem] p-6 w-full max-w-[360px] shadow-2xl relative flex flex-col max-h-[85vh]"
             >
               <div className="flex justify-between items-center mb-6">
@@ -729,13 +735,17 @@ function MenuScreen({
       {/* INFO MODAL */}
       <AnimatePresence>
         {showInfo && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 pointer-events-auto">
+          <div
+            onClick={() => setShowInfo(false)}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 pointer-events-auto"
+          >
             <motion.div
               key="info-modal"
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
               transition={{ duration: 0.2 }}
+              onClick={(e) => e.stopPropagation()}
               className="bg-white rounded-3xl p-5 w-full max-w-[340px] shadow-2xl relative"
             >
               {/* Header with 2-Tab Switcher & Close */}
@@ -1783,6 +1793,8 @@ export default function App() {
         else if (showLeaderboard) setShowLeaderboard(false);
         else if (showMedals) setShowMedals(false);
         else if (selectedMedal) setSelectedMedal(null);
+        else if (showBrainStats) setShowBrainStats(false);
+        else if (showDuel) setShowDuel(false);
         else if (showSuccessGlobal) setShowSuccessGlobal(false);
         else if (gameState === 'PLAYING') {
           // If in game, show exit confirmation instead of instant exit/pause
@@ -1796,7 +1808,7 @@ export default function App() {
     };
     setup();
     return () => { if (backListener) backListener.remove(); };
-  }, [showTutorialModal, showIntroModal, showTrackingModal, showDailyRewardGlobal, showSuccessGlobal, showExitConfirm, showInfo, showLeaderboard, showMedals, selectedMedal, gameState, isPaused]);
+  }, [showTutorialModal, showIntroModal, showTrackingModal, showDailyRewardGlobal, showSuccessGlobal, showExitConfirm, showInfo, showLeaderboard, showMedals, selectedMedal, showBrainStats, showDuel, gameState, isPaused]);
 
   useEffect(() => {
     // Reset state immediately on level/state change to ensure clean transition
@@ -3097,8 +3109,18 @@ export default function App() {
             )}
 
             {showDailyRewardGlobal && (
-              <div key="daily-reward-overlay" className="fixed inset-0 flex items-center justify-center p-4 bg-black/70 pointer-events-auto">
-                <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="bg-white rounded-[2rem] p-6 w-full max-w-[320px] shadow-2xl text-center relative pointer-events-auto">
+              <div
+                key="daily-reward-overlay"
+                onClick={() => setShowDailyRewardGlobal(false)}
+                className="fixed inset-0 flex items-center justify-center p-4 bg-black/70 pointer-events-auto"
+              >
+                <motion.div
+                  initial={{ scale: 0.95, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.95, opacity: 0 }}
+                  onClick={(e) => e.stopPropagation()}
+                  className="bg-white rounded-[2rem] p-6 w-full max-w-[320px] shadow-2xl text-center relative pointer-events-auto"
+                >
                   <button onClick={() => setShowDailyRewardGlobal(false)} className="absolute top-4 right-4 w-9 h-9 bg-neutral-100 hover:bg-neutral-200 rounded-full text-neutral-400 hover:text-neutral-700 shadow-sm transition-colors flex items-center justify-center">
                     <Icons.X className="w-4 h-4" />
                   </button>
@@ -3136,8 +3158,18 @@ export default function App() {
             )}
 
             {showSuccessGlobal && (
-              <div key="success-overlay" className="fixed inset-0 flex items-center justify-center p-4 bg-black/70 pointer-events-auto">
-                <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 20, opacity: 0 }} className="bg-white rounded-[2rem] p-8 w-full max-w-[300px] shadow-2xl text-center border-b-8 border-amber-400 pointer-events-auto">
+              <div
+                key="success-overlay"
+                onClick={() => setShowSuccessGlobal(false)}
+                className="fixed inset-0 flex items-center justify-center p-4 bg-black/70 pointer-events-auto"
+              >
+                <motion.div
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  exit={{ y: 20, opacity: 0 }}
+                  onClick={(e) => e.stopPropagation()}
+                  className="bg-white rounded-[2rem] p-8 w-full max-w-[300px] shadow-2xl text-center border-b-8 border-amber-400 pointer-events-auto"
+                >
                   <div className="w-16 h-16 bg-amber-100 text-amber-500 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-amber-200">
                     <Icons.Trophy className="w-9 h-9" />
                   </div>
@@ -3149,8 +3181,18 @@ export default function App() {
             )}
 
             {showExitConfirm && (
-              <div key="exit-confirm-overlay" className="fixed inset-0 flex items-center justify-center p-6 bg-black/40 pointer-events-auto">
-                <motion.div initial={{ scale: 0.9, y: 10, opacity: 0 }} animate={{ scale: 1, y: 0, opacity: 1 }} exit={{ scale: 0.9, y: 10, opacity: 0 }} className="bg-white/95 rounded-[2rem] p-8 w-full max-w-[280px] text-center shadow-2xl relative overflow-hidden">
+              <div
+                key="exit-confirm-overlay"
+                onClick={() => setShowExitConfirm(false)}
+                className="fixed inset-0 flex items-center justify-center p-6 bg-black/40 pointer-events-auto"
+              >
+                <motion.div
+                  initial={{ scale: 0.9, y: 10, opacity: 0 }}
+                  animate={{ scale: 1, y: 0, opacity: 1 }}
+                  exit={{ scale: 0.9, y: 10, opacity: 0 }}
+                  onClick={(e) => e.stopPropagation()}
+                  className="bg-white/95 rounded-[2rem] p-8 w-full max-w-[280px] text-center shadow-2xl relative overflow-hidden"
+                >
                   
                   {/* Live Timer Progress Bar to show it's ticking */}
                   {gameState === 'PLAYING' && !isDevMode && (
@@ -3252,20 +3294,25 @@ export default function App() {
         )}
       </AnimatePresence>
 
-      {/* BRAIN ANALYTICS & BRAIN AGE MODAL */}
-      <BrainAnalyticsModal
-        isOpen={showBrainStats}
-        onClose={() => setShowBrainStats(false)}
-        playSound={playSound}
-      />
+      {/* BRAIN ANALYTICS & 1V1 DUEL MODALS (LAZY LOADED ON DEMAND) */}
+      <Suspense fallback={null}>
+        {showBrainStats && (
+          <BrainAnalyticsModal
+            isOpen={showBrainStats}
+            onClose={() => setShowBrainStats(false)}
+            playSound={playSound}
+          />
+        )}
 
-      {/* 1v1 LIVE DUEL MODAL */}
-      <DuelModal
-        isOpen={showDuel}
-        onClose={() => setShowDuel(false)}
-        onStartDuel={(payload) => handleStartDuel(payload)}
-        playSound={playSound}
-      />
+        {showDuel && (
+          <DuelModal
+            isOpen={showDuel}
+            onClose={() => setShowDuel(false)}
+            onStartDuel={(payload) => handleStartDuel(payload)}
+            playSound={playSound}
+          />
+        )}
+      </Suspense>
     </div>
   );
 }

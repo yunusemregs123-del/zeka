@@ -52,7 +52,7 @@ export const DuelModal: React.FC<DuelModalProps> = ({
     }
   }, [isOpen, roomCode]);
 
-  // Clean up socket connections when closed without starting match
+  // Clean up socket connections when closed or unmounted without starting match
   useEffect(() => {
     if (!isOpen) {
       if (!matchStartedRef.current) {
@@ -63,6 +63,11 @@ export const DuelModal: React.FC<DuelModalProps> = ({
       setJoinError('');
       matchStartedRef.current = false;
     }
+    return () => {
+      if (!matchStartedRef.current) {
+        DuelService.cleanup();
+      }
+    };
   }, [isOpen]);
 
   // Timer for searching animation
@@ -237,12 +242,19 @@ export const DuelModal: React.FC<DuelModalProps> = ({
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm pointer-events-auto">
+        <div
+          onClick={() => {
+            DuelService.cleanup();
+            onClose();
+          }}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm pointer-events-auto"
+        >
           <motion.div
             initial={{ scale: 0.95, opacity: 0, y: 15 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.95, opacity: 0, y: 15 }}
             transition={{ duration: 0.2 }}
+            onClick={(e) => e.stopPropagation()}
             className="bg-white rounded-[2rem] p-6 w-full max-w-[360px] shadow-2xl relative flex flex-col max-h-[90vh] overflow-hidden"
           >
             {/* Header */}
