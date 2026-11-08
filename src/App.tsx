@@ -631,18 +631,23 @@ function MenuScreen({
       {/* MEDALS MODAL */}
       <AnimatePresence>
         {showMedals && (
-          <div
+          <motion.div
+            key="medals-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
             onClick={() => setShowMedals(false)}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 pointer-events-auto"
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 pointer-events-auto"
           >
             <motion.div
               key="medals-modal"
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              transition={{ duration: 0.2 }}
+              initial={{ scale: 0.96, opacity: 0, y: 8 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.96, opacity: 0, y: 8 }}
+              transition={{ duration: 0.18, ease: "easeOut" }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-white rounded-[2.5rem] p-6 w-full max-w-[360px] shadow-2xl relative flex flex-col max-h-[85vh]"
+              className="bg-white rounded-[2.5rem] p-6 w-full max-w-[360px] shadow-2xl relative flex flex-col max-h-[85vh] transform-gpu will-change-transform"
             >
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-2xl font-black tracking-tighter flex items-center gap-2">
@@ -743,25 +748,30 @@ function MenuScreen({
 
 
             </motion.div>
-          </div>
+          </motion.div>
         )}
       </AnimatePresence>
 
       {/* INFO MODAL */}
       <AnimatePresence>
         {showInfo && (
-          <div
+          <motion.div
+            key="info-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
             onClick={() => setShowInfo(false)}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 pointer-events-auto"
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 pointer-events-auto"
           >
             <motion.div
               key="info-modal"
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              transition={{ duration: 0.2 }}
+              initial={{ scale: 0.96, opacity: 0, y: 8 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.96, opacity: 0, y: 8 }}
+              transition={{ duration: 0.18, ease: "easeOut" }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-white rounded-3xl p-5 w-full max-w-[340px] shadow-2xl relative"
+              className="bg-white rounded-3xl p-5 w-full max-w-[340px] shadow-2xl relative transform-gpu will-change-transform"
             >
               {/* Header with 2-Tab Switcher & Close */}
               <div className="flex justify-between items-center mb-3">
@@ -1022,25 +1032,30 @@ function MenuScreen({
                 </div>
               )}
             </motion.div>
-          </div>
+          </motion.div>
         )}
       </AnimatePresence>
 
       {/* LEADERBOARD MODAL */}
       <AnimatePresence>
         {showLeaderboard && (
-          <div
+          <motion.div
+            key="lb-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
             onClick={() => setShowLeaderboard(false)}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 pointer-events-auto"
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 pointer-events-auto"
           >
             <motion.div
               key="lb-modal"
-              initial={{ scale: 0.95, opacity: 0, y: 10 }}
+              initial={{ scale: 0.96, opacity: 0, y: 8 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.95, opacity: 0, y: 10 }}
-              transition={{ duration: 0.2 }}
+              exit={{ scale: 0.96, opacity: 0, y: 8 }}
+              transition={{ duration: 0.18, ease: "easeOut" }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-white rounded-3xl w-full max-w-[360px] shadow-2xl flex flex-col overflow-hidden max-h-[85dvh]"
+              className="bg-white rounded-3xl w-full max-w-[360px] shadow-2xl flex flex-col overflow-hidden max-h-[85dvh] transform-gpu will-change-transform"
             >
               <div className="flex justify-between items-center p-4 border-b border-neutral-100 shrink-0">
                 <h2 className="text-xl font-black text-[#1D1D1F] flex items-center gap-2"><Icons.Trophy className="w-6 h-6 text-amber-500" /> {t.lb_title}</h2>
@@ -1159,25 +1174,30 @@ function MenuScreen({
                 </AnimatePresence>
               </div>
             </motion.div>
-          </div>
+          </motion.div>
         )}
       </AnimatePresence>
 
       {/* NICKNAME EDIT MODAL */}
       <AnimatePresence>
         {showNameEditModal && (
-          <div
+          <motion.div
+            key="name-edit-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
             onClick={() => setShowNameEditModal(false)}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 pointer-events-auto"
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 pointer-events-auto"
           >
             <motion.div
               key="name-edit-modal"
-              initial={{ scale: 0.95, opacity: 0, y: 10 }}
+              initial={{ scale: 0.96, opacity: 0, y: 8 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.95, opacity: 0, y: 10 }}
-              transition={{ duration: 0.2 }}
+              exit={{ scale: 0.96, opacity: 0, y: 8 }}
+              transition={{ duration: 0.18, ease: "easeOut" }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-white rounded-3xl w-full max-w-[320px] shadow-2xl p-5 border border-neutral-100 relative overflow-hidden"
+              className="bg-white rounded-3xl w-full max-w-[320px] shadow-2xl p-5 border border-neutral-100 relative overflow-hidden transform-gpu will-change-transform"
             >
               <div className="flex justify-between items-center mb-3">
                 <div className="flex items-center gap-2">
@@ -1254,7 +1274,7 @@ function MenuScreen({
                 </button>
               </div>
             </motion.div>
-          </div>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>
@@ -1803,6 +1823,21 @@ export default function App() {
       setShowCompanySplash(false);
     }, 2000);
     return () => clearTimeout(timer);
+  }, []);
+
+  // Pre-warm lazy modal chunks in background on idle so first tap is instantaneous
+  useEffect(() => {
+    const prewarm = () => {
+      import('./components/BrainAnalyticsModal');
+      import('./components/DuelModal');
+    };
+    if (typeof window !== 'undefined') {
+      if ('requestIdleCallback' in window) {
+        (window as any).requestIdleCallback(prewarm, { timeout: 2000 });
+      } else {
+        setTimeout(prewarm, 1200);
+      }
+    }
   }, []);
 
   // BACK BUTTON HANDLING (CAPACITOR)
@@ -2976,8 +3011,20 @@ export default function App() {
         <div className="fixed inset-0 pointer-events-none z-[1000]">
           <AnimatePresence>
             {showTrackingModal && (
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 pointer-events-auto">
-                <motion.div initial={{ scale: 0.9, opacity: 0, y: 15 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0, y: 15 }} className="bg-white p-6 sm:p-7 rounded-[2.2rem] max-w-[340px] w-full shadow-2xl text-center relative overflow-hidden border border-neutral-100">
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.15 }}
+                className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 pointer-events-auto"
+              >
+                <motion.div
+                  initial={{ scale: 0.96, opacity: 0, y: 8 }}
+                  animate={{ scale: 1, opacity: 1, y: 0 }}
+                  exit={{ scale: 0.96, opacity: 0, y: 8 }}
+                  transition={{ duration: 0.18, ease: "easeOut" }}
+                  className="bg-white p-6 sm:p-7 rounded-[2.2rem] max-w-[340px] w-full shadow-2xl text-center relative overflow-hidden border border-neutral-100 transform-gpu will-change-transform"
+                >
                   {/* Decorative Brand Header */}
                   <div className="flex flex-col items-center mb-3">
                     <div className="w-14 h-14 rounded-2xl bg-[#1D1D1F] border border-neutral-700 shadow-md flex items-center justify-center mb-2.5 relative">
@@ -3138,17 +3185,22 @@ export default function App() {
             )}
 
             {showDailyRewardGlobal && (
-              <div
+              <motion.div
                 key="daily-reward-overlay"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.15 }}
                 onClick={() => setShowDailyRewardGlobal(false)}
-                className="fixed inset-0 flex items-center justify-center p-4 bg-black/70 pointer-events-auto"
+                className="fixed inset-0 flex items-center justify-center p-4 bg-black/75 pointer-events-auto"
               >
                 <motion.div
-                  initial={{ scale: 0.95, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  exit={{ scale: 0.95, opacity: 0 }}
+                  initial={{ scale: 0.96, opacity: 0, y: 8 }}
+                  animate={{ scale: 1, opacity: 1, y: 0 }}
+                  exit={{ scale: 0.96, opacity: 0, y: 8 }}
+                  transition={{ duration: 0.18, ease: "easeOut" }}
                   onClick={(e) => e.stopPropagation()}
-                  className="bg-white rounded-[2rem] p-6 w-full max-w-[320px] shadow-2xl text-center relative pointer-events-auto"
+                  className="bg-white rounded-[2rem] p-6 w-full max-w-[320px] shadow-2xl text-center relative pointer-events-auto transform-gpu will-change-transform"
                 >
                   <button onClick={() => setShowDailyRewardGlobal(false)} className="absolute top-4 right-4 w-9 h-9 bg-neutral-100 hover:bg-neutral-200 rounded-full text-neutral-400 hover:text-neutral-700 shadow-sm transition-colors flex items-center justify-center">
                     <Icons.X className="w-4 h-4" />
@@ -3165,7 +3217,7 @@ export default function App() {
                         const res = await Ads.showRewardedAd(); 
                         setIsWatchingDaily(false); 
                         if (res.success) { 
-                          claimDailyReward(); 
+                           claimDailyReward(); 
                           setShowDailyRewardGlobal(false); 
                           setShowSuccessGlobal(true); 
                           playSound('success'); 
@@ -3183,21 +3235,26 @@ export default function App() {
                     </button>
                   ) : ( <div className="w-full py-4 bg-neutral-100 text-neutral-400 rounded-2xl italic font-bold text-xs tracking-widest">{dailyRewardsToday >= 3 ? t.daily_gift_limit : t.daily_gift_comeback}</div> )}
                 </motion.div>
-              </div>
+              </motion.div>
             )}
 
             {showSuccessGlobal && (
-              <div
+              <motion.div
                 key="success-overlay"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.15 }}
                 onClick={() => setShowSuccessGlobal(false)}
-                className="fixed inset-0 flex items-center justify-center p-4 bg-black/70 pointer-events-auto"
+                className="fixed inset-0 flex items-center justify-center p-4 bg-black/75 pointer-events-auto"
               >
                 <motion.div
-                  initial={{ y: 20, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  exit={{ y: 20, opacity: 0 }}
+                  initial={{ scale: 0.96, opacity: 0, y: 8 }}
+                  animate={{ scale: 1, opacity: 1, y: 0 }}
+                  exit={{ scale: 0.96, opacity: 0, y: 8 }}
+                  transition={{ duration: 0.18, ease: "easeOut" }}
                   onClick={(e) => e.stopPropagation()}
-                  className="bg-white rounded-[2rem] p-8 w-full max-w-[300px] shadow-2xl text-center border-b-8 border-amber-400 pointer-events-auto"
+                  className="bg-white rounded-[2rem] p-8 w-full max-w-[300px] shadow-2xl text-center border-b-8 border-amber-400 pointer-events-auto transform-gpu will-change-transform"
                 >
                   <div className="w-16 h-16 bg-amber-100 text-amber-500 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-amber-200">
                     <Icons.Trophy className="w-9 h-9" />
@@ -3206,21 +3263,26 @@ export default function App() {
                   <p className="text-neutral-500 font-bold mb-6 text-sm">{t.congrats_desc}</p>
                   <button onClick={() => setShowSuccessGlobal(false)} className="w-full py-4 bg-amber-400 text-white rounded-2xl font-black tracking-widest shadow-lg shadow-amber-200 active:scale-95 transition-all">{t.congrats_btn}</button>
                 </motion.div>
-              </div>
+              </motion.div>
             )}
 
             {showExitConfirm && (
-              <div
+              <motion.div
                 key="exit-confirm-overlay"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.15 }}
                 onClick={() => setShowExitConfirm(false)}
-                className="fixed inset-0 flex items-center justify-center p-6 bg-black/40 pointer-events-auto"
+                className="fixed inset-0 flex items-center justify-center p-6 bg-black/60 pointer-events-auto"
               >
                 <motion.div
-                  initial={{ scale: 0.9, y: 10, opacity: 0 }}
-                  animate={{ scale: 1, y: 0, opacity: 1 }}
-                  exit={{ scale: 0.9, y: 10, opacity: 0 }}
+                  initial={{ scale: 0.96, opacity: 0, y: 8 }}
+                  animate={{ scale: 1, opacity: 1, y: 0 }}
+                  exit={{ scale: 0.96, opacity: 0, y: 8 }}
+                  transition={{ duration: 0.18, ease: "easeOut" }}
                   onClick={(e) => e.stopPropagation()}
-                  className="bg-white/95 rounded-[2rem] p-8 w-full max-w-[280px] text-center shadow-2xl relative overflow-hidden"
+                  className="bg-white/95 rounded-[2rem] p-8 w-full max-w-[280px] text-center shadow-2xl relative overflow-hidden transform-gpu will-change-transform"
                 >
                   
                   {/* Live Timer Progress Bar to show it's ticking */}
@@ -3252,7 +3314,7 @@ export default function App() {
                     <button onClick={() => { setShowExitConfirm(false); handleReturnToMenu(); }} className="w-full py-4 bg-neutral-100 text-neutral-400 rounded-xl font-black text-xs tracking-widest uppercase hover:bg-neutral-200 transition-colors">{t.exit_confirm_yes}</button>
                   </div>
                 </motion.div>
-              </div>
+              </motion.div>
             )}
           </AnimatePresence>
         </div>,

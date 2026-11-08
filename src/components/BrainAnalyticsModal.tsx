@@ -138,17 +138,22 @@ export const BrainAnalyticsModal: React.FC<BrainAnalyticsModalProps> = ({
   return (
     <AnimatePresence>
       {isOpen && (
-        <div
+        <motion.div
+          key="brain-modal-backdrop"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.15 }}
           onClick={onClose}
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm pointer-events-auto"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 pointer-events-auto"
         >
           <motion.div
-            initial={{ scale: 0.95, opacity: 0, y: 10 }}
+            initial={{ scale: 0.96, opacity: 0, y: 8 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
-            exit={{ scale: 0.95, opacity: 0, y: 10 }}
-            transition={{ duration: 0.2 }}
+            exit={{ scale: 0.96, opacity: 0, y: 8 }}
+            transition={{ duration: 0.18, ease: "easeOut" }}
             onClick={(e) => e.stopPropagation()}
-            className="bg-white rounded-3xl w-full max-w-[360px] shadow-2xl flex flex-col overflow-hidden max-h-[90dvh]"
+            className="bg-white rounded-3xl w-full max-w-[360px] shadow-2xl flex flex-col overflow-hidden max-h-[90dvh] transform-gpu will-change-transform"
           >
             {/* Header with Title & Subtitle */}
             <div className="flex justify-between items-center p-4 border-b border-neutral-100 shrink-0">
@@ -384,7 +389,7 @@ export const BrainAnalyticsModal: React.FC<BrainAnalyticsModalProps> = ({
               </div>
             </div>
           </motion.div>
-        </div>
+        </motion.div>
       )}
     </AnimatePresence>
   );

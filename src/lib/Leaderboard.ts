@@ -23,12 +23,18 @@ const PERSONAL_BEST_KEY = 'zeka_personal_best';
 const PLAYER_COUNTRY_KEY = 'zeka_player_country';
 const DEVICE_ID_KEY = 'zeka_device_id';
 
+// --- In-Memory Caches for Zero Disk Latency ---
+let inMemoryDeviceId: string | null = null;
+let inMemoryPlayerName: string | null = null;
+
 export function getDeviceId(): string {
+  if (inMemoryDeviceId) return inMemoryDeviceId;
   let id = localStorage.getItem(DEVICE_ID_KEY);
   if (!id) {
     id = crypto.randomUUID();
     localStorage.setItem(DEVICE_ID_KEY, id);
   }
+  inMemoryDeviceId = id;
   return id;
 }
 
@@ -57,6 +63,7 @@ export function generateGuestName(): string {
 }
 
 export function getPlayerName(): string {
+  if (inMemoryPlayerName) return inMemoryPlayerName;
   let name = localStorage.getItem(PLAYER_NAME_KEY);
   if (!name || name.trim() === '' || name === 'Oyuncu') {
     name = generateGuestName();
@@ -65,11 +72,13 @@ export function getPlayerName(): string {
     name = name.trim().replace(/\s+/g, '_').substring(0, 15);
     localStorage.setItem(PLAYER_NAME_KEY, name);
   }
+  inMemoryPlayerName = name;
   return name;
 }
 
 export function setPlayerName(name: string): void {
   const cleanName = (name || '').trim().replace(/\s+/g, '_').substring(0, 15);
+  inMemoryPlayerName = cleanName;
   localStorage.setItem(PLAYER_NAME_KEY, cleanName);
 }
 

@@ -25,20 +25,26 @@ export interface CloudUserAccount {
 }
 
 let syncTimeout: any = null;
+let inMemoryRecoveryCode: string | null = null;
+let inMemoryAuthProvider: string | null = null;
 
 export const AuthService = {
   /**
    * Get cached recovery code
    */
   getRecoveryCode(): string {
-    return localStorage.getItem(RECOVERY_CODE_KEY) || '';
+    if (inMemoryRecoveryCode !== null) return inMemoryRecoveryCode;
+    inMemoryRecoveryCode = localStorage.getItem(RECOVERY_CODE_KEY) || '';
+    return inMemoryRecoveryCode;
   },
 
   /**
    * Get current auth provider ('guest', 'google', 'apple')
    */
   getAuthProvider(): string {
-    return localStorage.getItem(AUTH_PROVIDER_KEY) || 'guest';
+    if (inMemoryAuthProvider !== null) return inMemoryAuthProvider;
+    inMemoryAuthProvider = localStorage.getItem(AUTH_PROVIDER_KEY) || 'guest';
+    return inMemoryAuthProvider;
   },
 
   /**
@@ -84,9 +90,11 @@ export const AuthService = {
       if (res.ok) {
         const data = (await res.json()) as CloudUserAccount;
         if (data.recovery_code) {
+          inMemoryRecoveryCode = data.recovery_code;
           localStorage.setItem(RECOVERY_CODE_KEY, data.recovery_code);
         }
         if (data.provider) {
+          inMemoryAuthProvider = data.provider;
           localStorage.setItem(AUTH_PROVIDER_KEY, data.provider);
         }
         return data;
@@ -120,6 +128,8 @@ export const AuthService = {
 
       const acc = data as CloudUserAccount;
       // Apply account to local game store & localStorage
+      inMemoryRecoveryCode = acc.recovery_code;
+      inMemoryAuthProvider = acc.provider;
       localStorage.setItem(RECOVERY_CODE_KEY, acc.recovery_code);
       localStorage.setItem(AUTH_PROVIDER_KEY, acc.provider);
       localStorage.setItem('zeka_max_level', String(acc.max_level));
